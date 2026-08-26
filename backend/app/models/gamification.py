@@ -1,5 +1,5 @@
 from datetime import datetime
-from sqlalchemy import Column, String, DateTime, ForeignKey, Boolean, Integer
+from sqlalchemy import Column, String, DateTime, ForeignKey, Boolean, Integer, Index
 from sqlalchemy.dialects.postgresql import UUID
 import uuid
 from app.core.database import Base
@@ -57,4 +57,3 @@ class Notification(Base):
     def __repr__(self):
         return f"<Notification {self.title} for {self.user_id}>"
 
-from sqlalchemy import Index

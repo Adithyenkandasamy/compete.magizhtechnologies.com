@@ -1,4 +1,8 @@
-export default function EventsPage() {
+interface EventsPageProps {
+  filterType?: string
+}
+
+export default function EventsPage(_props: EventsPageProps) {
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
