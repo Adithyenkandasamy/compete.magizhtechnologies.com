@@ -16,6 +16,7 @@ app = FastAPI(
     version=settings.APP_VERSION,
     description="Production-grade student innovation and event platform",
     docs_url="/api/docs" if settings.DEBUG else None,
+    redoc_url="/api/redoc" if settings.DEBUG else None,
 )
 
 # Middleware

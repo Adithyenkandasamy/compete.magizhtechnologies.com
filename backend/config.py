@@ -1,16 +1,19 @@
 import os
 from typing import Optional
 from pydantic_settings import BaseSettings
+from dotenv import load_dotenv
+
+load_dotenv()
 
 class Settings(BaseSettings):
     # App
-    APP_NAME: str = "Comp"
-    APP_VERSION: str = "1.0.0"
-    DEBUG: bool = True
+    APP_NAME: str = os.getenv("APP_NAME", "Comp")
+    APP_VERSION: str = os.getenv("APP_VERSION", "0.0.1")
+    DEBUG: bool = os.getenv("DEBUG", False)
 
     # Database
-    DATABASE_URL: str = "postgresql+asyncpg://user:password@localhost/comp_db"
-    SQLALCHEMY_ECHO: bool = False
+    DATABASE_URL: str = os.getenv("DATABASE_URL", "postgresql+asyncpg://user:password@localhost/comp_db")
+    SQLALCHEMY_ECHO: bool = os.getenv("SQLALCHEMY_ECHO", False)
 
     # Security
     SECRET_KEY: str = "your-secret-key-change-in-production"

@@ -4,6 +4,7 @@ from sqlalchemy import select
 from datetime import timedelta
 
 from app.core.database import get_db
+from app.core.deps import get_current_user
 from app.core.security import (
     verify_password,
     get_password_hash,
@@ -96,6 +97,3 @@ async def get_me(current_user: User = Depends(get_current_user)):
 async def logout():
     """Logout - token invalidation handled on frontend"""
     return {"message": "Logged out successfully"}
-
-# Import after models
-from app.core.deps import get_current_user
