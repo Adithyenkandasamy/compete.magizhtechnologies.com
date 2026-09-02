@@ -1,0 +1,7 @@
+node_modules
+dist
+coverage
+.env
+.vite
+.eslintcache
+tsconfig.tsbuildinfo
