@@ -9,7 +9,7 @@ import uuid
 from datetime import datetime
 from typing import TYPE_CHECKING, Optional
 
-from sqlalchemy import DateTime, Enum as SAEnum, ForeignKey, Index, String, Text, func
+from sqlalchemy import DateTime, Enum as SAEnum, ForeignKey, Index, String, Text, UniqueConstraint, func
 from sqlalchemy.dialects.postgresql import ARRAY, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import text
@@ -73,6 +73,7 @@ class Project(Base):
     __table_args__ = (
         Index("ix_projects_team_id", "team_id"),
         Index("ix_projects_event_id", "event_id"),
+        UniqueConstraint("team_id", "event_id", name="uq_projects_team_event"),
     )
 
     def __repr__(self) -> str:

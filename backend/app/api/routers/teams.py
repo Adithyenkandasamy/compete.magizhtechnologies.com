@@ -29,7 +29,7 @@ async def create_team(
 ) -> TeamResponse:
     service = TeamService(session)
     team = await service.create_team(event_id, current_user.id, data.name, request)
-    return await service.get_team(team.id) # type: ignore
+    return await get_team(team.id, session)
 
 
 @router.get(
@@ -50,7 +50,7 @@ async def get_team(
     
     # We need to map the nested user details for the response
     for member in team.members:
-        member.full_name = member.user.full_name
+        member.full_name = member.user.profile.full_name if member.user.profile else "Student"
         member.email = member.user.email
         
     return team # type: ignore

@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.health import router as health_router
-from app.api.routers import admin_events, auth, events, registrations, teams, team_invites
+from app.api.routers import admin_events, auth, events, registrations, teams, team_invites, projects
 from app.core.config import settings
 from app.core.logging import configure_logging
 from app.middleware.error_handler import GlobalErrorMiddleware
@@ -53,6 +53,7 @@ app.include_router(admin_events.router, prefix="/api")
 app.include_router(registrations.router)
 app.include_router(teams.router)
 app.include_router(team_invites.router)
+app.include_router(projects.router)
 
 # ---------------------------------------------------------------------------
 # Root endpoint

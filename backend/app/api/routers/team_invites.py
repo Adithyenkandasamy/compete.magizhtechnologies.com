@@ -106,7 +106,7 @@ async def list_join_requests(
     requests = await service.get_team_requests(team_id, current_user.id)
     
     for req in requests:
-        req.requester_name = req.user.full_name
+        req.requester_name = req.user.profile.full_name if req.user.profile else "Student"
         req.requester_email = req.user.email
         
     return requests # type: ignore

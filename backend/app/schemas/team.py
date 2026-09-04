@@ -40,7 +40,6 @@ class TeamResponse(BaseModel):
     member_count: int
     max_members: int
     
-    leader: TeamMemberResponse
     members: list[TeamMemberResponse]
 
     class Config:
