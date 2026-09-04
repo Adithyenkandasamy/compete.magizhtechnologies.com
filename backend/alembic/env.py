@@ -31,10 +31,10 @@ from app.core.config import settings  # noqa: E402
 config.set_main_option("sqlalchemy.url", settings.database_url)
 
 # ---------------------------------------------------------------------------
-# Import all models here so autogenerate can detect schema changes.
-# Example (add as you create models):
-#   from app.models.user import User  # noqa: F401
+# Import ALL models here so autogenerate detects every table.
+# app/models/__init__.py re-exports every model from every module.
 # ---------------------------------------------------------------------------
+import app.models  # noqa: F401 — registers all models with Base.metadata
 from app.database.session import Base  # noqa: E402, F401
 
 target_metadata = Base.metadata

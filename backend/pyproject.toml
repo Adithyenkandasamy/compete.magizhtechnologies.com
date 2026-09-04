@@ -1,0 +1,35 @@
+[project]
+name = "backend"
+version = "0.1.0"
+description = "Magizh Innovation — FastAPI backend"
+readme = "README.md"
+authors = [
+    { name = "BILLA", email = "adithyen1@gmail.com" }
+]
+requires-python = ">=3.10"
+dependencies = [
+    "alembic==1.13.3",
+    "asyncpg==0.29.0",
+    "fastapi==0.115.0",
+    "pydantic==2.9.2",
+    "pydantic-settings==2.5.2",
+    "python-dotenv==1.0.1",
+    "sqlalchemy[asyncio]==2.0.35",
+    "uvicorn[standard]==0.30.6",
+]
+
+# No CLI entrypoints — server is started with uvicorn directly
+
+[build-system]
+requires = ["uv_build>=0.12.3,<0.13.0"]
+build-backend = "uv_build"
+
+# ---------------------------------------------------------------------------
+# Pyrefly (Meta's type-checker / VS Code extension) configuration.
+# Without this, pyrefly assumes a src/ layout and cannot resolve imports.
+# ---------------------------------------------------------------------------
+[tool.pyrefly]
+# Tell pyrefly the source root is the backend/ directory itself (flat layout)
+source_paths = ["."]
+# Point explicitly at the virtual-environment so it finds installed stubs
+python_interpreter = ".venv/bin/python"
