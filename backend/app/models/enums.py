@@ -53,6 +53,13 @@ class TeamMemberRole(str, enum.Enum):
     MEMBER = "MEMBER"
 
 
+class JoinRequestStatus(str, enum.Enum):
+    PENDING = "PENDING"
+    ACCEPTED = "ACCEPTED"
+    REJECTED = "REJECTED"
+    CANCELLED = "CANCELLED"
+
+
 class SubmissionStatus(str, enum.Enum):
     DRAFT = "DRAFT"
     SUBMITTED = "SUBMITTED"

@@ -1,5 +1,5 @@
 import uuid
-from typing import Optional
+from typing import Optional, Any
 
 from fastapi import HTTPException, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -50,7 +50,7 @@ class EventService:
         status_filter: Optional[EventStatus] = None,
         search: Optional[str] = None,
         public_only: bool = False,
-    ) -> PaginatedResponse[Event]:
+    ) -> PaginatedResponse[Any]:
         """Get paginated events."""
         skip = (page - 1) * size
         items, total = await self.repo.get_events(
