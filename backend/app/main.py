@@ -1,0 +1,72 @@
+import logging
+
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
+from app.api.health import router as health_router
+from app.core.config import settings
+from app.core.logging import configure_logging
+from app.middleware.error_handler import GlobalErrorMiddleware
+
+# ---------------------------------------------------------------------------
+# Configure logging before anything else
+# ---------------------------------------------------------------------------
+configure_logging()
+
+logger = logging.getLogger(__name__)
+
+# ---------------------------------------------------------------------------
+# Application factory
+# ---------------------------------------------------------------------------
+app = FastAPI(
+    title="Magizh Innovation API",
+    description="Official event and innovation platform for Magizh Technologies.",
+    version="0.1.0",
+    docs_url="/docs",
+    redoc_url="/redoc",
+)
+
+# ---------------------------------------------------------------------------
+# Middleware (order matters – outermost middleware is registered last)
+# ---------------------------------------------------------------------------
+
+# Global error handler – catches any unhandled exception
+app.add_middleware(GlobalErrorMiddleware)
+
+# CORS – restrict to the configured frontend origin
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[settings.frontend_url],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# ---------------------------------------------------------------------------
+# Routers
+# ---------------------------------------------------------------------------
+app.include_router(health_router)
+
+# ---------------------------------------------------------------------------
+# Root endpoint
+# ---------------------------------------------------------------------------
+
+
+@app.get("/", tags=["root"])
+async def root() -> dict[str, str]:
+    return {"name": "Magizh Innovation API", "status": "running"}
+
+
+# ---------------------------------------------------------------------------
+# Startup / shutdown lifecycle hooks
+# ---------------------------------------------------------------------------
+
+
+@app.on_event("startup")
+async def on_startup() -> None:
+    logger.info("Magizh Innovation API starting up …")
+
+
+@app.on_event("shutdown")
+async def on_shutdown() -> None:
+    logger.info("Magizh Innovation API shutting down …")

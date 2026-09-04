@@ -1,1 +1,42 @@
+.claude
+.vscode
+.agents
+.pyc
+*.pyc
 .env
+backend/.env
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Virtual environments
+.venv/
+venv/
+env/
+backend/.venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# Alembic (keep versions, ignore pycache)
+alembic/__pycache__/
+
+# Frontend
+frontend/node_modules/
+frontend/.next/
+frontend/dist/
+frontend/.env.local
+frontend/.env
+
+# OS
+.DS_Store
+Thumbs.db

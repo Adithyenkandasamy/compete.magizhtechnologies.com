@@ -1,0 +1,1 @@
+# Magizh Innovation – FastAPI Application
