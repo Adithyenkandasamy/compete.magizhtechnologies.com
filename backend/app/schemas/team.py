@@ -5,7 +5,7 @@ from typing import Optional
 from pydantic import BaseModel, Field
 
 from app.models.enums import JoinRequestStatus, TeamMemberRole
-from app.schemas.event import MinimalEventResponse
+from app.schemas.registration import MinimalEventResponse
 
 
 class TeamCreate(BaseModel):
