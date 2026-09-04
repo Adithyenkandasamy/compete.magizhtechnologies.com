@@ -1,14 +1,52 @@
 "use client";
 
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
+import { useState } from "react";
+
 import { useEvent } from "@/hooks/use-events";
+import { registerForEvent } from "@/lib/registrations-api";
+import { getAccessToken } from "@/lib/auth";
 
 export default function EventDetailsPage() {
   const params = useParams();
+  const router = useRouter();
+
   const eventId = params.event_id as string;
 
   const { data: event, isLoading, isError } = useEvent(eventId);
+
+  const [isRegistering, setIsRegistering] = useState(false);
+  const [success, setSuccess] = useState("");
+  const [error, setError] = useState("");
+
+  async function handleRegister() {
+    setSuccess("");
+    setError("");
+
+    const token = getAccessToken();
+
+    if (!token) {
+      router.push(`/login?redirect=/events/${eventId}`);
+      return;
+    }
+
+    setIsRegistering(true);
+
+    try {
+      await registerForEvent(eventId);
+
+      setSuccess("You have successfully registered for this event.");
+    } catch (err: any) {
+      const message =
+        err?.response?.data?.detail ||
+        "Unable to register for this event. Please try again.";
+
+      setError(message);
+    } finally {
+      setIsRegistering(false);
+    }
+  }
 
   if (isLoading) {
     return (
@@ -99,6 +137,7 @@ export default function EventDetailsPage() {
               <p className="magizh-muted uppercase tracking-wider">
                 Starts
               </p>
+
               <p className="mt-1">
                 {new Date(event.start_date).toLocaleString()}
               </p>
@@ -108,6 +147,7 @@ export default function EventDetailsPage() {
               <p className="magizh-muted uppercase tracking-wider">
                 Ends
               </p>
+
               <p className="mt-1">
                 {new Date(event.end_date).toLocaleString()}
               </p>
@@ -117,6 +157,7 @@ export default function EventDetailsPage() {
               <p className="magizh-muted uppercase tracking-wider">
                 Registration Deadline
               </p>
+
               <p className="mt-1">
                 {new Date(
                   event.registration_deadline,
@@ -128,6 +169,7 @@ export default function EventDetailsPage() {
               <p className="magizh-muted uppercase tracking-wider">
                 Location
               </p>
+
               <p className="mt-1">
                 {event.location || "To be announced"}
               </p>
@@ -137,6 +179,7 @@ export default function EventDetailsPage() {
               <p className="magizh-muted uppercase tracking-wider">
                 Team Size
               </p>
+
               <p className="mt-1">
                 {event.team_size_min} - {event.team_size_max} members
               </p>
@@ -148,6 +191,7 @@ export default function EventDetailsPage() {
                   <p className="magizh-muted uppercase tracking-wider">
                     Prize Pool
                   </p>
+
                   <p className="magizh-gold mt-1 text-lg font-semibold">
                     ₹{event.prize_pool.toLocaleString("en-IN")}
                   </p>
@@ -155,11 +199,33 @@ export default function EventDetailsPage() {
               )}
           </div>
 
+          {success && (
+            <div className="mt-6 rounded border border-[#6FAF7B]/40 bg-[#6FAF7B]/10 px-4 py-3">
+              <p className="text-sm text-[#6FAF7B]">
+                {success}
+              </p>
+            </div>
+          )}
+
+          {error && (
+            <div className="mt-6 rounded border border-[#C75C5C]/40 bg-[#C75C5C]/10 px-4 py-3">
+              <p className="text-sm text-[#C75C5C]">
+                {error}
+              </p>
+            </div>
+          )}
+
           <button
             type="button"
-            className="magizh-button mt-8 w-full"
+            onClick={handleRegister}
+            disabled={isRegistering || Boolean(success)}
+            className="magizh-button mt-8 w-full disabled:cursor-not-allowed disabled:opacity-50"
           >
-            Register for Event
+            {isRegistering
+              ? "Registering..."
+              : success
+                ? "Registered"
+                : "Register for Event"}
           </button>
         </aside>
       </div>
