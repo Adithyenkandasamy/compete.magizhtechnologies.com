@@ -12,6 +12,7 @@ from sqlalchemy import (
     CheckConstraint,
     DateTime,
     Enum as SAEnum,
+    ForeignKey,
     Index,
     Integer,
     Numeric,
@@ -142,6 +143,7 @@ class EventSponsor(Base):
     )
     event_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
+        ForeignKey("events.id", ondelete="CASCADE"),
         nullable=False,
         index=True,
     )

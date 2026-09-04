@@ -4,6 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.health import router as health_router
+from app.api.routers import admin_events, auth, events
 from app.core.config import settings
 from app.core.logging import configure_logging
 from app.middleware.error_handler import GlobalErrorMiddleware
@@ -46,6 +47,9 @@ app.add_middleware(
 # Routers
 # ---------------------------------------------------------------------------
 app.include_router(health_router)
+app.include_router(auth.router, prefix="/api")
+app.include_router(events.router, prefix="/api")
+app.include_router(admin_events.router, prefix="/api")
 
 # ---------------------------------------------------------------------------
 # Root endpoint

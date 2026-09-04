@@ -10,9 +10,16 @@ requires-python = ">=3.10"
 dependencies = [
     "alembic==1.13.3",
     "asyncpg==0.29.0",
+    "bcrypt==4.2.0",
+    "email-validator==2.1.1",
     "fastapi==0.115.0",
+    "httpx==0.27.0",
+    "passlib[bcrypt]==1.7.4",
     "pydantic==2.9.2",
     "pydantic-settings==2.5.2",
+    "pyjwt==2.9.0",
+    "pytest==8.0.0",
+    "pytest-asyncio==0.23.5",
     "python-dotenv==1.0.1",
     "sqlalchemy[asyncio]==2.0.35",
     "uvicorn[standard]==0.30.6",
@@ -33,3 +40,7 @@ build-backend = "uv_build"
 source_paths = ["."]
 # Point explicitly at the virtual-environment so it finds installed stubs
 python_interpreter = ".venv/bin/python"
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+asyncio_mode = "auto"
