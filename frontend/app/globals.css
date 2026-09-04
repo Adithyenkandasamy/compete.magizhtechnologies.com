@@ -1,0 +1,93 @@
+@import "tailwindcss";
+
+:root {
+  --background: #000000;
+  --surface: #0a0a0a;
+  --card: #0d0d0f;
+  --foreground: #f5f3ed;
+  --muted: #a1a1a1;
+  --gold: #d4af37;
+  --gold-bright: #e5c04a;
+  --border: #252525;
+  --success: #6faf7b;
+  --danger: #c75c5c;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+::selection {
+  background: var(--gold);
+  color: #000000;
+}
+
+/* Main container */
+.magizh-container {
+  width: min(1200px, calc(100% - 40px));
+  margin: 0 auto;
+}
+
+/* Gold button */
+.magizh-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--gold);
+  color: #000000;
+  border: 1px solid var(--gold);
+  padding: 12px 22px;
+  border-radius: 4px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.magizh-button:hover {
+  background: var(--gold-bright);
+  border-color: var(--gold-bright);
+}
+
+/* Dark card */
+.magizh-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+/* Muted text */
+.magizh-muted {
+  color: var(--muted);
+}
+
+/* Gold text */
+.magizh-gold {
+  color: var(--gold);
+}
+
+/* Editorial heading */
+.magizh-heading {
+  font-family: Georgia, "Times New Roman", serif;
+  letter-spacing: -0.02em;
+}
