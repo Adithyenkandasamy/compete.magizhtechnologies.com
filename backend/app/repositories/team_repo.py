@@ -27,8 +27,8 @@ class TeamRepository:
             select(Team)
             .options(
                 selectinload(Team.event),
-                selectinload(Team.leader),
-                selectinload(Team.members).selectinload(TeamMember.user)
+                selectinload(Team.leader).selectinload(User.profile),
+                selectinload(Team.members).selectinload(TeamMember.user).selectinload(User.profile)
             )
             .where(Team.id == team_id)
         )

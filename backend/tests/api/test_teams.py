@@ -71,8 +71,10 @@ async def test_registered_student_creates_team(setup_users, client: AsyncClient,
     data = res.json()
     assert data["name"] == "Alpha Team"
     assert data["member_count"] == 1
-    assert data["leader"]["role"] == "LEADER"
+    
+    # Leader is part of the members array now
     assert len(data["members"]) == 1
+    assert data["members"][0]["role"] == "LEADER"
 
 
 @pytest.mark.asyncio

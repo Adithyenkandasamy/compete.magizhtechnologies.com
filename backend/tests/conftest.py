@@ -33,6 +33,10 @@ async def session() -> AsyncGenerator[AsyncSession, None]:
     Uses a nested transaction (savepoint) that rolls back after the test completes,
     ensuring test data is never actually saved to your Supabase database.
     """
+    async with engine.begin() as conn:
+        # Create all tables if they don't exist
+        await conn.run_sync(Base.metadata.create_all)
+
     async with engine.connect() as conn:
         # Start a transaction for the test
         transaction = await conn.begin()

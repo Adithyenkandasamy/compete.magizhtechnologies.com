@@ -7,6 +7,7 @@ from sqlalchemy.orm import selectinload
 
 from app.models.enums import JoinRequestStatus
 from app.models.team_request import TeamJoinRequest
+from app.models.user import User
 
 
 class TeamRequestRepository:
@@ -34,7 +35,7 @@ class TeamRequestRepository:
         """Fetch all requests for a team, including basic user info."""
         stmt = (
             select(TeamJoinRequest)
-            .options(selectinload(TeamJoinRequest.user))
+            .options(selectinload(TeamJoinRequest.user).selectinload(User.profile))
             .where(TeamJoinRequest.team_id == team_id)
             .order_by(TeamJoinRequest.requested_at.desc())
         )

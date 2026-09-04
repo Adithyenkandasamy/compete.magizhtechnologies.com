@@ -22,6 +22,19 @@ class ProjectService:
         self.event_repo = EventRepository(session)
         self.audit_repo = AuditRepository(session)
 
+    async def _log(self, request: Request, action: str, resource_id: str, user_id: uuid.UUID):
+        await self.audit_repo.create_audit_log(
+            action=action,
+            event_type="project_management",
+            user_id=user_id,
+            resource_type="Project",
+            resource_id=resource_id,
+            ip_address=request.client.host if request.client else None,
+            user_agent=request.headers.get("user-agent"),
+            endpoint=request.url.path,
+            http_method=request.method,
+        )
+
     async def _verify_team_member(
         self, team_id: uuid.UUID, user_id: uuid.UUID
     ) -> tuple[any, any]:
@@ -44,7 +57,7 @@ class ProjectService:
 
     async def _verify_event_status(self, event_id: uuid.UUID) -> any:
         """Verify the event allows project creation/updates."""
-        event = await self.event_repo.get_event(event_id)
+        event = await self.event_repo.get_by_id(event_id)
         if not event:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -98,13 +111,11 @@ class ProjectService:
                 detail="Team already has a project for this event",
             )
             
-        await self.audit_repo.create_audit_log(
-            user_id=user_id,
-            action="project.created",
-            resource_type="project",
-            resource_id=str(created_project.id),
+        await self._log(
             request=request,
-            details={"team_id": str(team.id), "event_id": str(team.event_id)},
+            action="project.created",
+            resource_id=str(created_project.id),
+            user_id=user_id,
         )
         
         return created_project
@@ -157,13 +168,11 @@ class ProjectService:
             
         updated_project = await self.project_repo.update_project(project, update_data)
         
-        await self.audit_repo.create_audit_log(
-            user_id=user_id,
-            action="project.updated",
-            resource_type="project",
-            resource_id=str(project.id),
+        await self._log(
             request=request,
-            details={"updated_fields": list(update_data.keys())},
+            action="project.updated",
+            resource_id=str(project.id),
+            user_id=user_id,
         )
         
         return updated_project
@@ -183,13 +192,11 @@ class ProjectService:
             
         await self.project_repo.delete_project(project)
         
-        await self.audit_repo.create_audit_log(
-            user_id=user_id,
-            action="project.deleted",
-            resource_type="project",
-            resource_id=str(project_id),
+        await self._log(
             request=request,
-            details={"team_id": str(project.team_id)},
+            action="project.deleted",
+            resource_id=str(project_id),
+            user_id=user_id,
         )
         
         return {"status": "success", "message": "Project deleted"}
