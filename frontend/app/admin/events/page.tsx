@@ -132,10 +132,7 @@ export default function AdminEventsPage() {
             </p>
           </div>
 
-          <Link
-            href="/admin/events/new"
-            className="magizh-button"
-          >
+          <Link href="/admin/events/new" className="magizh-button">
             Create Event
           </Link>
         </div>
@@ -176,10 +173,7 @@ export default function AdminEventsPage() {
               Create your first MAGIZH | INNOVATION event to get started.
             </p>
 
-            <Link
-              href="/admin/events/new"
-              className="magizh-button mt-6"
-            >
+            <Link href="/admin/events/new" className="magizh-button mt-6">
               Create Event
             </Link>
           </div>
@@ -189,7 +183,7 @@ export default function AdminEventsPage() {
         {!loading && events.length > 0 && (
           <div className="mt-10 overflow-hidden rounded-lg border border-[#252525]">
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[900px] border-collapse">
+              <table className="w-full min-w-[1050px] border-collapse">
                 <thead>
                   <tr className="border-b border-[#252525] bg-[#0A0A0A]">
                     <th className="px-5 py-4 text-left text-xs font-semibold uppercase tracking-[0.15em] text-[#A1A1A1]">
@@ -269,6 +263,15 @@ export default function AdminEventsPage() {
                         {/* Actions */}
                         <td className="px-5 py-5">
                           <div className="flex justify-end gap-2">
+                            {/* Analytics */}
+                            <Link
+                              href={`/admin/analytics/events/${event.id}`}
+                              className="rounded border border-[#252525] px-3 py-2 text-xs font-semibold text-[#D4AF37] transition-colors hover:border-[#D4AF37] hover:bg-[#D4AF37] hover:text-black"
+                            >
+                              Analytics
+                            </Link>
+
+                            {/* Edit */}
                             <Link
                               href={`/admin/events/${event.id}`}
                               className="rounded border border-[#252525] px-3 py-2 text-xs font-semibold text-[#F5F3ED] transition-colors hover:border-[#D4AF37] hover:text-[#D4AF37]"
@@ -276,40 +279,32 @@ export default function AdminEventsPage() {
                               Edit
                             </Link>
 
+                            {/* Publish / Unpublish */}
                             {event.status === "PUBLISHED" ? (
                               <button
                                 type="button"
                                 disabled={isActionLoading}
-                                onClick={() =>
-                                  handleUnpublish(event.id)
-                                }
+                                onClick={() => handleUnpublish(event.id)}
                                 className="rounded border border-[#252525] px-3 py-2 text-xs font-semibold text-[#F5F3ED] transition-colors hover:border-[#D4AF37] hover:text-[#D4AF37] disabled:cursor-not-allowed disabled:opacity-50"
                               >
-                                {isActionLoading
-                                  ? "..."
-                                  : "Unpublish"}
+                                {isActionLoading ? "..." : "Unpublish"}
                               </button>
                             ) : (
                               <button
                                 type="button"
                                 disabled={isActionLoading}
-                                onClick={() =>
-                                  handlePublish(event.id)
-                                }
+                                onClick={() => handlePublish(event.id)}
                                 className="rounded border border-[#D4AF37] px-3 py-2 text-xs font-semibold text-[#D4AF37] transition-colors hover:bg-[#D4AF37] hover:text-black disabled:cursor-not-allowed disabled:opacity-50"
                               >
-                                {isActionLoading
-                                  ? "..."
-                                  : "Publish"}
+                                {isActionLoading ? "..." : "Publish"}
                               </button>
                             )}
 
+                            {/* Delete */}
                             <button
                               type="button"
                               disabled={isActionLoading}
-                              onClick={() =>
-                                handleDelete(event.id)
-                              }
+                              onClick={() => handleDelete(event.id)}
                               className="rounded border border-[#252525] px-3 py-2 text-xs font-semibold text-[#C75C5C] transition-colors hover:border-[#C75C5C] disabled:cursor-not-allowed disabled:opacity-50"
                             >
                               Delete

@@ -2,13 +2,19 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 
 import {
   getAdminEvent,
   updateAdminEvent,
   type UpdateEventRequest,
 } from "@/lib/admin-events-api";
+
+import {
+  assignJudgeToEvent,
+  getAdminJudges,
+  type AdminJudge,
+} from "@/lib/admin-judges-api";
 
 import type {
   Event,
@@ -48,18 +54,24 @@ type EventForm = {
 
 export default function AdminEventEditPage() {
   const params = useParams();
-  const router = useRouter();
 
   const eventId = params.event_id as string;
 
   const [event, setEvent] = useState<Event | null>(null);
   const [form, setForm] = useState<EventForm | null>(null);
 
+  const [judges, setJudges] = useState<AdminJudge[]>([]);
+  const [selectedJudgeId, setSelectedJudgeId] = useState("");
+
   const [loading, setLoading] = useState(true);
+  const [loadingJudges, setLoadingJudges] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [assigningJudge, setAssigningJudge] = useState(false);
 
   const [error, setError] = useState("");
+  const [judgeError, setJudgeError] = useState("");
   const [success, setSuccess] = useState("");
+  const [judgeSuccess, setJudgeSuccess] = useState("");
 
   useEffect(() => {
     async function loadEvent() {
@@ -83,6 +95,26 @@ export default function AdminEventEditPage() {
       loadEvent();
     }
   }, [eventId]);
+
+  useEffect(() => {
+    async function loadJudges() {
+      try {
+        setLoadingJudges(true);
+        setJudgeError("");
+
+        const data = await getAdminJudges();
+
+        setJudges(data);
+      } catch (err) {
+        console.error("Unable to load judges:", err);
+        setJudgeError("Unable to load judges.");
+      } finally {
+        setLoadingJudges(false);
+      }
+    }
+
+    loadJudges();
+  }, []);
 
   function updateField<K extends keyof EventForm>(
     field: K,
@@ -194,6 +226,41 @@ export default function AdminEventEditPage() {
     }
   }
 
+  async function handleAssignJudge() {
+    if (!selectedJudgeId) {
+      setJudgeError("Please select a judge.");
+      return;
+    }
+
+    try {
+      setAssigningJudge(true);
+      setJudgeError("");
+      setJudgeSuccess("");
+
+      await assignJudgeToEvent(
+        eventId,
+        selectedJudgeId,
+      );
+
+      const assignedJudge = judges.find(
+        (judge) => judge.id === selectedJudgeId,
+      );
+
+      setJudgeSuccess(
+        `${assignedJudge?.name || "Judge"} assigned to this event successfully.`,
+      );
+
+      setSelectedJudgeId("");
+    } catch (err) {
+      console.error("Unable to assign judge:", err);
+      setJudgeError(
+        "Unable to assign judge to this event.",
+      );
+    } finally {
+      setAssigningJudge(false);
+    }
+  }
+
   if (loading) {
     return (
       <main className="min-h-screen bg-black">
@@ -284,10 +351,7 @@ export default function AdminEventEditPage() {
           </div>
         )}
 
-        <form
-          onSubmit={handleSubmit}
-          className="max-w-4xl space-y-8"
-        >
+        <div className="max-w-4xl space-y-8">
           {/* Basic Information */}
           <section className="magizh-card p-6 md:p-8">
             <SectionHeading
@@ -577,6 +641,122 @@ export default function AdminEventEditPage() {
             </div>
           </section>
 
+          {/* Judge Assignment */}
+          <section className="magizh-card p-6 md:p-8">
+            <SectionHeading
+              label="05"
+              title="Judge Assignment"
+              description="Assign an available judge to evaluate submissions for this event."
+            />
+
+            <div className="mt-8">
+              {loadingJudges ? (
+                <div className="rounded border border-[#252525] bg-[#0A0A0A] p-5">
+                  <p className="magizh-muted text-sm">
+                    Loading judges...
+                  </p>
+                </div>
+              ) : judgeError && judges.length === 0 ? (
+                <div className="rounded border border-[#C75C5C] bg-[#0A0A0A] p-5">
+                  <p className="text-sm text-[#C75C5C]">
+                    {judgeError}
+                  </p>
+                </div>
+              ) : judges.length === 0 ? (
+                <div className="rounded border border-[#252525] bg-[#0A0A0A] p-5">
+                  <p className="text-sm font-semibold text-[#F5F3ED]">
+                    No judges available
+                  </p>
+
+                  <p className="magizh-muted mt-2 text-sm leading-6">
+                    Create a judge first before assigning one to
+                    this event.
+                  </p>
+
+                  <Link
+                    href="/admin/judges/new"
+                    className="magizh-button mt-5"
+                  >
+                    Add Judge
+                  </Link>
+                </div>
+              ) : (
+                <>
+                  <FormField label="Select Judge">
+                    <select
+                      value={selectedJudgeId}
+                      onChange={(e) => {
+                        setSelectedJudgeId(e.target.value);
+                        setJudgeError("");
+                        setJudgeSuccess("");
+                      }}
+                      className={inputClass}
+                    >
+                      <option
+                        value=""
+                        className="bg-[#0A0A0A]"
+                      >
+                        Select a judge
+                      </option>
+
+                      {judges.map((judge) => (
+                        <option
+                          key={judge.id}
+                          value={judge.id}
+                          className="bg-[#0A0A0A]"
+                        >
+                          {judge.name || "Unnamed Judge"}
+                          {judge.email
+                            ? ` — ${judge.email}`
+                            : ""}
+                        </option>
+                      ))}
+                    </select>
+                  </FormField>
+
+                  {judgeError && (
+                    <div className="mt-5 rounded border border-[#C75C5C] bg-[#0A0A0A] p-4">
+                      <p className="text-sm text-[#C75C5C]">
+                        {judgeError}
+                      </p>
+                    </div>
+                  )}
+
+                  {judgeSuccess && (
+                    <div className="mt-5 rounded border border-[#6FAF7B] bg-[#0A0A0A] p-4">
+                      <p className="text-sm text-[#6FAF7B]">
+                        {judgeSuccess}
+                      </p>
+                    </div>
+                  )}
+
+                  <div className="mt-6 flex flex-wrap items-center gap-4">
+                    <button
+                      type="button"
+                      onClick={handleAssignJudge}
+                      disabled={
+                        assigningJudge ||
+                        !selectedJudgeId
+                      }
+                      className="magizh-button disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {assigningJudge
+                        ? "Assigning..."
+                        : "Assign Judge"}
+                    </button>
+
+                    <Link
+                      href="/admin/judges"
+                      className="rounded border border-[#252525] px-5 py-3 font-semibold text-[#F5F3ED] transition-colors hover:border-[#D4AF37] hover:text-[#D4AF37]"
+                    >
+                      Manage Judges
+                    </Link>
+                  </div>
+                </>
+              )}
+            </div>
+          </section>
+
           {/* Actions */}
           <div className="flex flex-col-reverse gap-4 border-t border-[#252525] pt-8 sm:flex-row sm:justify-end">
             <Link
@@ -589,12 +769,20 @@ export default function AdminEventEditPage() {
             <button
               type="submit"
               disabled={saving}
+              onClick={() => {
+                const formElement =
+                  document.querySelector(
+                    "form",
+                  ) as HTMLFormElement | null;
+
+                formElement?.requestSubmit();
+              }}
               className="magizh-button disabled:cursor-not-allowed disabled:opacity-50"
             >
               {saving ? "Saving Changes..." : "Save Changes"}
             </button>
           </div>
-        </form>
+        </div>
       </section>
     </main>
   );

@@ -5,6 +5,46 @@ import type {
   EventType,
 } from "@/types/events";
 
+// ---------------------------------------------------------------------------
+// Admin Dashboard
+// ---------------------------------------------------------------------------
+
+export type AdminDashboardStats = {
+  total_users: number;
+  total_events: number;
+  total_registrations: number;
+  total_teams: number;
+  total_projects: number;
+  total_submissions: number;
+};
+
+export type AdminActivity = {
+  id: string;
+  type: string;
+  message: string;
+  created_at: string;
+};
+
+export async function getAdminDashboard(): Promise<AdminDashboardStats> {
+  const response = await apiClient.get<AdminDashboardStats>(
+    "/admin/dashboard",
+  );
+
+  return response.data;
+}
+
+export async function getAdminDashboardActivity(): Promise<AdminActivity[]> {
+  const response = await apiClient.get<AdminActivity[]>(
+    "/admin/dashboard/activity",
+  );
+
+  return response.data;
+}
+
+// ---------------------------------------------------------------------------
+// Admin Events
+// ---------------------------------------------------------------------------
+
 export type CreateEventRequest = {
   title: string;
   description: string;
