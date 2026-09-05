@@ -56,6 +56,24 @@ class TeamRepository:
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
 
+    async def get_user_teams_for_event(
+        self, user_id: uuid.UUID, event_id: uuid.UUID
+    ) -> list[Team]:
+        """Fetch every team the user belongs to within an event (with details)."""
+        stmt = (
+            select(Team)
+            .join(TeamMember)
+            .options(
+                selectinload(Team.event),
+                selectinload(Team.leader).selectinload(User.profile),
+                selectinload(Team.members).selectinload(TeamMember.user).selectinload(User.profile),
+            )
+            .where(Team.event_id == event_id, TeamMember.user_id == user_id)
+            .order_by(Team.created_at)
+        )
+        result = await self.session.execute(stmt)
+        return list(result.scalars().all())
+
     async def get_team_member(
         self, team_id: uuid.UUID, user_id: uuid.UUID
     ) -> Optional[TeamMember]:

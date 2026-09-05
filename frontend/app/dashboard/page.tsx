@@ -1,39 +1,22 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 
-import { getCurrentUser } from "@/lib/auth-api";
-import { getAccessToken } from "@/lib/auth";
-import type { User } from "@/types/auth";
+import { useAuth } from "@/providers/auth-provider";
 
 export default function DashboardPage() {
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const router = useRouter();
+  const { user, status, logout } = useAuth();
 
   useEffect(() => {
-    async function loadUser() {
-      const token = getAccessToken();
-
-      if (!token) {
-        setIsLoading(false);
-        return;
-      }
-
-      try {
-        const currentUser = await getCurrentUser();
-        setUser(currentUser);
-      } catch {
-        setUser(null);
-      } finally {
-        setIsLoading(false);
-      }
+    if (status === "unauthenticated") {
+      router.replace("/login");
     }
+  }, [status, router]);
 
-    loadUser();
-  }, []);
-
-  if (isLoading) {
+  if (status === "loading") {
     return (
       <main className="magizh-container py-20">
         <p className="magizh-muted">Loading dashboard...</p>
@@ -42,48 +25,43 @@ export default function DashboardPage() {
   }
 
   if (!user) {
-    return (
-      <main className="magizh-container py-20">
-        <div className="magizh-card max-w-lg p-8">
-          <p className="magizh-gold text-xs font-semibold uppercase tracking-[0.2em]">
-            Authentication Required
-          </p>
+    return null;
+  }
 
-          <h1 className="magizh-heading mt-3 text-3xl font-bold">
-            Please sign in
-          </h1>
+  const displayName = user.profile?.full_name || user.email.split("@")[0];
 
-          <p className="magizh-muted mt-3">
-            You need to sign in to access your student dashboard.
-          </p>
-
-          <Link
-            href="/login"
-            className="magizh-button mt-6"
-          >
-            Sign In
-          </Link>
-        </div>
-      </main>
-    );
+  async function handleSignOut() {
+    await logout();
+    router.replace("/login");
   }
 
   return (
     <main className="magizh-container py-12 md:py-16">
       <section className="mb-12">
-        <p className="magizh-gold text-xs font-semibold uppercase tracking-[0.25em]">
-          STUDENT DASHBOARD
-        </p>
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <p className="magizh-gold text-xs font-semibold uppercase tracking-[0.25em]">
+              STUDENT DASHBOARD
+            </p>
 
-        <h1 className="magizh-heading mt-3 text-4xl font-bold md:text-5xl">
-          Welcome back
-          {user.email ? `, ${user.email.split("@")[0]}` : ""}.
-        </h1>
+            <h1 className="magizh-heading mt-3 text-4xl font-bold md:text-5xl">
+              Welcome back, {displayName}.
+            </h1>
 
-        <p className="magizh-muted mt-4 max-w-2xl">
-          Manage your events, teams, projects, submissions, results, and
-          certificates from one place.
-        </p>
+            <p className="magizh-muted mt-4 max-w-2xl">
+              Manage your events, teams, projects, submissions, results, and
+              certificates from one place.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleSignOut}
+            className="magizh-button"
+          >
+            Sign Out
+          </button>
+        </div>
       </section>
 
       <section className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">

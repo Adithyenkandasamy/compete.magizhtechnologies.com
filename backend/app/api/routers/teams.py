@@ -1,8 +1,10 @@
 import uuid
+from typing import List
 
 from fastapi import APIRouter, Depends, Request, status
 
 from app.api.deps import SessionDep, get_current_user
+from app.models.team import Team
 from app.models.user import User
 from app.schemas.team import TeamCreate, TeamResponse, TeamUpdate
 from app.services.team_service import TeamService
@@ -12,6 +14,20 @@ router = APIRouter(
     tags=["Teams"],
     dependencies=[Depends(get_current_user)],
 )
+
+
+def _populate_team_response(team: Team) -> Team:
+    """Fill the transient fields the TeamResponse schema reads."""
+    team.member_count = len(team.members)
+    team.max_members = team.event.team_size_max if team.event else None
+
+    for member in team.members:
+        member.full_name = (
+            member.user.profile.full_name if member.user.profile else "Student"
+        )
+        member.email = member.user.email
+
+    return team
 
 
 @router.post(
@@ -33,6 +49,24 @@ async def create_team(
 
 
 @router.get(
+    "/events/{event_id}/teams",
+    response_model=List[TeamResponse],
+    summary="List the current user's teams for an event",
+)
+async def list_event_teams(
+    event_id: uuid.UUID,
+    session: SessionDep,
+    current_user: User = Depends(get_current_user),
+) -> List[TeamResponse]:
+    """
+    Returns every team the authenticated user belongs to within the given event.
+    """
+    service = TeamService(session)
+    teams = await service.list_user_teams_for_event(current_user.id, event_id)
+    return [_populate_team_response(team) for team in teams]  # type: ignore
+
+
+@router.get(
     "/teams/{team_id}",
     response_model=TeamResponse,
     summary="Get team details",
@@ -43,17 +77,7 @@ async def get_team(
 ) -> TeamResponse:
     service = TeamService(session)
     team = await service.get_team(team_id)
-    # The TeamResponse schema needs member_count, max_members, etc.
-    # We populate those properties on the fly for Pydantic to read.
-    team.member_count = len(team.members)
-    team.max_members = team.event.team_size_max
-    
-    # We need to map the nested user details for the response
-    for member in team.members:
-        member.full_name = member.user.profile.full_name if member.user.profile else "Student"
-        member.email = member.user.email
-        
-    return team # type: ignore
+    return _populate_team_response(team)  # type: ignore
 
 
 @router.put(

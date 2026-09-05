@@ -1,14 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
-import { registerUser } from "@/lib/auth-api";
-import { setAccessToken } from "@/lib/auth";
+import { useAuth } from "@/providers/auth-provider";
 
 export default function RegisterPage() {
   const router = useRouter();
+  const { register, status } = useAuth();
 
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
@@ -17,6 +17,12 @@ export default function RegisterPage() {
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
+  useEffect(() => {
+    if (status === "authenticated") {
+      router.replace("/dashboard");
+    }
+  }, [status, router]);
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
@@ -24,15 +30,13 @@ export default function RegisterPage() {
     setIsLoading(true);
 
     try {
-      const response = await registerUser({
+      await register({
         full_name: fullName,
         email,
         password,
       });
 
-      setAccessToken(response.access_token);
-
-      router.push("/dashboard");
+      router.replace("/dashboard");
     } catch (err: any) {
       const message =
         err?.response?.data?.detail ||
@@ -78,6 +82,7 @@ export default function RegisterPage() {
                 onChange={(e) => setFullName(e.target.value)}
                 placeholder="Enter your full name"
                 required
+                disabled={isLoading}
                 className="w-full rounded border border-[#252525] bg-[#0A0A0A] px-4 py-3 text-[#F5F3ED] outline-none transition focus:border-[#D4AF37]"
               />
             </div>
@@ -97,6 +102,7 @@ export default function RegisterPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@example.com"
                 required
+                disabled={isLoading}
                 className="w-full rounded border border-[#252525] bg-[#0A0A0A] px-4 py-3 text-[#F5F3ED] outline-none transition focus:border-[#D4AF37]"
               />
             </div>
@@ -114,8 +120,10 @@ export default function RegisterPage() {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Create a password"
+                placeholder="Create a password (min. 8 characters)"
+                minLength={8}
                 required
+                disabled={isLoading}
                 className="w-full rounded border border-[#252525] bg-[#0A0A0A] px-4 py-3 text-[#F5F3ED] outline-none transition focus:border-[#D4AF37]"
               />
             </div>

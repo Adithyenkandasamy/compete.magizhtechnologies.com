@@ -1,33 +1,11 @@
 import apiClient from "@/lib/api-client";
+import type { Project, ProjectPayload } from "@/types/project";
 
-export type Project = {
-  id: string;
-  team_id: string;
-  title: string;
-  description?: string | null;
-  repository_url?: string | null;
-  demo_url?: string | null;
-  created_at: string;
-  updated_at: string;
-};
-
-export type CreateProjectRequest = {
-  title: string;
-  description?: string;
-  repository_url?: string;
-  demo_url?: string;
-};
-
-export type UpdateProjectRequest = {
-  title?: string;
-  description?: string;
-  repository_url?: string;
-  demo_url?: string;
-};
+export type { Project, ProjectPayload };
 
 export async function createProject(
   teamId: string,
-  data: CreateProjectRequest,
+  data: ProjectPayload,
 ): Promise<Project> {
   const response = await apiClient.post<Project>(
     `/teams/${teamId}/projects`,
@@ -35,6 +13,13 @@ export async function createProject(
   );
 
   return response.data;
+}
+
+export async function createTeamProject(
+  teamId: string,
+  data: ProjectPayload,
+): Promise<Project> {
+  return createProject(teamId, data);
 }
 
 export async function getTeamProjects(
@@ -45,6 +30,30 @@ export async function getTeamProjects(
   );
 
   return response.data;
+}
+
+export async function getTeamProject(
+  teamId: string,
+): Promise<Project | null> {
+  try {
+    const projects = await getTeamProjects(teamId);
+
+    return projects.length > 0 ? projects[0] : null;
+  } catch (err: unknown) {
+    const status = (
+      err as {
+        response?: {
+          status?: number;
+        };
+      }
+    )?.response?.status;
+
+    if (status === 404) {
+      return null;
+    }
+
+    throw err;
+  }
 }
 
 export async function getProjects(): Promise<Project[]> {
@@ -65,7 +74,7 @@ export async function getProject(
 
 export async function updateProject(
   projectId: string,
-  data: UpdateProjectRequest,
+  data: ProjectPayload,
 ): Promise<Project> {
   const response = await apiClient.put<Project>(
     `/projects/${projectId}`,

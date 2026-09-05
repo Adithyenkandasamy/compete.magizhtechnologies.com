@@ -2,14 +2,19 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 import {
   getMyProfile,
   updateMyProfile,
 } from "@/lib/profile-api";
+import { useAuth } from "@/providers/auth-provider";
 import type { Profile } from "@/types/auth";
 
 export default function ProfilePage() {
+  const router = useRouter();
+  const { user, status } = useAuth();
+
   const [profile, setProfile] = useState<Profile | null>(null);
 
   const [fullName, setFullName] = useState("");
@@ -24,6 +29,12 @@ export default function ProfilePage() {
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      router.replace("/login");
+    }
+  }, [status, router]);
 
   useEffect(() => {
     async function loadProfile() {
@@ -85,12 +96,16 @@ export default function ProfilePage() {
     }
   }
 
-  if (isLoading) {
+  if (isLoading || status === "loading") {
     return (
       <main className="magizh-container py-20">
         <p className="magizh-muted">Loading profile...</p>
       </main>
     );
+  }
+
+  if (!user) {
+    return null;
   }
 
   return (
@@ -286,6 +301,10 @@ export default function ProfilePage() {
           </h2>
 
           <p className="magizh-muted mt-2 break-all text-sm">
+            {user.email}
+          </p>
+
+          <p className="magizh-muted mt-1 break-all text-xs">
             Profile ID: {profile?.user_id}
           </p>
 
