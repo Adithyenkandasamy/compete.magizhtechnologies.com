@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { useEvent } from "@/hooks/use-events";
 import { registerForEvent } from "@/lib/registrations-api";
 import { getAccessToken } from "@/lib/auth";
+import { getEventSponsors, type Sponsor } from "@/lib/sponsors-api";
 
 export default function EventDetailsPage() {
   const params = useParams();
@@ -16,9 +17,32 @@ export default function EventDetailsPage() {
 
   const { data: event, isLoading, isError } = useEvent(eventId);
 
+  const [sponsors, setSponsors] = useState<Sponsor[]>([]);
+  const [sponsorsLoading, setSponsorsLoading] = useState(true);
+
   const [isRegistering, setIsRegistering] = useState(false);
   const [success, setSuccess] = useState("");
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    async function loadSponsors() {
+      try {
+        setSponsorsLoading(true);
+
+        const data = await getEventSponsors(eventId);
+        setSponsors(data);
+      } catch (err) {
+        console.error("Unable to load sponsors:", err);
+        setSponsors([]);
+      } finally {
+        setSponsorsLoading(false);
+      }
+    }
+
+    if (eventId) {
+      loadSponsors();
+    }
+  }, [eventId]);
 
   async function handleRegister() {
     setSuccess("");
@@ -123,6 +147,60 @@ export default function EventDetailsPage() {
               <p className="magizh-muted mt-4 whitespace-pre-line leading-7">
                 {event.rules}
               </p>
+            </div>
+          )}
+
+          {!sponsorsLoading && sponsors.length > 0 && (
+            <div className="mt-14 border-t border-[#252525] pt-10">
+              <p className="magizh-gold text-xs font-semibold uppercase tracking-[0.25em]">
+                EVENT SPONSORS
+              </p>
+
+              <h2 className="magizh-heading mt-3 text-2xl font-bold md:text-3xl">
+                Supported by
+              </h2>
+
+              <div className="mt-8 grid gap-5 sm:grid-cols-2">
+                {sponsors.map((sponsor) => (
+                  <div
+                    key={sponsor.id}
+                    className="magizh-card p-5 transition-colors hover:border-[#D4AF37]"
+                  >
+                    <div className="flex items-center gap-4">
+                      {sponsor.logo_url ? (
+                        <img
+                          src={sponsor.logo_url}
+                          alt={sponsor.name}
+                          className="h-14 w-14 rounded border border-[#252525] object-contain bg-[#0A0A0A] p-2"
+                        />
+                      ) : (
+                        <div className="flex h-14 w-14 items-center justify-center rounded border border-[#252525] bg-[#0A0A0A]">
+                          <span className="magizh-gold text-lg font-semibold">
+                            {sponsor.name.charAt(0).toUpperCase()}
+                          </span>
+                        </div>
+                      )}
+
+                      <div className="min-w-0">
+                        <h3 className="font-semibold text-[#F5F3ED]">
+                          {sponsor.name}
+                        </h3>
+
+                        {sponsor.website_url && (
+                          <a
+                            href={sponsor.website_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="mt-1 inline-block text-xs text-[#A1A1A1] transition-colors hover:text-[#D4AF37]"
+                          >
+                            Visit website ↗
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </section>

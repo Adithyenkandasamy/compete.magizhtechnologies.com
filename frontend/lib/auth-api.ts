@@ -1,5 +1,5 @@
 import apiClient from "./api-client";
-import {
+import type {
   AuthResponse,
   LoginRequest,
   RegisterRequest,
