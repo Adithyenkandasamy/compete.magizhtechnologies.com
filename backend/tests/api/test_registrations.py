@@ -42,7 +42,7 @@ async def auth_client(client: AsyncClient, session: AsyncSession) -> tuple[Async
     """Returns a client with an auth token, and the user data."""
     email = f"student_{uuid.uuid4()}@example.com"
     await create_test_user(session, email=email, role=UserRole.STUDENT)
-    login_res = await client.post("/api/auth/login", json={"email": email, "password": "StrongPass123!"})
+    login_res = await client.post("/api/auth/login", data={"username": email, "password": "StrongPass123!"})
     token = login_res.json()["access_token"]
     client.headers = {"Authorization": f"Bearer {token}"}
     return client, {"email": email, "token": token}
@@ -136,7 +136,7 @@ async def test_capacity_enforced(
     # Second user hits waitlist
     email = f"student2_{uuid.uuid4()}@example.com"
     await create_test_user(session, email=email, role=UserRole.STUDENT)
-    login_res = await client.post("/api/auth/login", json={"email": email, "password": "StrongPass123!"})
+    login_res = await client.post("/api/auth/login", data={"username": email, "password": "StrongPass123!"})
     token2 = login_res.json()["access_token"]
     res2 = await client.post(
         f"/api/events/{event.id}/register",
@@ -164,7 +164,7 @@ async def test_cancelled_registration_capacity(
     # Second user should get CONFIRMED, not WAITLISTED
     email = f"student3_{uuid.uuid4()}@example.com"
     await create_test_user(session, email=email, role=UserRole.STUDENT)
-    login_res = await client.post("/api/auth/login", json={"email": email, "password": "StrongPass123!"})
+    login_res = await client.post("/api/auth/login", data={"username": email, "password": "StrongPass123!"})
     token2 = login_res.json()["access_token"]
     res2 = await client.post(
         f"/api/events/{event.id}/register",
@@ -198,7 +198,7 @@ async def test_student_access_isolation(
     # Second user tries to view it
     email = f"student4_{uuid.uuid4()}@example.com"
     await create_test_user(session, email=email, role=UserRole.STUDENT)
-    login_res = await client.post("/api/auth/login", json={"email": email, "password": "StrongPass123!"})
+    login_res = await client.post("/api/auth/login", data={"username": email, "password": "StrongPass123!"})
     token2 = login_res.json()["access_token"]
     res2 = await client.get(
         f"/api/me/registrations/{reg_id}",

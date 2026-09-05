@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, status
+from fastapi.security import OAuth2PasswordRequestForm
 
 from app.api.deps import CurrentUserDep, SessionDep
 from app.schemas.auth import LoginRequest, RegisterRequest, TokenResponse, UserResponse
@@ -26,21 +27,23 @@ async def register(
     # The Pydantic UserResponse schema automatically strips the password hash
     return user  # type: ignore
 
-
 @router.post(
     "/login",
     response_model=TokenResponse,
     summary="Login and obtain a JWT token",
 )
 async def login(
-    data: LoginRequest,
     session: SessionDep,
+    form_data: OAuth2PasswordRequestForm = Depends(),
 ) -> TokenResponse:
     """
     Authenticate user credentials and return a Bearer access token.
+    Accepts standard OAuth2 form data (username, password).
     """
     auth_service = AuthService(session)
-    _, access_token = await auth_service.authenticate_user(data)
+    # The OAuth2PasswordRequestForm uses 'username' instead of 'email'
+    login_data = LoginRequest(email=form_data.username, password=form_data.password)
+    _, access_token = await auth_service.authenticate_user(login_data)
     
     return TokenResponse(access_token=access_token)
 

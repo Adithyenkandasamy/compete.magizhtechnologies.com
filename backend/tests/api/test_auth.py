@@ -79,8 +79,8 @@ async def test_successful_login(client: AsyncClient, session: AsyncSession):
     """4. successful login"""
     await create_test_user(session, email="login@example.com", password="Password123!")
     
-    payload = {"email": "login@example.com", "password": "Password123!"}
-    response = await client.post("/api/auth/login", json=payload)
+    payload = {"username": "login@example.com", "password": "Password123!"}
+    response = await client.post("/api/auth/login", data=payload)
     assert response.status_code == 200
     assert "access_token" in response.json()
 
@@ -90,16 +90,16 @@ async def test_wrong_password(client: AsyncClient, session: AsyncSession):
     """5. wrong password"""
     await create_test_user(session, email="wrongpass@example.com", password="Password123!")
     
-    payload = {"email": "wrongpass@example.com", "password": "WrongPassword!"}
-    response = await client.post("/api/auth/login", json=payload)
+    payload = {"username": "wrongpass@example.com", "password": "WrongPassword!"}
+    response = await client.post("/api/auth/login", data=payload)
     assert response.status_code == 401
 
 
 @pytest.mark.asyncio
 async def test_nonexistent_account_login(client: AsyncClient):
     """6. nonexistent account login"""
-    payload = {"email": "doesnotexist@example.com", "password": "Password123!"}
-    response = await client.post("/api/auth/login", json=payload)
+    payload = {"username": "doesnotexist@example.com", "password": "Password123!"}
+    response = await client.post("/api/auth/login", data=payload)
     assert response.status_code == 401
 
 
@@ -108,7 +108,7 @@ async def test_me_with_valid_token(client: AsyncClient, session: AsyncSession):
     """7. /me with valid token"""
     await create_test_user(session, email="valid@example.com", password="Password123!")
     login_res = await client.post(
-        "/api/auth/login", json={"email": "valid@example.com", "password": "Password123!"}
+        "/api/auth/login", data={"username": "valid@example.com", "password": "Password123!"}
     )
     token = login_res.json()["access_token"]
 
@@ -137,8 +137,8 @@ async def test_suspended_user_authentication(client: AsyncClient, session: Async
     """10. suspended user authentication"""
     await create_test_user(session, email="suspended@example.com", status=AccountStatus.SUSPENDED)
     
-    payload = {"email": "suspended@example.com", "password": "StrongPass123!"}
-    response = await client.post("/api/auth/login", json=payload)
+    payload = {"username": "suspended@example.com", "password": "StrongPass123!"}
+    response = await client.post("/api/auth/login", data=payload)
     assert response.status_code == 403
 
 
@@ -147,7 +147,7 @@ async def test_student_accessing_admin_protected_endpoint(client: AsyncClient, s
     """11. student accessing admin-protected endpoint"""
     await create_test_user(session, email="student@example.com", role=UserRole.STUDENT)
     login_res = await client.post(
-        "/api/auth/login", json={"email": "student@example.com", "password": "StrongPass123!"}
+        "/api/auth/login", data={"username": "student@example.com", "password": "StrongPass123!"}
     )
     token = login_res.json()["access_token"]
 
@@ -172,7 +172,7 @@ async def test_admin_accessing_admin_protected_endpoint(client: AsyncClient, ses
     """12. admin accessing admin-protected endpoint"""
     await create_test_user(session, email="admin@example.com", role=UserRole.ADMIN)
     login_res = await client.post(
-        "/api/auth/login", json={"email": "admin@example.com", "password": "StrongPass123!"}
+        "/api/auth/login", data={"username": "admin@example.com", "password": "StrongPass123!"}
     )
     token = login_res.json()["access_token"]
 

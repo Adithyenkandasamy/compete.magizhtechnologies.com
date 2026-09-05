@@ -43,7 +43,7 @@ async def setup_users(client: AsyncClient, session: AsyncSession) -> dict:
     for i in range(1, 5):
         email = f"team_user_{i}_{uuid.uuid4()}@example.com"
         await create_test_user(session, email=email, role=UserRole.STUDENT)
-        login_res = await client.post("/api/auth/login", json={"email": email, "password": "StrongPass123!"})
+        login_res = await client.post("/api/auth/login", data={"username": email, "password": "StrongPass123!"})
         users[f"user{i}"] = {
             "email": email,
             "token": login_res.json()["access_token"]

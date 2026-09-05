@@ -63,7 +63,7 @@ async def test_admin_creates_event(client: AsyncClient, session: AsyncSession):
     """4. admin creates event"""
     from tests.api.test_auth import create_test_user
     await create_test_user(session, email="admin2@example.com", role=UserRole.ADMIN)
-    login_res = await client.post("/api/auth/login", json={"email": "admin2@example.com", "password": "StrongPass123!"})
+    login_res = await client.post("/api/auth/login", data={"username": "admin2@example.com", "password": "StrongPass123!"})
     token = login_res.json()["access_token"]
 
     payload = {
@@ -82,7 +82,7 @@ async def test_student_cannot_create_event(client: AsyncClient, session: AsyncSe
     """5. student cannot create event"""
     from tests.api.test_auth import create_test_user
     await create_test_user(session, email="student2@example.com", role=UserRole.STUDENT)
-    login_res = await client.post("/api/auth/login", json={"email": "student2@example.com", "password": "StrongPass123!"})
+    login_res = await client.post("/api/auth/login", data={"username": "student2@example.com", "password": "StrongPass123!"})
     token = login_res.json()["access_token"]
 
     response = await client.post("/api/admin/events", json={"title": "Hack", "slug": "hack", "event_type": "HACKATHON"}, headers={"Authorization": f"Bearer {token}"})
@@ -94,7 +94,7 @@ async def test_admin_updates_event(client: AsyncClient, session: AsyncSession):
     """6. admin updates event"""
     from tests.api.test_auth import create_test_user
     await create_test_user(session, email="admin3@example.com", role=UserRole.ADMIN)
-    login_res = await client.post("/api/auth/login", json={"email": "admin3@example.com", "password": "StrongPass123!"})
+    login_res = await client.post("/api/auth/login", data={"username": "admin3@example.com", "password": "StrongPass123!"})
     token = login_res.json()["access_token"]
 
     event = await create_test_event(session, slug="update-me")
@@ -109,7 +109,7 @@ async def test_duplicate_slug_rejected(client: AsyncClient, session: AsyncSessio
     """7. duplicate slug rejected"""
     from tests.api.test_auth import create_test_user
     await create_test_user(session, email="admin4@example.com", role=UserRole.ADMIN)
-    login_res = await client.post("/api/auth/login", json={"email": "admin4@example.com", "password": "StrongPass123!"})
+    login_res = await client.post("/api/auth/login", data={"username": "admin4@example.com", "password": "StrongPass123!"})
     token = login_res.json()["access_token"]
 
     await create_test_event(session, slug="existing-slug")
@@ -124,7 +124,7 @@ async def test_invalid_dates_rejected(client: AsyncClient, session: AsyncSession
     """8. invalid dates rejected"""
     from tests.api.test_auth import create_test_user
     await create_test_user(session, email="admin5@example.com", role=UserRole.ADMIN)
-    login_res = await client.post("/api/auth/login", json={"email": "admin5@example.com", "password": "StrongPass123!"})
+    login_res = await client.post("/api/auth/login", data={"username": "admin5@example.com", "password": "StrongPass123!"})
     token = login_res.json()["access_token"]
 
     payload = {
@@ -143,7 +143,7 @@ async def test_admin_publishes_event(client: AsyncClient, session: AsyncSession)
     """9. admin publishes event"""
     from tests.api.test_auth import create_test_user
     await create_test_user(session, email="admin6@example.com", role=UserRole.ADMIN)
-    login_res = await client.post("/api/auth/login", json={"email": "admin6@example.com", "password": "StrongPass123!"})
+    login_res = await client.post("/api/auth/login", data={"username": "admin6@example.com", "password": "StrongPass123!"})
     token = login_res.json()["access_token"]
 
     # Needs required fields to publish
@@ -164,7 +164,7 @@ async def test_student_cannot_publish_event(client: AsyncClient, session: AsyncS
     """10. student cannot publish event"""
     from tests.api.test_auth import create_test_user
     await create_test_user(session, email="student3@example.com", role=UserRole.STUDENT)
-    login_res = await client.post("/api/auth/login", json={"email": "student3@example.com", "password": "StrongPass123!"})
+    login_res = await client.post("/api/auth/login", data={"username": "student3@example.com", "password": "StrongPass123!"})
     token = login_res.json()["access_token"]
 
     event = await create_test_event(session)
@@ -177,7 +177,7 @@ async def test_admin_unpublishes_event(client: AsyncClient, session: AsyncSessio
     """11. admin unpublishes event"""
     from tests.api.test_auth import create_test_user
     await create_test_user(session, email="admin7@example.com", role=UserRole.ADMIN)
-    login_res = await client.post("/api/auth/login", json={"email": "admin7@example.com", "password": "StrongPass123!"})
+    login_res = await client.post("/api/auth/login", data={"username": "admin7@example.com", "password": "StrongPass123!"})
     token = login_res.json()["access_token"]
 
     event = await create_test_event(session, status=EventStatus.PUBLISHED)
@@ -198,7 +198,7 @@ async def test_safe_deletion_cancellation_behavior(client: AsyncClient, session:
     """13. safe deletion/cancellation behavior"""
     from tests.api.test_auth import create_test_user
     await create_test_user(session, email="admin8@example.com", role=UserRole.ADMIN)
-    login_res = await client.post("/api/auth/login", json={"email": "admin8@example.com", "password": "StrongPass123!"})
+    login_res = await client.post("/api/auth/login", data={"username": "admin8@example.com", "password": "StrongPass123!"})
     token = login_res.json()["access_token"]
 
     # Hard delete an isolated draft
