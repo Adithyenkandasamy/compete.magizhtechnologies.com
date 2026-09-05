@@ -21,7 +21,15 @@ class LoginRequest(BaseModel):
 class TokenResponse(BaseModel):
     """Schema for returning JWT tokens."""
     access_token: str
+    refresh_token: str
     token_type: str = "bearer"
+    expires_in: Optional[int] = None
+    refresh_expires_in: Optional[int] = None
+
+
+class RefreshRequest(BaseModel):
+    """Schema for refreshing an access token using a refresh token."""
+    refresh_token: str
 
 
 class ProfileResponse(BaseModel):

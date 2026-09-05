@@ -1,8 +1,8 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Request, status
 from fastapi.security import OAuth2PasswordRequestForm
 
 from app.api.deps import CurrentUserDep, SessionDep
-from app.schemas.auth import LoginRequest, RegisterRequest, TokenResponse, UserResponse
+from app.schemas.auth import LoginRequest, RefreshRequest, RegisterRequest, TokenResponse, UserResponse
 from app.services.auth_service import AuthService
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
@@ -16,6 +16,7 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 )
 async def register(
     data: RegisterRequest,
+    request: Request,
     session: SessionDep,
 ) -> UserResponse:
     """
@@ -30,22 +31,43 @@ async def register(
 @router.post(
     "/login",
     response_model=TokenResponse,
-    summary="Login and obtain a JWT token",
+    summary="Login and obtain an access + refresh token",
 )
 async def login(
     session: SessionDep,
+    request: Request,
     form_data: OAuth2PasswordRequestForm = Depends(),
 ) -> TokenResponse:
     """
-    Authenticate user credentials and return a Bearer access token.
+    Authenticate user credentials and return a Bearer access token
+    plus a long-lived refresh token used to obtain new access tokens.
     Accepts standard OAuth2 form data (username, password).
     """
     auth_service = AuthService(session)
     # The OAuth2PasswordRequestForm uses 'username' instead of 'email'
     login_data = LoginRequest(email=form_data.username, password=form_data.password)
-    _, access_token = await auth_service.authenticate_user(login_data)
-    
-    return TokenResponse(access_token=access_token)
+    _, tokens = await auth_service.authenticate_user(login_data, request)
+
+    return tokens
+
+
+@router.post(
+    "/refresh",
+    response_model=TokenResponse,
+    summary="Refresh an expired access token",
+)
+async def refresh(
+    data: RefreshRequest,
+    request: Request,
+    session: SessionDep,
+) -> TokenResponse:
+    """
+    Exchange a valid refresh token for a fresh access token.
+    The refresh token is rotated: the old one is invalidated and a new
+    refresh token is returned.
+    """
+    auth_service = AuthService(session)
+    return await auth_service.refresh_tokens(data, request)
 
 
 @router.get(
@@ -69,11 +91,15 @@ async def get_me(
     summary="Logout the current user",
 )
 async def logout(
-    current_user: CurrentUserDep,
+    data: RefreshRequest,
+    request: Request,
+    session: SessionDep,
 ) -> dict:
     """
     Logout endpoint.
-    Currently structural for frontend clearing of local tokens.
-    In the future, this can be expanded to invalidate the token in Redis or UserSessions.
+    Revokes the session associated with the supplied refresh token, which
+    invalidates the token pair. The client should also clear local tokens.
+    Idempotent — logging out twice is safe.
     """
-    return {"message": "Successfully logged out"}
+    auth_service = AuthService(session)
+    return await auth_service.logout(data.refresh_token, request)

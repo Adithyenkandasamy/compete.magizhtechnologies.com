@@ -1,20 +1,26 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
-import { loginUser } from "@/lib/auth-api";
-import { setAccessToken } from "@/lib/auth";
+import { useAuth } from "@/providers/auth-provider";
 
 export default function LoginPage() {
   const router = useRouter();
+  const { login, status } = useAuth();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    if (status === "authenticated") {
+      router.replace("/dashboard");
+    }
+  }, [status, router]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -23,14 +29,14 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      const response = await loginUser({
-        email,
-        password,
-      });
+      await login(email, password);
 
-      setAccessToken(response.access_token);
+      const redirectParam =
+        typeof window !== "undefined"
+          ? new URLSearchParams(window.location.search).get("redirect")
+          : null;
 
-      router.push("/dashboard");
+      router.replace(redirectParam || "/dashboard");
     } catch (err: any) {
       const message =
         err?.response?.data?.detail ||
@@ -76,6 +82,7 @@ export default function LoginPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@example.com"
                 required
+                disabled={isLoading}
                 className="w-full rounded border border-[#252525] bg-[#0A0A0A] px-4 py-3 text-[#F5F3ED] outline-none transition focus:border-[#D4AF37]"
               />
             </div>
@@ -95,6 +102,7 @@ export default function LoginPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Enter your password"
                 required
+                disabled={isLoading}
                 className="w-full rounded border border-[#252525] bg-[#0A0A0A] px-4 py-3 text-[#F5F3ED] outline-none transition focus:border-[#D4AF37]"
               />
             </div>

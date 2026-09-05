@@ -34,10 +34,10 @@ app = FastAPI(
 # Global error handler – catches any unhandled exception
 app.add_middleware(GlobalErrorMiddleware)
 
-# CORS – restrict to the configured frontend origin
+# CORS – restrict to the configured frontend origin(s)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[settings.frontend_url],
+    allow_origins=settings.allowed_cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

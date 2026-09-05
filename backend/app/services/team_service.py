@@ -72,6 +72,12 @@ class TeamService:
             raise HTTPException(status_code=404, detail="Team not found")
         return team
 
+    async def list_user_teams_for_event(
+        self, user_id: uuid.UUID, event_id: uuid.UUID
+    ) -> list[Team]:
+        """List every team the user belongs to within an event."""
+        return await self.team_repo.get_user_teams_for_event(user_id, event_id)
+
     async def update_team(
         self, team_id: uuid.UUID, user_id: uuid.UUID, name: str, request: Request
     ) -> Team:
