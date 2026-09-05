@@ -1,0 +1,13 @@
+# Secrets & local-only files — never deployed
+.env
+.env.*
+!.env.example
+
+# Local tooling
+.venv
+__pycache__
+*.pyc
+.pytest_cache
+
+# Tests & docs not needed at runtime
+tests
