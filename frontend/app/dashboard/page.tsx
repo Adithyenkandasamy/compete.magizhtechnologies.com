@@ -5,6 +5,7 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 import { useAuth } from "@/providers/auth-provider";
+import { DashboardSkeleton } from "@/components/loading";
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -19,7 +20,7 @@ export default function DashboardPage() {
   if (status === "loading") {
     return (
       <main className="magizh-container py-20">
-        <p className="magizh-muted">Loading dashboard...</p>
+        <DashboardSkeleton variant="student" />
       </main>
     );
   }

@@ -3,9 +3,11 @@
 import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useMutation } from "@tanstack/react-query";
 
 import { useAuth } from "@/providers/auth-provider";
 import { getErrorMessage } from "@/lib/error-message";
+import { LoadingButton } from "@/components/loading";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -15,7 +17,6 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
 
   const [error, setError] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     if (status === "authenticated") {
@@ -23,31 +24,31 @@ export default function LoginPage() {
     }
   }, [status, router]);
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-
-    setError("");
-    setIsLoading(true);
-
-    try {
-      await login(email, password);
-
+  const loginMutation = useMutation({
+    mutationFn: () => login(email, password),
+    onSuccess: () => {
       const redirectParam =
         typeof window !== "undefined"
           ? new URLSearchParams(window.location.search).get("redirect")
           : null;
 
       router.replace(redirectParam || "/dashboard");
-    } catch (err: any) {
+    },
+    onError: (err) => {
       setError(
         getErrorMessage(
           err,
           "Unable to login. Please check your email and password.",
         ),
       );
-    } finally {
-      setIsLoading(false);
-    }
+    },
+  });
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    setError("");
+    loginMutation.mutate();
   }
 
   return (
@@ -84,7 +85,7 @@ export default function LoginPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@example.com"
                 required
-                disabled={isLoading}
+                disabled={loginMutation.isPending}
                 className="w-full rounded border border-[#252525] bg-[#0A0A0A] px-4 py-3 text-[#F5F3ED] outline-none transition focus:border-[#D4AF37]"
               />
             </div>
@@ -104,7 +105,7 @@ export default function LoginPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Enter your password"
                 required
-                disabled={isLoading}
+                disabled={loginMutation.isPending}
                 className="w-full rounded border border-[#252525] bg-[#0A0A0A] px-4 py-3 text-[#F5F3ED] outline-none transition focus:border-[#D4AF37]"
               />
             </div>
@@ -115,13 +116,14 @@ export default function LoginPage() {
               </div>
             )}
 
-            <button
+<LoadingButton
               type="submit"
-              disabled={isLoading}
-              className="magizh-button w-full disabled:cursor-not-allowed disabled:opacity-50"
+              loading={loginMutation.isPending}
+              loadingText="Signing in..."
+              className="w-full"
             >
-              {isLoading ? "Signing In..." : "Sign In"}
-            </button>
+              Sign In
+            </LoadingButton>
           </form>
 
           <div className="mt-7 border-t border-[#252525] pt-6 text-center">

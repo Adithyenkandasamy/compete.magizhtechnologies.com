@@ -9,6 +9,7 @@ import { registerForEvent } from "@/lib/registrations-api";
 import { getAccessToken } from "@/lib/auth";
 import { getEventSponsors, type Sponsor } from "@/lib/sponsors-api";
 import { getErrorMessage } from "@/lib/error-message";
+import { ErrorState, LoadingButton, PageLoader, SmartImage } from "@/components/loading";
 
 export default function EventDetailsPage() {
   const params = useParams();
@@ -77,7 +78,7 @@ export default function EventDetailsPage() {
   if (isLoading) {
     return (
       <main className="magizh-container py-20">
-        <p className="magizh-muted">Loading event...</p>
+        <PageLoader label="loading event" />
       </main>
     );
   }
@@ -85,18 +86,10 @@ export default function EventDetailsPage() {
   if (isError || !event) {
     return (
       <main className="magizh-container py-20">
-        <div className="magizh-card p-8">
-          <p className="text-[#C75C5C]">
-            Unable to load this event.
-          </p>
-
-          <Link
-            href="/events"
-            className="mt-5 inline-flex text-sm font-semibold uppercase tracking-wider text-[#D4AF37] hover:text-[#E5C04A]"
-          >
-            ← Back to Events
-          </Link>
-        </div>
+        <ErrorState
+          title="Unable to load this event."
+          message="The event may have been removed or the backend may be offline."
+        />
       </main>
     );
   }
@@ -112,10 +105,10 @@ export default function EventDetailsPage() {
 
       {event.banner_url && (
         <div className="mb-10 aspect-[16/6] overflow-hidden rounded-lg border border-[#252525]">
-          <img
+          <SmartImage
             src={event.banner_url}
             alt={event.title}
-            className="h-full w-full object-cover"
+            className="h-full w-full"
           />
         </div>
       )}
@@ -170,10 +163,11 @@ export default function EventDetailsPage() {
                   >
                     <div className="flex items-center gap-4">
                       {sponsor.logo_url ? (
-                        <img
+                        <SmartImage
                           src={sponsor.logo_url}
                           alt={sponsor.name}
-                          className="h-14 w-14 rounded border border-[#252525] object-contain bg-[#0A0A0A] p-2"
+                          className="h-14 w-14 rounded border border-[#252525] bg-[#0A0A0A]"
+                          imgClassName="object-contain p-2"
                         />
                       ) : (
                         <div className="flex h-14 w-14 items-center justify-center rounded border border-[#252525] bg-[#0A0A0A]">
@@ -295,18 +289,17 @@ export default function EventDetailsPage() {
             </div>
           )}
 
-          <button
+          <LoadingButton
             type="button"
             onClick={handleRegister}
-            disabled={isRegistering || Boolean(success)}
-            className="magizh-button mt-8 w-full disabled:cursor-not-allowed disabled:opacity-50"
+            variant="gold"
+            loading={isRegistering}
+            loadingText="Registering..."
+            disabled={Boolean(success)}
+            className="mt-8 w-full"
           >
-            {isRegistering
-              ? "Registering..."
-              : success
-                ? "Registered"
-                : "Register for Event"}
-          </button>
+            {success ? "Registered" : "Register for Event"}
+          </LoadingButton>
         </aside>
       </div>
     </main>

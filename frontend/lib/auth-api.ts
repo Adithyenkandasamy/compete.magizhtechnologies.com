@@ -24,7 +24,12 @@ export async function loginUser(
 
   const response = await apiClient.post<TokenResponse>(
     "/auth/login",
-    body,
+    body.toString(),
+    {
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+    },
   );
 
   return response.data;

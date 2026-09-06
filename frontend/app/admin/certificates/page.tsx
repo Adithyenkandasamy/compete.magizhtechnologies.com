@@ -1,11 +1,17 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Award, CheckCircle, Loader2, RefreshCw } from "lucide-react";
+import { Award, CheckCircle, RefreshCw } from "lucide-react";
 import {
   getAdminCertificates,
   issueCertificate,
 } from "@/lib/admin-certificates-api";
+import {
+  EmptyState,
+  ErrorState,
+  LoadingButton,
+  TableSkeleton,
+} from "@/components/loading";
 
 export default function AdminCertificatesPage() {
   const queryClient = useQueryClient();
@@ -77,50 +83,26 @@ export default function AdminCertificatesPage() {
         </div>
 
         {/* Loading */}
-        {isLoading && (
-          <div className="flex min-h-60 items-center justify-center">
-            <div className="flex items-center gap-3 text-[#A1A1A1]">
-              <Loader2 className="animate-spin" size={20} />
-              Loading certificates...
-            </div>
-          </div>
-        )}
+        {isLoading && <TableSkeleton rows={6} columns={7} />}
 
         {/* Error */}
         {isError && !isLoading && (
-          <div className="rounded-lg border border-[#C75C5C]/40 bg-[#0D0D0F] p-8 text-center">
-            <p className="text-[#C75C5C]">
-              Failed to load certificates.
-            </p>
-
-            <button
-              type="button"
-              onClick={() => refetch()}
-              className="mt-4 rounded border border-[#252525] px-4 py-2 text-sm hover:border-[#D4AF37] hover:text-[#D4AF37]"
-            >
-              Try Again
-            </button>
-          </div>
+          <ErrorState
+            title="Failed to load certificates."
+            onRetry={() => refetch()}
+            retryLabel="Try Again"
+          />
         )}
 
         {/* Empty */}
         {!isLoading &&
           !isError &&
           (!certificates || certificates.length === 0) && (
-            <div className="rounded-lg border border-[#252525] bg-[#0D0D0F] p-12 text-center">
-              <Award
-                size={40}
-                className="mx-auto mb-4 text-[#D4AF37]"
-              />
-
-              <h2 className="text-xl font-semibold">
-                No certificates found
-              </h2>
-
-              <p className="mt-2 text-sm text-[#A1A1A1]">
-                Generated certificates will appear here.
-              </p>
-            </div>
+            <EmptyState
+              kicker="CERTIFICATES"
+              title="No certificates found"
+              description="Generated certificates will appear here."
+            />
           )}
 
         {/* Certificates */}
@@ -218,29 +200,20 @@ export default function AdminCertificatesPage() {
                                 Issued
                               </span>
                             ) : (
-                              <button
+                              <LoadingButton
                                 type="button"
                                 onClick={() =>
                                   handleIssue(certificate.id)
                                 }
+                                variant="gold"
+                                size="sm"
+                                loading={isIssuing}
+                                loadingText="Issuing..."
                                 disabled={issueMutation.isPending}
-                                className="inline-flex items-center gap-2 rounded bg-[#D4AF37] px-4 py-2 text-sm font-semibold text-black transition hover:bg-[#E5C04A] disabled:cursor-not-allowed disabled:opacity-50"
                               >
-                                {isIssuing ? (
-                                  <>
-                                    <Loader2
-                                      size={15}
-                                      className="animate-spin"
-                                    />
-                                    Issuing...
-                                  </>
-                                ) : (
-                                  <>
-                                    <Award size={15} />
-                                    Issue
-                                  </>
-                                )}
-                              </button>
+                                <Award size={15} />
+                                Issue
+                              </LoadingButton>
                             )}
                           </td>
                         </tr>

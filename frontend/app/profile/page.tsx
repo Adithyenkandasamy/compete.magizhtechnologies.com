@@ -11,6 +11,7 @@ import {
 import { useAuth } from "@/providers/auth-provider";
 import type { Profile } from "@/types/auth";
 import { getErrorMessage } from "@/lib/error-message";
+import { LoadingButton, PageLoader } from "@/components/loading";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -98,7 +99,7 @@ export default function ProfilePage() {
   if (isLoading || status === "loading") {
     return (
       <main className="magizh-container py-20">
-        <p className="magizh-muted">Loading profile...</p>
+        <PageLoader label="loading profile" />
       </main>
     );
   }
@@ -280,13 +281,13 @@ export default function ProfilePage() {
               </div>
             )}
 
-            <button
+            <LoadingButton
               type="submit"
-              disabled={isSaving}
-              className="magizh-button disabled:cursor-not-allowed disabled:opacity-50"
+              loading={isSaving}
+              loadingText="Saving..."
             >
-              {isSaving ? "Saving..." : "Save Profile"}
-            </button>
+              Save Profile
+            </LoadingButton>
           </form>
         </section>
 
