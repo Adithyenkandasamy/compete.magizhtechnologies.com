@@ -140,7 +140,7 @@ export default function DashboardPage() {
           </p>
 
           <Link
-            href="/notifications"
+            href="/dashboard/notifications"
             className="mt-5 inline-flex text-sm font-semibold uppercase tracking-wider text-[#D4AF37] hover:text-[#E5C04A]"
           >
             View Notifications →

@@ -33,7 +33,7 @@ export default function TeamInvitePage() {
 
         const data = await getTeamInvite(token);
         setInvite(data);
-      } catch (err: any) {
+      } catch (err: unknown) {
         setError(
           getErrorMessage(
             err,
@@ -71,7 +71,7 @@ export default function TeamInvitePage() {
       setSuccess(
         "Your request to join the team has been sent successfully.",
       );
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(
         getErrorMessage(err, "Unable to send your join request."),
       );

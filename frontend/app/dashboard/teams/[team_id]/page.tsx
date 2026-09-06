@@ -40,7 +40,7 @@ export default function TeamDetailsPage() {
 
                 setTeam(data);
                 setTeamName(data.name);
-            } catch (err: any) {
+            } catch (err: unknown) {
                 setError(
                     getErrorMessage(
                         err,
@@ -75,7 +75,7 @@ export default function TeamDetailsPage() {
             setTeam(updatedTeam);
             setTeamName(updatedTeam.name);
             setSuccess("Team updated successfully.");
-        } catch (err: any) {
+        } catch (err: unknown) {
             setError(
                 getErrorMessage(err, "Unable to update the team."),
             );
@@ -101,7 +101,7 @@ export default function TeamDetailsPage() {
             await leaveTeam(teamId);
 
             router.push("/dashboard/teams");
-        } catch (err: any) {
+        } catch (err: unknown) {
             setError(
                 getErrorMessage(err, "Unable to leave the team."),
             );
@@ -127,7 +127,7 @@ export default function TeamDetailsPage() {
             await deleteTeam(teamId);
 
             router.push("/dashboard/teams");
-        } catch (err: any) {
+        } catch (err: unknown) {
             setError(
                 getErrorMessage(err, "Unable to delete the team."),
             );

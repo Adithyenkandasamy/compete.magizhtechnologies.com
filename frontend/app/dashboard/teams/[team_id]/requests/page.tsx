@@ -29,12 +29,11 @@ export default function TeamJoinRequestsPage() {
 
   async function loadRequests() {
     try {
-      setError("");
-
       const data = await getJoinRequests(teamId);
 
       setRequests(data);
-    } catch (err: any) {
+      setError("");
+    } catch (err) {
       setError(
         getErrorMessage(err, "Unable to load join requests."),
       );
@@ -44,9 +43,35 @@ export default function TeamJoinRequestsPage() {
   }
 
   useEffect(() => {
-    if (teamId) {
-      loadRequests();
+    if (!teamId) {
+      return;
     }
+
+    let cancelled = false;
+
+    getJoinRequests(teamId)
+      .then((data) => {
+        if (!cancelled) {
+          setRequests(data);
+          setError("");
+        }
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          setError(
+            getErrorMessage(err, "Unable to load join requests."),
+          );
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setIsLoading(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, [teamId]);
 
   async function handleAccept(requestId: string) {
@@ -60,7 +85,7 @@ export default function TeamJoinRequestsPage() {
       setSuccess("Join request accepted successfully.");
 
       await loadRequests();
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(
         getErrorMessage(err, "Unable to accept this join request."),
       );
@@ -80,7 +105,7 @@ export default function TeamJoinRequestsPage() {
       setSuccess("Join request rejected successfully.");
 
       await loadRequests();
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(
         getErrorMessage(err, "Unable to reject this join request."),
       );

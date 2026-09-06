@@ -47,7 +47,7 @@ export default function MyTeamsPage() {
         );
 
         setEventTeams(registeredEventData);
-      } catch (err: any) {
+      } catch (err: unknown) {
         setError(
           getErrorMessage(err, "Unable to load your teams."),
         );
@@ -89,7 +89,7 @@ export default function MyTeamsPage() {
 
       setTeamName("");
       setSuccess("Team created successfully.");
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(
         getErrorMessage(err, "Unable to create the team."),
       );

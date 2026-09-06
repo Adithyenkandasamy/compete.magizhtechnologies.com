@@ -87,7 +87,7 @@ export default function ProfilePage() {
       setProfile(updatedProfile);
 
       setSuccess("Profile updated successfully.");
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(
         getErrorMessage(err, "Unable to update your profile."),
       );

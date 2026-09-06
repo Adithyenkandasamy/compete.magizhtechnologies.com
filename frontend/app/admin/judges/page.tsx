@@ -15,23 +15,32 @@ export default function AdminJudgesPage() {
   const [error, setError] = useState("");
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  async function loadJudges() {
-    try {
-      setLoading(true);
-      setError("");
-
-      const data = await getAdminJudges();
-      setJudges(data);
-    } catch (err) {
-      console.error("Unable to load judges:", err);
-      setError("Unable to load judges.");
-    } finally {
-      setLoading(false);
-    }
-  }
-
   useEffect(() => {
-    loadJudges();
+    let cancelled = false;
+
+    getAdminJudges()
+      .then((data) => {
+        if (!cancelled) {
+          setJudges(data);
+          setError("");
+        }
+      })
+      .catch((err) => {
+        console.error("Unable to load judges:", err);
+
+        if (!cancelled) {
+          setError("Unable to load judges.");
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   async function handleDelete(judgeId: string) {

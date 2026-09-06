@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowLeft,
@@ -18,7 +18,6 @@ import {
 
 export default function AdminUserDetailPage() {
   const params = useParams();
-  const router = useRouter();
   const queryClient = useQueryClient();
 
   const userId = params.user_id as string;

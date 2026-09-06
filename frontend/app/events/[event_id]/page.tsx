@@ -63,7 +63,7 @@ export default function EventDetailsPage() {
       await registerForEvent(eventId);
 
       setSuccess("You have successfully registered for this event.");
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(
         getErrorMessage(
           err,

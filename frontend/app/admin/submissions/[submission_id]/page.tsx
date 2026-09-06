@@ -173,7 +173,7 @@ export default function AdminSubmissionDetailsPage() {
                   type="button"
                   onClick={() =>
                     router.push(
-                      `/admin/projects/${submission.project_id}`,
+                      `/projects/${submission.project_id}`,
                     )
                   }
                   className="rounded border border-[#252525] px-5 py-3 font-semibold text-[#F5F3ED] transition-colors hover:border-[#D4AF37] hover:text-[#D4AF37]"

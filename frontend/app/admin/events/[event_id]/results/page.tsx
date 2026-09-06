@@ -20,25 +20,36 @@ export default function AdminEventResultsPage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-  async function loadResults() {
-    try {
-      setLoading(true);
-      setError("");
-
-      const data = await getAdminEventResults(eventId);
-      setResults(data);
-    } catch (err) {
-      console.error("Unable to load results:", err);
-      setError("Unable to load event results.");
-    } finally {
-      setLoading(false);
-    }
-  }
-
   useEffect(() => {
-    if (eventId) {
-      loadResults();
+    if (!eventId) {
+      return;
     }
+
+    let cancelled = false;
+
+    getAdminEventResults(eventId)
+      .then((data) => {
+        if (!cancelled) {
+          setResults(data);
+          setError("");
+        }
+      })
+      .catch((err) => {
+        console.error("Unable to load results:", err);
+
+        if (!cancelled) {
+          setError("Unable to load event results.");
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, [eventId]);
 
   async function handlePublish() {

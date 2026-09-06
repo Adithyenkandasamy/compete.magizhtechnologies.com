@@ -46,6 +46,7 @@ export function useWebSocket(
   const socketRef = useRef<WebSocket | null>(null);
   const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const manuallyDisconnectedRef = useRef(false);
+  const connectRef = useRef<() => void>(() => {});
 
   const [connected, setConnected] = useState(false);
   const [connecting, setConnecting] = useState(false);
@@ -117,7 +118,7 @@ export function useWebSocket(
         enabled
       ) {
         reconnectTimerRef.current = setTimeout(() => {
-          connect();
+          connectRef.current();
         }, reconnectDelay);
       }
     };
@@ -131,6 +132,10 @@ export function useWebSocket(
     onClose,
     onError,
   ]);
+
+  useEffect(() => {
+    connectRef.current = connect;
+  }, [connect]);
 
   const disconnect = useCallback(() => {
     manuallyDisconnectedRef.current = true;
@@ -157,9 +162,9 @@ export function useWebSocket(
     manuallyDisconnectedRef.current = false;
 
     setTimeout(() => {
-      connect();
+      connectRef.current();
     }, 100);
-  }, [connect, disconnect]);
+  }, [disconnect]);
 
   const sendMessage = useCallback((message: unknown) => {
     const socket = socketRef.current;
@@ -177,13 +182,24 @@ export function useWebSocket(
 
   useEffect(() => {
     if (!enabled) {
-      disconnect();
+      manuallyDisconnectedRef.current = true;
+
+      if (reconnectTimerRef.current) {
+        clearTimeout(reconnectTimerRef.current);
+        reconnectTimerRef.current = null;
+      }
+
+      socketRef.current?.close();
       return;
     }
 
-    connect();
+    const connectTimeout = setTimeout(() => {
+      connect();
+    }, 0);
 
     return () => {
+      clearTimeout(connectTimeout);
+
       manuallyDisconnectedRef.current = true;
 
       if (reconnectTimerRef.current) {
@@ -194,7 +210,7 @@ export function useWebSocket(
       socketRef.current?.close();
       socketRef.current = null;
     };
-  }, [connect, disconnect, enabled]);
+  }, [connect, enabled]);
 
   return {
     connected,

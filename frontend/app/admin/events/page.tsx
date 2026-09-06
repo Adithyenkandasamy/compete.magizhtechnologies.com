@@ -19,23 +19,32 @@ export default function AdminEventsPage() {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [success, setSuccess] = useState("");
 
-  async function loadEvents() {
-    try {
-      setLoading(true);
-      setError("");
-
-      const data = await getAdminEvents();
-      setEvents(data);
-    } catch (err) {
-      console.error("Unable to load admin events:", err);
-      setError("Unable to load events.");
-    } finally {
-      setLoading(false);
-    }
-  }
-
   useEffect(() => {
-    loadEvents();
+    let cancelled = false;
+
+    getAdminEvents()
+      .then((data) => {
+        if (!cancelled) {
+          setEvents(data);
+          setError("");
+        }
+      })
+      .catch((err) => {
+        console.error("Unable to load admin events:", err);
+
+        if (!cancelled) {
+          setError("Unable to load events.");
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   async function handlePublish(eventId: string) {

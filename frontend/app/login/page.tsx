@@ -128,7 +128,7 @@ export default function LoginPage() {
 
           <div className="mt-7 border-t border-[#252525] pt-6 text-center">
             <p className="magizh-muted text-sm">
-              Don't have an account?
+              Don&apos;t have an account?
             </p>
 
             <Link
