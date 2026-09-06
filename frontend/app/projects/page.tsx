@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { getProjects, type Project } from "@/lib/projects-api";
-import { ProjectShowcaseFilters } from "@/components/projects/project-showcase-filters";
+import { ProjectShowcaseFilters } from "@/components/projects/showcase-filters";
 
 export default function ProjectsShowcasePage() {
   const [projects, setProjects] = useState<Project[]>([]);

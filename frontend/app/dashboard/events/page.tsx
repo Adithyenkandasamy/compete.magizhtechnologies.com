@@ -1,12 +1,14 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useEffect, useState } from "react";
 
 import { getMyRegistrations } from "@/lib/registrations-api";
 import { getEvent } from "@/lib/events-api";
 import type { Registration } from "@/lib/registrations-api";
 import type { Event } from "@/types/events";
+import { getErrorMessage } from "@/lib/error-message";
 
 type RegisteredEvent = {
   registration: Registration;
@@ -40,12 +42,13 @@ export default function MyEventsPage() {
         );
 
         setRegisteredEvents(events);
-      } catch (err: any) {
-        const message =
-          err?.response?.data?.detail ||
-          "Unable to load your registered events.";
-
-        setError(message);
+      } catch (err: unknown) {
+        setError(
+          getErrorMessage(
+            err,
+            "Unable to load your registered events.",
+          ),
+        );
       } finally {
         setIsLoading(false);
       }
@@ -99,7 +102,7 @@ export default function MyEventsPage() {
           </p>
 
           <h2 className="magizh-heading mt-3 text-2xl font-bold">
-            You haven't registered for any events yet.
+            You haven&apos;t registered for any events yet.
           </h2>
 
           <p className="magizh-muted mt-3">
@@ -124,11 +127,14 @@ export default function MyEventsPage() {
               className="magizh-card overflow-hidden transition-colors duration-200 hover:border-[#D4AF37]"
             >
               {event.banner_url ? (
-                <div className="aspect-[16/8] overflow-hidden border-b border-[#252525]">
-                  <img
+                <div className="relative aspect-[16/8] overflow-hidden border-b border-[#252525]">
+                  <Image
+                    fill
+                    unoptimized
                     src={event.banner_url}
                     alt={event.title}
-                    className="h-full w-full object-cover"
+                    className="object-cover"
+                    sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
                   />
                 </div>
               ) : (

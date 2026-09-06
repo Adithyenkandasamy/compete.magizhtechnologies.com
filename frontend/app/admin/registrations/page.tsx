@@ -14,28 +14,35 @@ export default function AdminRegistrationsPage() {
   >([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-
-  async function loadRegistrations() {
-    try {
-      setLoading(true);
-      setError("");
-
-      const data = await getAdminRegistrations();
-      setRegistrations(data);
-    } catch (err) {
-      console.error(
-        "Unable to load admin registrations:",
-        err,
-      );
-      setError("Unable to load registrations.");
-    } finally {
-      setLoading(false);
-    }
-  }
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
-    loadRegistrations();
-  }, []);
+    let cancelled = false;
+
+    getAdminRegistrations()
+      .then((data) => {
+        if (!cancelled) {
+          setRegistrations(data);
+          setError("");
+        }
+      })
+      .catch((err) => {
+        console.error("Unable to load admin registrations:", err);
+
+        if (!cancelled) {
+          setError("Unable to load registrations.");
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [reloadKey]);
 
   return (
     <main className="min-h-screen bg-black">
@@ -78,7 +85,7 @@ export default function AdminRegistrationsPage() {
 
             <button
               type="button"
-              onClick={loadRegistrations}
+              onClick={() => setReloadKey((key) => key + 1)}
               className="mt-5 rounded border border-[#252525] px-4 py-2 text-sm font-semibold text-[#F5F3ED] transition-colors hover:border-[#D4AF37] hover:text-[#D4AF37]"
             >
               Try Again

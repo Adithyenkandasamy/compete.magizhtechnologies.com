@@ -16,6 +16,7 @@ import {
     transferTeamLeadership,
     updateTeam,
 } from "@/lib/teams-api";
+<<<<<<< HEAD
 
 import type {
     JoinRequest,
@@ -42,6 +43,10 @@ type TeamMember = {
 type TeamWithMembers = Team & {
     members?: TeamMember[];
 };
+=======
+import type { Team } from "@/lib/teams-api";
+import { getErrorMessage } from "@/lib/error-message";
+>>>>>>> e9267dfe5ddf938a4d6ac2efd5e1b0ac0921637d
 
 export default function TeamDetailsPage() {
     const params = useParams();
@@ -84,6 +89,7 @@ export default function TeamDetailsPage() {
 
             const data = await getTeam(teamId);
 
+<<<<<<< HEAD
             setTeam(data as TeamWithMembers);
             setTeamName(data.name);
         } catch (err: any) {
@@ -94,6 +100,24 @@ export default function TeamDetailsPage() {
             setError(message);
         } finally {
             setIsLoading(false);
+=======
+                setTeam(data);
+                setTeamName(data.name);
+            } catch (err: unknown) {
+                setError(
+                    getErrorMessage(
+                        err,
+                        "Unable to load this team.",
+                    ),
+                );
+            } finally {
+                setIsLoading(false);
+            }
+        }
+
+        if (teamId) {
+            loadTeam();
+>>>>>>> e9267dfe5ddf938a4d6ac2efd5e1b0ac0921637d
         }
     }, [teamId]);
 
@@ -203,12 +227,10 @@ export default function TeamDetailsPage() {
             setTeam(updatedTeam as TeamWithMembers);
             setTeamName(updatedTeam.name);
             setSuccess("Team updated successfully.");
-        } catch (err: any) {
-            const message =
-                err?.response?.data?.detail ||
-                "Unable to update the team.";
-
-            setError(message);
+        } catch (err: unknown) {
+            setError(
+                getErrorMessage(err, "Unable to update the team."),
+            );
         } finally {
             setIsSaving(false);
         }
@@ -234,12 +256,10 @@ export default function TeamDetailsPage() {
             await leaveTeam(teamId);
 
             router.push("/dashboard/teams");
-        } catch (err: any) {
-            const message =
-                err?.response?.data?.detail ||
-                "Unable to leave the team.";
-
-            setError(message);
+        } catch (err: unknown) {
+            setError(
+                getErrorMessage(err, "Unable to leave the team."),
+            );
         } finally {
             setIsLeaving(false);
         }
@@ -265,12 +285,10 @@ export default function TeamDetailsPage() {
             await deleteTeam(teamId);
 
             router.push("/dashboard/teams");
-        } catch (err: any) {
-            const message =
-                err?.response?.data?.detail ||
-                "Unable to delete the team.";
-
-            setError(message);
+        } catch (err: unknown) {
+            setError(
+                getErrorMessage(err, "Unable to delete the team."),
+            );
         } finally {
             setIsDeleting(false);
         }

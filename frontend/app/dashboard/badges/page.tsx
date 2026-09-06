@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import apiClient from "@/lib/api-client";
 
 type Badge = {
@@ -91,12 +92,15 @@ export default function BadgesPage() {
               key={badge.id}
               className="magizh-card p-6 transition hover:border-[#D4AF37]"
             >
-              <div className="flex h-16 w-16 items-center justify-center border border-[#D4AF37] text-2xl">
+              <div className="relative flex h-16 w-16 items-center justify-center border border-[#D4AF37] text-2xl">
                 {badge.icon_url ? (
-                  <img
+                  <Image
+                    fill
+                    unoptimized
                     src={badge.icon_url}
                     alt={badge.name || "Badge"}
-                    className="h-full w-full object-cover"
+                    className="object-cover"
+                    sizes="64px"
                   />
                 ) : (
                   "★"

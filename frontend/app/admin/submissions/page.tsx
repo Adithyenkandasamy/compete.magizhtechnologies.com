@@ -14,25 +14,35 @@ export default function AdminSubmissionsPage() {
   );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-
-  async function loadSubmissions() {
-    try {
-      setLoading(true);
-      setError("");
-
-      const data = await getAdminSubmissions();
-      setSubmissions(data);
-    } catch (err) {
-      console.error("Unable to load admin submissions:", err);
-      setError("Unable to load submissions.");
-    } finally {
-      setLoading(false);
-    }
-  }
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
-    loadSubmissions();
-  }, []);
+    let cancelled = false;
+
+    getAdminSubmissions()
+      .then((data) => {
+        if (!cancelled) {
+          setSubmissions(data);
+          setError("");
+        }
+      })
+      .catch((err) => {
+        console.error("Unable to load admin submissions:", err);
+
+        if (!cancelled) {
+          setError("Unable to load submissions.");
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [reloadKey]);
 
   return (
     <main className="min-h-screen bg-black">
@@ -71,7 +81,7 @@ export default function AdminSubmissionsPage() {
 
             <button
               type="button"
-              onClick={loadSubmissions}
+              onClick={() => setReloadKey((key) => key + 1)}
               className="mt-5 rounded border border-[#252525] px-4 py-2 text-sm font-semibold text-[#F5F3ED] transition-colors hover:border-[#D4AF37] hover:text-[#D4AF37]"
             >
               Try Again

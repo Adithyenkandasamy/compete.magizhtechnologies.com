@@ -351,7 +351,10 @@ export default function AdminEventEditPage() {
           </div>
         )}
 
-        <div className="max-w-4xl space-y-8">
+        <form
+          className="max-w-4xl space-y-8"
+          onSubmit={handleSubmit}
+        >
           {/* Basic Information */}
           <section className="magizh-card p-6 md:p-8">
             <SectionHeading
@@ -769,20 +772,12 @@ export default function AdminEventEditPage() {
             <button
               type="submit"
               disabled={saving}
-              onClick={() => {
-                const formElement =
-                  document.querySelector(
-                    "form",
-                  ) as HTMLFormElement | null;
-
-                formElement?.requestSubmit();
-              }}
               className="magizh-button disabled:cursor-not-allowed disabled:opacity-50"
             >
               {saving ? "Saving Changes..." : "Save Changes"}
             </button>
           </div>
-        </div>
+        </form>
       </section>
     </main>
   );

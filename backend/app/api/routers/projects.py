@@ -1,12 +1,54 @@
 import uuid
-from typing import List
 
-from fastapi import APIRouter, Depends, Request, status
+from fastapi import APIRouter, Depends, Query, Request, status
 
 from app.api.deps import SessionDep, get_current_user
 from app.models.user import User
+from app.schemas.event import PaginatedResponse
 from app.schemas.project import ProjectCreate, ProjectResponse, ProjectUpdate
 from app.services.project_service import ProjectService
+
+public_router = APIRouter(
+    prefix="/api/projects",
+    tags=["Projects (Public Showcase)"],
+)
+
+
+@public_router.get(
+    "",
+    response_model=PaginatedResponse[ProjectResponse],
+    summary="List showcase projects",
+)
+async def list_projects(
+    session: SessionDep,
+    page: int = Query(1, ge=1),
+    size: int = Query(20, ge=1, le=100),
+) -> PaginatedResponse[ProjectResponse]:
+    service = ProjectService(session)
+    projects, total = await service.list_showcase_projects(page, size)
+
+    return PaginatedResponse[ProjectResponse](
+        items=projects,  # type: ignore
+        total=total,
+        page=page,
+        size=size,
+        pages=(total + size - 1) // size if total else 0,
+    )
+
+
+@public_router.get(
+    "/{project_id}",
+    response_model=ProjectResponse,
+    summary="Get showcase project details",
+)
+async def get_public_project(
+    project_id: uuid.UUID,
+    session: SessionDep,
+) -> ProjectResponse:
+    service = ProjectService(session)
+    project = await service.get_public_project(project_id)
+    return project  # type: ignore
+
 
 router = APIRouter(
     prefix="/api",
@@ -45,21 +87,6 @@ async def get_team_project(
 ) -> ProjectResponse:
     service = ProjectService(session)
     project = await service.get_team_project(team_id, current_user.id)
-    return project # type: ignore
-
-
-@router.get(
-    "/projects/{project_id}",
-    response_model=ProjectResponse,
-    summary="Get project details",
-)
-async def get_project(
-    project_id: uuid.UUID,
-    session: SessionDep,
-    current_user: User = Depends(get_current_user),
-) -> ProjectResponse:
-    service = ProjectService(session)
-    project = await service.get_project(project_id, current_user.id)
     return project # type: ignore
 
 

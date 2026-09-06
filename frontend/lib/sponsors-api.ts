@@ -7,7 +7,7 @@ export type Sponsor = {
   logo_url?: string | null;
   website_url?: string | null;
   created_at: string;
-  updated_at: string;
+  updated_at?: string | null;
 };
 
 export type CreateSponsorRequest = {

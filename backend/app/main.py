@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.health import router as health_router
-from app.api.routers import admin_events, auth, events, profile as profile_router, registrations, teams, team_invites, projects
+from app.api.routers import admin_events, auth, events, profile as profile_router, registrations, teams, team_invites, projects, sponsors
 from app.core.config import settings
 from app.core.logging import configure_logging
 from app.middleware.error_handler import GlobalErrorMiddleware
@@ -55,6 +55,9 @@ app.include_router(profile_router.router)
 app.include_router(teams.router)
 app.include_router(team_invites.router)
 app.include_router(projects.router)
+app.include_router(projects.public_router)
+app.include_router(sponsors.router)
+app.include_router(sponsors.public_router)
 
 # ---------------------------------------------------------------------------
 # Root endpoint

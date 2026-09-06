@@ -11,6 +11,11 @@ import {
 } from "@/lib/teams-api";
 
 import { getAccessToken } from "@/lib/auth";
+<<<<<<< HEAD
+=======
+import type { TeamInvite } from "@/lib/team-invites-api";
+import { getErrorMessage } from "@/lib/error-message";
+>>>>>>> e9267dfe5ddf938a4d6ac2efd5e1b0ac0921637d
 
 export default function TeamInvitePage() {
   const params = useParams();
@@ -26,11 +31,31 @@ export default function TeamInvitePage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
+<<<<<<< HEAD
   const loadInvite = useCallback(async () => {
     if (!token) {
       setError("Invalid invite link.");
       setIsLoading(false);
       return;
+=======
+  useEffect(() => {
+    async function loadInvite() {
+      try {
+        setError("");
+
+        const data = await getTeamInvite(token);
+        setInvite(data);
+      } catch (err: unknown) {
+        setError(
+          getErrorMessage(
+            err,
+            "This team invitation is invalid or has expired.",
+          ),
+        );
+      } finally {
+        setIsLoading(false);
+      }
+>>>>>>> e9267dfe5ddf938a4d6ac2efd5e1b0ac0921637d
     }
 
     try {
@@ -83,12 +108,19 @@ export default function TeamInvitePage() {
         response?.message ||
           "Your request to join the team has been sent successfully.",
       );
+<<<<<<< HEAD
     } catch (err: any) {
       const message =
         err?.response?.data?.detail ||
         "Unable to send the join request.";
 
       setError(message);
+=======
+    } catch (err: unknown) {
+      setError(
+        getErrorMessage(err, "Unable to send your join request."),
+      );
+>>>>>>> e9267dfe5ddf938a4d6ac2efd5e1b0ac0921637d
     } finally {
       setIsJoining(false);
     }

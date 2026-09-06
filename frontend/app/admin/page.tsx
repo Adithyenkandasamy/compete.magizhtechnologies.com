@@ -24,6 +24,7 @@ import {
   WifiOff,
 } from "lucide-react";
 
+<<<<<<< HEAD
 import {
   getAdminDashboard,
   getAdminDashboardActivity,
@@ -36,6 +37,16 @@ import {
   getRealtimeEventType,
   getRealtimeMessage,
 } from "@/lib/realtime";
+=======
+import { getAdminDashboard, getAdminDashboardActivity } from "@/lib/admin-api";
+import { useWebSocket, type WebSocketMessage } from "@/hooks/use-websocket";
+import {
+  EmptyState,
+  ErrorState,
+  RefetchIndicator,
+  Skeleton,
+} from "@/components/loading";
+>>>>>>> e9267dfe5ddf938a4d6ac2efd5e1b0ac0921637d
 
 type QuickLink = {
   title: string;
@@ -44,6 +55,10 @@ type QuickLink = {
   icon: React.ComponentType<{
     size?: number;
     strokeWidth?: number;
+<<<<<<< HEAD
+=======
+    className?: string;
+>>>>>>> e9267dfe5ddf938a4d6ac2efd5e1b0ac0921637d
   }>;
 };
 
@@ -372,41 +387,38 @@ export default function AdminDashboardPage() {
 
         {/* Stats */}
         <section className="mb-12">
-          <div className="mb-6 flex items-center gap-2">
-            <BarChart3
-              size={18}
-              className="text-[#D4AF37]"
-            />
+          <div className="mb-6 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <BarChart3
+                size={18}
+                className="text-[#D4AF37]"
+              />
 
-            <h2 className="text-sm font-semibold uppercase tracking-[0.2em] text-[#A1A1A1]">
-              Platform Overview
-            </h2>
+              <h2 className="text-sm font-semibold uppercase tracking-[0.2em] text-[#A1A1A1]">
+                Platform Overview
+              </h2>
+            </div>
+
+            {/* Background refetch: keep stats visible, show subtle update */}
+            {dashboardQuery.isFetching && !dashboardQuery.isLoading && (
+              <RefetchIndicator active label="Updating" />
+            )}
           </div>
 
-          {dashboardQuery.isLoading ? (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {Array.from({ length: 6 }).map((_, index) => (
-                <div
-                  key={index}
-                  className="h-32 animate-pulse rounded border border-[#252525] bg-[#0D0D0F]"
-                />
-              ))}
-            </div>
-          ) : dashboardQuery.isError ? (
-            <div className="rounded border border-[#C75C5C]/40 bg-[#0D0D0F] p-6">
-              <p className="font-semibold text-[#C75C5C]">
-                Unable to load dashboard statistics.
-              </p>
-
-              <button
-                type="button"
-                onClick={() => dashboardQuery.refetch()}
-                className="mt-4 text-sm font-semibold text-[#D4AF37] hover:text-[#E5C04A]"
-              >
-                Try again
-              </button>
-            </div>
-          ) : (
+          <div aria-busy={dashboardQuery.isLoading}>
+            {dashboardQuery.isLoading ? (
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {Array.from({ length: 6 }).map((_, index) => (
+                  <Skeleton key={index} className="h-32" />
+                ))}
+              </div>
+            ) : dashboardQuery.isError ? (
+              <ErrorState
+                title="Unable to load dashboard statistics."
+                onRetry={() => dashboardQuery.refetch()}
+                retryLabel="Try Again"
+              />
+            ) : (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {statCards.map((stat) => {
                 const Icon = stat.icon;
@@ -435,7 +447,8 @@ export default function AdminDashboardPage() {
                 );
               })}
             </div>
-          )}
+            )}
+          </div>
         </section>
 
         {/* Recent activity */}
@@ -446,43 +459,42 @@ export default function AdminDashboardPage() {
               className="text-[#D4AF37]"
             />
 
+<<<<<<< HEAD
             <h2 className="text-sm font-semibold uppercase tracking-[0.2em] text-[#A1A1A1]">
               Recent Activity
             </h2>
+=======
+              <h2 className="text-sm font-semibold uppercase tracking-[0.2em] text-[#A1A1A1]">
+                Recent Activity
+              </h2>
+            </div>
+
+            {/* Background refetch keeps existing activity visible */}
+            {activityQuery.isFetching && !activityQuery.isLoading && (
+              <RefetchIndicator active label="Updating" />
+            )}
+>>>>>>> e9267dfe5ddf938a4d6ac2efd5e1b0ac0921637d
           </div>
 
           <div className="overflow-hidden rounded border border-[#252525] bg-[#0D0D0F]">
             {activityQuery.isLoading ? (
-              <div className="space-y-4 p-6">
+              <div className="space-y-4 p-6" aria-hidden>
                 {Array.from({ length: 4 }).map((_, index) => (
-                  <div
-                    key={index}
-                    className="h-12 animate-pulse rounded bg-[#111113]"
-                  />
+                  <Skeleton key={index} className="h-12" />
                 ))}
               </div>
             ) : activityQuery.isError ? (
-              <div className="p-6">
-                <p className="text-sm text-[#C75C5C]">
-                  Unable to load recent activity.
-                </p>
-              </div>
+              <ErrorState
+                title="Unable to load recent activity."
+                onRetry={() => activityQuery.refetch()}
+                retryLabel="Try Again"
+              />
             ) : !activityQuery.data?.length ? (
-              <div className="p-8 text-center">
-                <Activity
-                  size={28}
-                  strokeWidth={1.3}
-                  className="mx-auto text-[#555]"
-                />
-
-                <p className="mt-4 text-sm font-medium">
-                  No recent activity
-                </p>
-
-                <p className="mt-1 text-xs text-[#A1A1A1]">
-                  Platform activity will appear here.
-                </p>
-              </div>
+              <EmptyState
+                kicker="ACTIVITY"
+                title="No recent activity"
+                description="Platform activity will appear here."
+              />
             ) : (
               <div className="divide-y divide-[#252525]">
                 {activityQuery.data.map((activity) => (

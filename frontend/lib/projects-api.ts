@@ -86,9 +86,15 @@ export async function getTeamProject(
 }
 
 export async function getProjects(): Promise<Project[]> {
-  const response = await apiClient.get<Project[]>("/projects");
+  const response = await apiClient.get<{
+    items: Project[];
+    total: number;
+    page: number;
+    size: number;
+    pages: number;
+  }>("/projects");
 
-  return response.data;
+  return response.data.items;
 }
 
 export async function getProject(

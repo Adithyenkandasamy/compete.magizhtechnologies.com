@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowLeft,
@@ -18,7 +18,6 @@ import {
 
 export default function AdminUserDetailPage() {
   const params = useParams();
-  const router = useRouter();
   const queryClient = useQueryClient();
 
   const userId = params.user_id as string;
@@ -206,16 +205,6 @@ export default function AdminUserDetailPage() {
 
                   <p className="text-sm text-[#F5F3ED]">
                     {formatDate(user.created_at)}
-                  </p>
-                </div>
-
-                <div>
-                  <p className="mb-2 text-xs uppercase tracking-[0.15em] text-[#A1A1A1]">
-                    Updated
-                  </p>
-
-                  <p className="text-sm text-[#F5F3ED]">
-                    {formatDate(user.updated_at)}
                   </p>
                 </div>
               </div>

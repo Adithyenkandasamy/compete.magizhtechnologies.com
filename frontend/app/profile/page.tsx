@@ -10,6 +10,8 @@ import {
 } from "@/lib/profile-api";
 import { useAuth } from "@/providers/auth-provider";
 import type { Profile } from "@/types/auth";
+import { getErrorMessage } from "@/lib/error-message";
+import { LoadingButton, PageLoader } from "@/components/loading";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -85,12 +87,10 @@ export default function ProfilePage() {
       setProfile(updatedProfile);
 
       setSuccess("Profile updated successfully.");
-    } catch (err: any) {
-      const message =
-        err?.response?.data?.detail ||
-        "Unable to update your profile.";
-
-      setError(message);
+    } catch (err: unknown) {
+      setError(
+        getErrorMessage(err, "Unable to update your profile."),
+      );
     } finally {
       setIsSaving(false);
     }
@@ -99,7 +99,7 @@ export default function ProfilePage() {
   if (isLoading || status === "loading") {
     return (
       <main className="magizh-container py-20">
-        <p className="magizh-muted">Loading profile...</p>
+        <PageLoader label="loading profile" />
       </main>
     );
   }
@@ -281,13 +281,13 @@ export default function ProfilePage() {
               </div>
             )}
 
-            <button
+            <LoadingButton
               type="submit"
-              disabled={isSaving}
-              className="magizh-button disabled:cursor-not-allowed disabled:opacity-50"
+              loading={isSaving}
+              loadingText="Saving..."
             >
-              {isSaving ? "Saving..." : "Save Profile"}
-            </button>
+              Save Profile
+            </LoadingButton>
           </form>
         </section>
 

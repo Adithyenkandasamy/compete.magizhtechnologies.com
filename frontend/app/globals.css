@@ -25,7 +25,7 @@ body {
   margin: 0;
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-body), system-ui, -apple-system, Arial, sans-serif;
 }
 
 button,
@@ -88,6 +88,115 @@ button {
 
 /* Editorial heading */
 .magizh-heading {
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: var(--font-display), Georgia, "Times New Roman", serif;
   letter-spacing: -0.02em;
+}
+
+/* Accent font for labels, kickers, and numerals */
+.magizh-accent {
+  font-family: var(--font-accent), var(--font-geist-sans), sans-serif;
+}
+
+/* Display copy for hero */
+.magizh-display {
+  font-family: var(--font-display), Georgia, serif;
+  letter-spacing: -0.03em;
+}
+
+/* Small-caps kicker / overline */
+.magizh-kicker {
+  font-family: var(--font-accent), var(--font-geist-sans), sans-serif;
+  letter-spacing: 0.25em;
+}
+
+/* ---------------------------------------------------------------------------
+ * Loading & motion utilities
+ * ------------------------------------------------------------------------- */
+
+/* Skeleton base — dark surface with a subtle, restrained pulse. */
+.magizh-skeleton {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  animation: magizh-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes magizh-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+
+/* Thin gold line used by the page loader. */
+.magizh-loader-line {
+  position: relative;
+  overflow: hidden;
+  height: 1px;
+  background: var(--border);
+}
+
+.magizh-loader-line::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  width: 40%;
+  background: var(--gold);
+  animation: magizh-slide 1.1s ease-in-out infinite;
+}
+
+@keyframes magizh-slide {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(350%);
+  }
+}
+
+/* Small gold dot used inside loading buttons / inline states. */
+.magizh-pulse-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 9999px;
+  background: currentColor;
+  animation: magizh-dot 1.1s ease-in-out infinite;
+}
+
+@keyframes magizh-dot {
+  0%,
+  100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* Respect reduced motion preferences — keep only essential opacity fades. */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .magizh-skeleton,
+  .magizh-loader-line::after,
+  .magizh-pulse-dot {
+    animation: none;
+  }
+
+  .magizh-skeleton {
+    opacity: 0.6;
+  }
+
+  .magizh-loader-line::after {
+    opacity: 0;
+  }
+
+  .magizh-pulse-dot {
+    opacity: 0.5;
+  }
 }

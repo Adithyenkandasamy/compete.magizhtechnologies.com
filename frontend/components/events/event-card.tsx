@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import type { Event } from "@/types/events";
 
 type EventCardProps = {
@@ -9,11 +10,14 @@ export function EventCard({ event }: EventCardProps) {
   return (
     <article className="magizh-card overflow-hidden transition-colors duration-200 hover:border-[#D4AF37]">
       {event.banner_url ? (
-        <div className="aspect-[16/8] overflow-hidden border-b border-[#252525]">
-          <img
+        <div className="relative aspect-[16/8] overflow-hidden border-b border-[#252525]">
+          <Image
+            fill
+            unoptimized
             src={event.banner_url}
             alt={event.title}
-            className="h-full w-full object-cover"
+            className="object-cover"
+            sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
           />
         </div>
       ) : (

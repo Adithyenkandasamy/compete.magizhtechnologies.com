@@ -19,26 +19,33 @@ export default function NotificationsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  async function loadNotifications() {
-    try {
-      setLoading(true);
-      setError("");
-
-      const response = await apiClient.get<Notification[]>(
-        "/me/notifications",
-      );
-
-      setNotifications(response.data);
-    } catch (err) {
-      console.error(err);
-      setError("Unable to load notifications.");
-    } finally {
-      setLoading(false);
-    }
-  }
-
   useEffect(() => {
-    loadNotifications();
+    let cancelled = false;
+
+    apiClient
+      .get<Notification[]>("/me/notifications")
+      .then((response) => {
+        if (!cancelled) {
+          setNotifications(response.data);
+          setError("");
+        }
+      })
+      .catch((err) => {
+        console.error(err);
+
+        if (!cancelled) {
+          setError("Unable to load notifications.");
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   async function markAsRead(notificationId: string) {

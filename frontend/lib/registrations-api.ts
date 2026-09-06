@@ -20,11 +20,15 @@ export async function registerForEvent(
 }
 
 export async function getMyRegistrations(): Promise<Registration[]> {
-  const response = await apiClient.get<Registration[]>(
-    "/me/registrations",
-  );
+  const response = await apiClient.get<{
+    items: Registration[];
+    total: number;
+    page: number;
+    size: number;
+    pages: number;
+  }>("/me/registrations");
 
-  return response.data;
+  return response.data.items;
 }
 
 export async function getMyRegistration(

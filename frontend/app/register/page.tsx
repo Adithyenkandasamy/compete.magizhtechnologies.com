@@ -3,8 +3,11 @@
 import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useMutation } from "@tanstack/react-query";
 
 import { useAuth } from "@/providers/auth-provider";
+import { getErrorMessage } from "@/lib/error-message";
+import { LoadingButton } from "@/components/loading";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -15,7 +18,6 @@ export default function RegisterPage() {
   const [password, setPassword] = useState("");
 
   const [error, setError] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     if (status === "authenticated") {
@@ -23,29 +25,31 @@ export default function RegisterPage() {
     }
   }, [status, router]);
 
+  const registerMutation = useMutation({
+    mutationFn: () =>
+      register({
+        full_name: fullName,
+        email,
+        password,
+      }),
+    onSuccess: () => {
+      router.replace("/dashboard");
+    },
+    onError: (err) => {
+      setError(
+        getErrorMessage(
+          err,
+          "Unable to create account. Please try again.",
+        ),
+      );
+    },
+  });
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     setError("");
-    setIsLoading(true);
-
-    try {
-      await register({
-        full_name: fullName,
-        email,
-        password,
-      });
-
-      router.replace("/dashboard");
-    } catch (err: any) {
-      const message =
-        err?.response?.data?.detail ||
-        "Unable to create account. Please try again.";
-
-      setError(message);
-    } finally {
-      setIsLoading(false);
-    }
+    registerMutation.mutate();
   }
 
   return (
@@ -82,7 +86,7 @@ export default function RegisterPage() {
                 onChange={(e) => setFullName(e.target.value)}
                 placeholder="Enter your full name"
                 required
-                disabled={isLoading}
+                disabled={registerMutation.isPending}
                 className="w-full rounded border border-[#252525] bg-[#0A0A0A] px-4 py-3 text-[#F5F3ED] outline-none transition focus:border-[#D4AF37]"
               />
             </div>
@@ -102,7 +106,7 @@ export default function RegisterPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@example.com"
                 required
-                disabled={isLoading}
+                disabled={registerMutation.isPending}
                 className="w-full rounded border border-[#252525] bg-[#0A0A0A] px-4 py-3 text-[#F5F3ED] outline-none transition focus:border-[#D4AF37]"
               />
             </div>
@@ -123,7 +127,7 @@ export default function RegisterPage() {
                 placeholder="Create a password (min. 8 characters)"
                 minLength={8}
                 required
-                disabled={isLoading}
+                disabled={registerMutation.isPending}
                 className="w-full rounded border border-[#252525] bg-[#0A0A0A] px-4 py-3 text-[#F5F3ED] outline-none transition focus:border-[#D4AF37]"
               />
             </div>
@@ -134,13 +138,14 @@ export default function RegisterPage() {
               </div>
             )}
 
-            <button
+<LoadingButton
               type="submit"
-              disabled={isLoading}
-              className="magizh-button w-full disabled:cursor-not-allowed disabled:opacity-50"
+              loading={registerMutation.isPending}
+              loadingText="Creating account..."
+              className="w-full"
             >
-              {isLoading ? "Creating Account..." : "Create Account"}
-            </button>
+              Create Account
+            </LoadingButton>
           </form>
 
           <div className="mt-7 border-t border-[#252525] pt-6 text-center">
