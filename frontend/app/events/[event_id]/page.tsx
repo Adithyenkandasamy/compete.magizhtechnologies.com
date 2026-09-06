@@ -8,6 +8,7 @@ import { useEvent } from "@/hooks/use-events";
 import { registerForEvent } from "@/lib/registrations-api";
 import { getAccessToken } from "@/lib/auth";
 import { getEventSponsors, type Sponsor } from "@/lib/sponsors-api";
+import { getErrorMessage } from "@/lib/error-message";
 
 export default function EventDetailsPage() {
   const params = useParams();
@@ -62,11 +63,12 @@ export default function EventDetailsPage() {
 
       setSuccess("You have successfully registered for this event.");
     } catch (err: any) {
-      const message =
-        err?.response?.data?.detail ||
-        "Unable to register for this event. Please try again.";
-
-      setError(message);
+      setError(
+        getErrorMessage(
+          err,
+          "Unable to register for this event. Please try again.",
+        ),
+      );
     } finally {
       setIsRegistering(false);
     }

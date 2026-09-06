@@ -25,7 +25,7 @@ body {
   margin: 0;
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-body), system-ui, -apple-system, Arial, sans-serif;
 }
 
 button,
@@ -88,6 +88,23 @@ button {
 
 /* Editorial heading */
 .magizh-heading {
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: var(--font-display), Georgia, "Times New Roman", serif;
   letter-spacing: -0.02em;
+}
+
+/* Accent font for labels, kickers, and numerals */
+.magizh-accent {
+  font-family: var(--font-accent), var(--font-geist-sans), sans-serif;
+}
+
+/* Display copy for hero */
+.magizh-display {
+  font-family: var(--font-display), Georgia, serif;
+  letter-spacing: -0.03em;
+}
+
+/* Small-caps kicker / overline */
+.magizh-kicker {
+  font-family: var(--font-accent), var(--font-geist-sans), sans-serif;
+  letter-spacing: 0.25em;
 }

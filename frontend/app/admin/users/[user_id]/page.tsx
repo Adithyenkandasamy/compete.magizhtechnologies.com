@@ -208,16 +208,6 @@ export default function AdminUserDetailPage() {
                     {formatDate(user.created_at)}
                   </p>
                 </div>
-
-                <div>
-                  <p className="mb-2 text-xs uppercase tracking-[0.15em] text-[#A1A1A1]">
-                    Updated
-                  </p>
-
-                  <p className="text-sm text-[#F5F3ED]">
-                    {formatDate(user.updated_at)}
-                  </p>
-                </div>
               </div>
             </div>
           </section>

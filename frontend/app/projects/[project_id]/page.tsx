@@ -106,16 +106,16 @@ export default function PublicProjectDetailsPage() {
               </div>
             </div>
 
-            {(project.repository_url || project.demo_url) && (
+            {(project.github_url || project.demo_url) && (
               <div className="mt-10 border-t border-[#252525] pt-8">
                 <p className="magizh-muted text-xs font-semibold uppercase tracking-[0.2em]">
                   PROJECT LINKS
                 </p>
 
                 <div className="mt-5 flex flex-wrap gap-4">
-                  {project.repository_url && (
+                  {project.github_url && (
                     <a
-                      href={project.repository_url}
+                      href={project.github_url}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="magizh-button"

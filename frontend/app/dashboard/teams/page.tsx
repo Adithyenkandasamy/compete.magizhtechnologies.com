@@ -9,6 +9,7 @@ import { createTeam, getEventTeams } from "@/lib/teams-api";
 import type { Registration } from "@/lib/registrations-api";
 import type { Event } from "@/types/events";
 import type { Team } from "@/lib/teams-api";
+import { getErrorMessage } from "@/lib/error-message";
 
 type EventTeams = {
   event: Event;
@@ -47,11 +48,9 @@ export default function MyTeamsPage() {
 
         setEventTeams(registeredEventData);
       } catch (err: any) {
-        const message =
-          err?.response?.data?.detail ||
-          "Unable to load your teams.";
-
-        setError(message);
+        setError(
+          getErrorMessage(err, "Unable to load your teams."),
+        );
       } finally {
         setIsLoading(false);
       }
@@ -91,11 +90,9 @@ export default function MyTeamsPage() {
       setTeamName("");
       setSuccess("Team created successfully.");
     } catch (err: any) {
-      const message =
-        err?.response?.data?.detail ||
-        "Unable to create the team.";
-
-      setError(message);
+      setError(
+        getErrorMessage(err, "Unable to create the team."),
+      );
     } finally {
       setCreatingForEvent("");
     }

@@ -31,7 +31,11 @@ type QuickLink = {
   title: string;
   description: string;
   href: string;
-  icon: React.ComponentType<{ size?: number; strokeWidth?: number }>;
+  icon: React.ComponentType<{
+    size?: number;
+    strokeWidth?: number;
+    className?: string;
+  }>;
 };
 
 const quickLinks: QuickLink[] = [

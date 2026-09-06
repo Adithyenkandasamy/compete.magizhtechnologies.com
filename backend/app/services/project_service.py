@@ -151,6 +151,25 @@ class ProjectService:
         await self._verify_team_member(project.team_id, user_id)
         return project
 
+    async def get_public_project(self, project_id: uuid.UUID) -> Project:
+        project = await self.project_repo.get_project_by_id(project_id)
+        if not project:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Project not found",
+            )
+
+        return project
+
+    async def list_showcase_projects(
+        self, page: int, size: int
+    ) -> tuple[list[Project], int]:
+        offset = (page - 1) * size
+        projects = await self.project_repo.list_projects(offset, size)
+        total = await self.project_repo.count_projects()
+
+        return projects, total
+
     async def update_project(
         self, project_id: uuid.UUID, user_id: uuid.UUID, data: ProjectUpdate, request: Request
     ) -> Project:

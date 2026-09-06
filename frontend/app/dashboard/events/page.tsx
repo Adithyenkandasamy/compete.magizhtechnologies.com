@@ -7,6 +7,7 @@ import { getMyRegistrations } from "@/lib/registrations-api";
 import { getEvent } from "@/lib/events-api";
 import type { Registration } from "@/lib/registrations-api";
 import type { Event } from "@/types/events";
+import { getErrorMessage } from "@/lib/error-message";
 
 type RegisteredEvent = {
   registration: Registration;
@@ -41,11 +42,12 @@ export default function MyEventsPage() {
 
         setRegisteredEvents(events);
       } catch (err: any) {
-        const message =
-          err?.response?.data?.detail ||
-          "Unable to load your registered events.";
-
-        setError(message);
+        setError(
+          getErrorMessage(
+            err,
+            "Unable to load your registered events.",
+          ),
+        );
       } finally {
         setIsLoading(false);
       }

@@ -10,6 +10,7 @@ import {
   rejectJoinRequest,
 } from "@/lib/team-invites-api";
 import type { JoinRequest } from "@/lib/team-invites-api";
+import { getErrorMessage } from "@/lib/error-message";
 
 export default function TeamJoinRequestsPage() {
   const params = useParams();
@@ -34,11 +35,9 @@ export default function TeamJoinRequestsPage() {
 
       setRequests(data);
     } catch (err: any) {
-      const message =
-        err?.response?.data?.detail ||
-        "Unable to load join requests.";
-
-      setError(message);
+      setError(
+        getErrorMessage(err, "Unable to load join requests."),
+      );
     } finally {
       setIsLoading(false);
     }
@@ -62,11 +61,9 @@ export default function TeamJoinRequestsPage() {
 
       await loadRequests();
     } catch (err: any) {
-      const message =
-        err?.response?.data?.detail ||
-        "Unable to accept this join request.";
-
-      setError(message);
+      setError(
+        getErrorMessage(err, "Unable to accept this join request."),
+      );
     } finally {
       setProcessingRequestId(null);
     }
@@ -84,11 +81,9 @@ export default function TeamJoinRequestsPage() {
 
       await loadRequests();
     } catch (err: any) {
-      const message =
-        err?.response?.data?.detail ||
-        "Unable to reject this join request.";
-
-      setError(message);
+      setError(
+        getErrorMessage(err, "Unable to reject this join request."),
+      );
     } finally {
       setProcessingRequestId(null);
     }

@@ -5,6 +5,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { useAuth } from "@/providers/auth-provider";
+import { getErrorMessage } from "@/lib/error-message";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -38,11 +39,12 @@ export default function LoginPage() {
 
       router.replace(redirectParam || "/dashboard");
     } catch (err: any) {
-      const message =
-        err?.response?.data?.detail ||
-        "Unable to login. Please check your email and password.";
-
-      setError(message);
+      setError(
+        getErrorMessage(
+          err,
+          "Unable to login. Please check your email and password.",
+        ),
+      );
     } finally {
       setIsLoading(false);
     }

@@ -10,6 +10,7 @@ import {
 } from "@/lib/profile-api";
 import { useAuth } from "@/providers/auth-provider";
 import type { Profile } from "@/types/auth";
+import { getErrorMessage } from "@/lib/error-message";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -86,11 +87,9 @@ export default function ProfilePage() {
 
       setSuccess("Profile updated successfully.");
     } catch (err: any) {
-      const message =
-        err?.response?.data?.detail ||
-        "Unable to update your profile.";
-
-      setError(message);
+      setError(
+        getErrorMessage(err, "Unable to update your profile."),
+      );
     } finally {
       setIsSaving(false);
     }

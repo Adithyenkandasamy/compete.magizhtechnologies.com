@@ -10,6 +10,7 @@ import {
 } from "@/lib/team-invites-api";
 import { getAccessToken } from "@/lib/auth";
 import type { TeamInvite } from "@/lib/team-invites-api";
+import { getErrorMessage } from "@/lib/error-message";
 
 export default function TeamInvitePage() {
   const params = useParams();
@@ -33,11 +34,12 @@ export default function TeamInvitePage() {
         const data = await getTeamInvite(token);
         setInvite(data);
       } catch (err: any) {
-        const message =
-          err?.response?.data?.detail ||
-          "This team invitation is invalid or has expired.";
-
-        setError(message);
+        setError(
+          getErrorMessage(
+            err,
+            "This team invitation is invalid or has expired.",
+          ),
+        );
       } finally {
         setIsLoading(false);
       }
@@ -70,11 +72,9 @@ export default function TeamInvitePage() {
         "Your request to join the team has been sent successfully.",
       );
     } catch (err: any) {
-      const message =
-        err?.response?.data?.detail ||
-        "Unable to send your join request.";
-
-      setError(message);
+      setError(
+        getErrorMessage(err, "Unable to send your join request."),
+      );
     } finally {
       setIsRequesting(false);
     }

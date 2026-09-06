@@ -1,5 +1,5 @@
 import axios from "axios";
-import { getAccessToken } from "./auth";
+import { setupInterceptors } from "./api-interceptors";
 
 const apiClient = axios.create({
   baseURL:
@@ -7,20 +7,9 @@ const apiClient = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
-  timeout: 10000,
+  timeout: 30000,
 });
 
-apiClient.interceptors.request.use(
-  (config) => {
-    const token = getAccessToken();
-
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-
-    return config;
-  },
-  (error) => Promise.reject(error),
-);
+setupInterceptors(apiClient);
 
 export default apiClient;

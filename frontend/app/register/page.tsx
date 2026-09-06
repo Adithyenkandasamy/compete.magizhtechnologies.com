@@ -5,6 +5,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { useAuth } from "@/providers/auth-provider";
+import { getErrorMessage } from "@/lib/error-message";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -38,11 +39,12 @@ export default function RegisterPage() {
 
       router.replace("/dashboard");
     } catch (err: any) {
-      const message =
-        err?.response?.data?.detail ||
-        "Unable to create account. Please try again.";
-
-      setError(message);
+      setError(
+        getErrorMessage(
+          err,
+          "Unable to create account. Please try again.",
+        ),
+      );
     } finally {
       setIsLoading(false);
     }

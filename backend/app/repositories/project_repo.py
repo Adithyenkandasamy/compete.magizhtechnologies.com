@@ -44,3 +44,20 @@ class ProjectRepository:
     async def delete_project(self, project: Project) -> None:
         await self.session.delete(project)
         await self.session.flush()
+
+    async def list_projects(
+        self, offset: int, limit: int
+    ) -> list[Project]:
+        stmt = (
+            select(Project)
+            .order_by(Project.created_at.desc())
+            .offset(offset)
+            .limit(limit)
+        )
+        result = await self.session.execute(stmt)
+        return list(result.scalars().all())
+
+    async def count_projects(self) -> int:
+        stmt = select(Project)
+        result = await self.session.execute(stmt)
+        return len(result.scalars().all())

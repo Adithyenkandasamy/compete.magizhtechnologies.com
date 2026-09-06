@@ -1,28 +1,30 @@
 import apiClient from "./api-client";
 import type {
-  AuthResponse,
   LoginRequest,
   RegisterRequest,
+  TokenResponse,
   User,
 } from "@/types/auth";
 
 export async function registerUser(
   data: RegisterRequest,
-): Promise<AuthResponse> {
-  const response = await apiClient.post<AuthResponse>(
-    "/auth/register",
-    data,
-  );
+): Promise<User> {
+  const response = await apiClient.post<User>("/auth/register", data);
 
   return response.data;
 }
 
 export async function loginUser(
   data: LoginRequest,
-): Promise<AuthResponse> {
-  const response = await apiClient.post<AuthResponse>(
+): Promise<TokenResponse> {
+  const body = new URLSearchParams({
+    username: data.email,
+    password: data.password,
+  });
+
+  const response = await apiClient.post<TokenResponse>(
     "/auth/login",
-    data,
+    body,
   );
 
   return response.data;
@@ -34,6 +36,6 @@ export async function getCurrentUser(): Promise<User> {
   return response.data;
 }
 
-export async function logoutUser(): Promise<void> {
-  await apiClient.post("/auth/logout");
+export async function logoutUser(refreshToken: string): Promise<void> {
+  await apiClient.post("/auth/logout", { refresh_token: refreshToken });
 }

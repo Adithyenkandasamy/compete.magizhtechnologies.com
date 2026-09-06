@@ -11,6 +11,7 @@ import {
     updateTeam,
 } from "@/lib/teams-api";
 import type { Team } from "@/lib/teams-api";
+import { getErrorMessage } from "@/lib/error-message";
 
 export default function TeamDetailsPage() {
     const params = useParams();
@@ -40,11 +41,12 @@ export default function TeamDetailsPage() {
                 setTeam(data);
                 setTeamName(data.name);
             } catch (err: any) {
-                const message =
-                    err?.response?.data?.detail ||
-                    "Unable to load this team.";
-
-                setError(message);
+                setError(
+                    getErrorMessage(
+                        err,
+                        "Unable to load this team.",
+                    ),
+                );
             } finally {
                 setIsLoading(false);
             }
@@ -74,11 +76,9 @@ export default function TeamDetailsPage() {
             setTeamName(updatedTeam.name);
             setSuccess("Team updated successfully.");
         } catch (err: any) {
-            const message =
-                err?.response?.data?.detail ||
-                "Unable to update the team.";
-
-            setError(message);
+            setError(
+                getErrorMessage(err, "Unable to update the team."),
+            );
         } finally {
             setIsSaving(false);
         }
@@ -102,11 +102,9 @@ export default function TeamDetailsPage() {
 
             router.push("/dashboard/teams");
         } catch (err: any) {
-            const message =
-                err?.response?.data?.detail ||
-                "Unable to leave the team.";
-
-            setError(message);
+            setError(
+                getErrorMessage(err, "Unable to leave the team."),
+            );
         } finally {
             setIsLeaving(false);
         }
@@ -130,11 +128,9 @@ export default function TeamDetailsPage() {
 
             router.push("/dashboard/teams");
         } catch (err: any) {
-            const message =
-                err?.response?.data?.detail ||
-                "Unable to delete the team.";
-
-            setError(message);
+            setError(
+                getErrorMessage(err, "Unable to delete the team."),
+            );
         } finally {
             setIsDeleting(false);
         }
