@@ -3,6 +3,35 @@ import type { Project, ProjectPayload } from "@/types/project";
 
 export type { Project, ProjectPayload };
 
+/* =========================
+   Submission Types
+========================= */
+
+export type SubmissionStatus =
+  | "DRAFT"
+  | "SUBMITTED"
+  | "UNDER_REVIEW"
+  | "ACCEPTED"
+  | "REJECTED";
+
+export type Submission = {
+  id: string;
+  project_id: string;
+  status: SubmissionStatus | string;
+  submitted_at?: string | null;
+  created_at?: string;
+  updated_at?: string;
+  [key: string]: unknown;
+};
+
+export type SubmissionPayload = {
+  [key: string]: unknown;
+};
+
+/* =========================
+   Project APIs
+========================= */
+
 export async function createProject(
   teamId: string,
   data: ProjectPayload,
@@ -88,4 +117,68 @@ export async function deleteProject(
   projectId: string,
 ): Promise<void> {
   await apiClient.delete(`/projects/${projectId}`);
+}
+
+/* =========================
+   Submission APIs
+========================= */
+
+export async function createSubmission(
+  projectId: string,
+  data: SubmissionPayload = {},
+): Promise<Submission> {
+  const response = await apiClient.post<Submission>(
+    `/projects/${projectId}/submission`,
+    data,
+  );
+
+  return response.data;
+}
+
+export async function getProjectSubmission(
+  projectId: string,
+): Promise<Submission | null> {
+  try {
+    const response = await apiClient.get<Submission>(
+      `/projects/${projectId}/submission`,
+    );
+
+    return response.data;
+  } catch (err: unknown) {
+    const status = (
+      err as {
+        response?: {
+          status?: number;
+        };
+      }
+    )?.response?.status;
+
+    if (status === 404) {
+      return null;
+    }
+
+    throw err;
+  }
+}
+
+export async function submitSubmission(
+  submissionId: string,
+): Promise<Submission> {
+  const response = await apiClient.post<Submission>(
+    `/submissions/${submissionId}/submit`,
+  );
+
+  return response.data;
+}
+
+export async function updateSubmission(
+  submissionId: string,
+  data: SubmissionPayload,
+): Promise<Submission> {
+  const response = await apiClient.put<Submission>(
+    `/submissions/${submissionId}`,
+    data,
+  );
+
+  return response.data;
 }

@@ -2,16 +2,24 @@
 
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 
 import { useEvent } from "@/hooks/use-events";
+import { useEventWebSocket } from "@/hooks/use-event-websocket";
 import { registerForEvent } from "@/lib/registrations-api";
 import { getAccessToken } from "@/lib/auth";
 import { getEventSponsors, type Sponsor } from "@/lib/sponsors-api";
+import {
+  getRealtimeEventType,
+  getRealtimeMessage,
+} from "@/lib/realtime";
+import type { WebSocketMessage } from "@/hooks/use-websocket";
 
 export default function EventDetailsPage() {
   const params = useParams();
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   const eventId = params.event_id as string;
 
@@ -23,6 +31,45 @@ export default function EventDetailsPage() {
   const [isRegistering, setIsRegistering] = useState(false);
   const [success, setSuccess] = useState("");
   const [error, setError] = useState("");
+  const [realtimeMessage, setRealtimeMessage] = useState("");
+
+  const handleRealtimeMessage = useCallback(
+    (message: WebSocketMessage) => {
+      const eventType = getRealtimeEventType(message);
+      const messageText = getRealtimeMessage(message);
+
+      setRealtimeMessage(messageText);
+
+      if (
+        eventType === "created" ||
+        eventType === "updated" ||
+        eventType === "deleted" ||
+        eventType === "published" ||
+        eventType === "unpublished" ||
+        eventType === "status_changed"
+      ) {
+        queryClient.invalidateQueries({
+          queryKey: ["event", eventId],
+        });
+
+        queryClient.invalidateQueries({
+          queryKey: ["events"],
+        });
+      }
+    },
+    [eventId, queryClient],
+  );
+
+  const {
+    connected: realtimeConnected,
+    connecting: realtimeConnecting,
+    reconnect: reconnectRealtime,
+  } = useEventWebSocket(eventId, {
+    enabled: Boolean(eventId && getAccessToken()),
+    reconnect: true,
+    reconnectDelay: 3000,
+    onMessage: handleRealtimeMessage,
+  });
 
   useEffect(() => {
     async function loadSponsors() {
@@ -61,6 +108,10 @@ export default function EventDetailsPage() {
       await registerForEvent(eventId);
 
       setSuccess("You have successfully registered for this event.");
+
+      queryClient.invalidateQueries({
+        queryKey: ["event", eventId],
+      });
     } catch (err: any) {
       const message =
         err?.response?.data?.detail ||
@@ -107,6 +158,50 @@ export default function EventDetailsPage() {
       >
         ← Back to Events
       </Link>
+
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <span
+            className={`h-2 w-2 rounded-full ${
+              realtimeConnected
+                ? "bg-[#6FAF7B]"
+                : realtimeConnecting
+                  ? "animate-pulse bg-[#D4AF37]"
+                  : "bg-[#A1A1A1]"
+            }`}
+          />
+
+          <span className="text-xs font-semibold uppercase tracking-[0.2em] text-[#A1A1A1]">
+            {realtimeConnected
+              ? "Live Updates"
+              : realtimeConnecting
+                ? "Connecting..."
+                : "Live Updates Offline"}
+          </span>
+        </div>
+
+        {!realtimeConnected && !realtimeConnecting && getAccessToken() && (
+          <button
+            type="button"
+            onClick={reconnectRealtime}
+            className="text-xs font-semibold uppercase tracking-wider text-[#D4AF37] transition-colors hover:text-[#E5C04A]"
+          >
+            Reconnect
+          </button>
+        )}
+      </div>
+
+      {realtimeMessage && (
+        <div className="mb-8 rounded border border-[#D4AF37]/30 bg-[#D4AF37]/5 px-4 py-3">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#D4AF37]">
+            Realtime Update
+          </p>
+
+          <p className="mt-1 text-sm text-[#F5F3ED]">
+            {realtimeMessage}
+          </p>
+        </div>
+      )}
 
       {event.banner_url && (
         <div className="mb-10 aspect-[16/6] overflow-hidden rounded-lg border border-[#252525]">

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Activity,
@@ -24,14 +24,27 @@ import {
   WifiOff,
 } from "lucide-react";
 
-import { getAdminDashboard, getAdminDashboardActivity } from "@/lib/admin-api";
-import { useWebSocket, type WebSocketMessage } from "@/hooks/use-websocket";
+import {
+  getAdminDashboard,
+  getAdminDashboardActivity,
+} from "@/lib/admin-api";
+import {
+  useWebSocket,
+  type WebSocketMessage,
+} from "@/hooks/use-websocket";
+import {
+  getRealtimeEventType,
+  getRealtimeMessage,
+} from "@/lib/realtime";
 
 type QuickLink = {
   title: string;
   description: string;
   href: string;
-  icon: React.ComponentType<{ size?: number; strokeWidth?: number }>;
+  icon: React.ComponentType<{
+    size?: number;
+    strokeWidth?: number;
+  }>;
 };
 
 const quickLinks: QuickLink[] = [
@@ -113,20 +126,16 @@ function formatDate(value: string) {
   return date.toLocaleString();
 }
 
-function getMessageText(message: WebSocketMessage) {
-  if (typeof message.message === "string") {
-    return message.message;
+function getEventLabel(message: WebSocketMessage) {
+  const eventType = getRealtimeEventType(message);
+
+  if (eventType === "unknown") {
+    return "Realtime";
   }
 
-  if (typeof message.event === "string") {
-    return message.event;
-  }
-
-  if (typeof message.type === "string") {
-    return message.type;
-  }
-
-  return "Live platform update received";
+  return eventType
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (character) => character.toUpperCase());
 }
 
 export default function AdminDashboardPage() {
@@ -145,17 +154,27 @@ export default function AdminDashboardPage() {
     queryFn: getAdminDashboardActivity,
   });
 
-  const handleRealtimeMessage = (message: WebSocketMessage) => {
-    setLastRealtimeMessage(message);
+  const handleRealtimeMessage = useCallback(
+    (message: WebSocketMessage) => {
+      setLastRealtimeMessage(message);
 
-    queryClient.invalidateQueries({
-      queryKey: ["admin-dashboard"],
-    });
+      /*
+       * WebSocket only informs the frontend that something changed.
+       * PostgreSQL remains the source of truth.
+       *
+       * Therefore, invalidate the relevant queries and fetch the
+       * latest dashboard data from the REST API.
+       */
+      queryClient.invalidateQueries({
+        queryKey: ["admin-dashboard"],
+      });
 
-    queryClient.invalidateQueries({
-      queryKey: ["admin-dashboard-activity"],
-    });
-  };
+      queryClient.invalidateQueries({
+        queryKey: ["admin-dashboard-activity"],
+      });
+    },
+    [queryClient],
+  );
 
   const {
     connected: websocketConnected,
@@ -258,17 +277,22 @@ export default function AdminDashboardPage() {
           <button
             type="button"
             onClick={handleRefresh}
-            disabled={dashboardQuery.isFetching || activityQuery.isFetching}
+            disabled={
+              dashboardQuery.isFetching ||
+              activityQuery.isFetching
+            }
             className="inline-flex items-center justify-center gap-2 rounded border border-[#252525] px-5 py-3 text-sm font-semibold text-[#F5F3ED] transition hover:border-[#D4AF37] hover:text-[#D4AF37] disabled:cursor-not-allowed disabled:opacity-50"
           >
             <RefreshCw
               size={16}
               className={
-                dashboardQuery.isFetching || activityQuery.isFetching
+                dashboardQuery.isFetching ||
+                activityQuery.isFetching
                   ? "animate-spin"
                   : ""
               }
             />
+
             Refresh
           </button>
         </div>
@@ -327,19 +351,21 @@ export default function AdminDashboardPage() {
           </div>
 
           {lastRealtimeMessage && (
-            <div className="mt-3 flex items-center gap-2 rounded border border-[#D4AF37]/30 bg-[#0D0D0F] px-4 py-3 text-sm">
-              <Bell
-                size={16}
-                className="shrink-0 text-[#D4AF37]"
-              />
+            <div className="mt-3 rounded border border-[#D4AF37]/30 bg-[#0D0D0F] px-4 py-3">
+              <div className="flex items-center gap-2">
+                <Bell
+                  size={16}
+                  className="shrink-0 text-[#D4AF37]"
+                />
 
-              <span className="text-[#A1A1A1]">
-                Live update:
-              </span>
+                <span className="text-xs font-semibold uppercase tracking-[0.15em] text-[#D4AF37]">
+                  {getEventLabel(lastRealtimeMessage)}
+                </span>
+              </div>
 
-              <span className="font-medium text-[#F5F3ED]">
-                {getMessageText(lastRealtimeMessage)}
-              </span>
+              <p className="mt-2 pl-6 text-sm text-[#F5F3ED]">
+                {getRealtimeMessage(lastRealtimeMessage)}
+              </p>
             </div>
           )}
         </section>
@@ -414,17 +440,15 @@ export default function AdminDashboardPage() {
 
         {/* Recent activity */}
         <section className="mb-12">
-          <div className="mb-6 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Activity
-                size={18}
-                className="text-[#D4AF37]"
-              />
+          <div className="mb-6 flex items-center gap-2">
+            <Activity
+              size={18}
+              className="text-[#D4AF37]"
+            />
 
-              <h2 className="text-sm font-semibold uppercase tracking-[0.2em] text-[#A1A1A1]">
-                Recent Activity
-              </h2>
-            </div>
+            <h2 className="text-sm font-semibold uppercase tracking-[0.2em] text-[#A1A1A1]">
+              Recent Activity
+            </h2>
           </div>
 
           <div className="overflow-hidden rounded border border-[#252525] bg-[#0D0D0F]">
