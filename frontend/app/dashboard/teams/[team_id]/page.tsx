@@ -10,6 +10,7 @@ import {
     deleteTeam,
     getJoinRequests,
     getTeam,
+    generateInvite,
     leaveTeam,
     rejectJoinRequest,
     removeTeamMember,
@@ -75,6 +76,10 @@ export default function TeamDetailsPage() {
     const [success, setSuccess] = useState("");
     const [latestRealtimeMessage, setLatestRealtimeMessage] =
         useState("");
+
+    const [inviteLink, setInviteLink] = useState("");
+    const [isGeneratingInvite, setIsGeneratingInvite] = useState(false);
+    const [inviteCopied, setInviteCopied] = useState(false);
 
     /*
      * Load team details.
@@ -322,6 +327,44 @@ export default function TeamDetailsPage() {
             );
         } finally {
             setIsDeleting(false);
+        }
+    }
+
+    /*
+     * Generate invite link (leader only).
+     */
+    async function handleGenerateInvite() {
+        setError("");
+        setSuccess("");
+        setInviteLink("");
+        setIsGeneratingInvite(true);
+
+        try {
+            const data = await generateInvite(teamId);
+            const fullUrl = `${window.location.origin}/join/${data.token}`;
+            setInviteLink(fullUrl);
+            setSuccess("Invite link generated. Share it with teammates.");
+        } catch (err: unknown) {
+            setError(
+                getErrorMessage(err, "Unable to generate invite link."),
+            );
+        } finally {
+            setIsGeneratingInvite(false);
+        }
+    }
+
+    /*
+     * Copy invite link to clipboard.
+     */
+    async function handleCopyInvite() {
+        if (!inviteLink) return;
+
+        try {
+            await navigator.clipboard.writeText(inviteLink);
+            setInviteCopied(true);
+            setTimeout(() => setInviteCopied(false), 2000);
+        } catch {
+            setError("Unable to copy link. Copy it manually.");
         }
     }
 
@@ -957,6 +1000,19 @@ export default function TeamDetailsPage() {
                         <div className="mt-6 space-y-3">
                             <button
                                 type="button"
+                                onClick={handleGenerateInvite}
+                                disabled={
+                                    isGeneratingInvite || isLeaving || isDeleting
+                                }
+                                className="w-full rounded border border-[#D4AF37]/50 px-4 py-3 text-sm font-semibold text-[#D4AF37] transition-colors hover:bg-[#D4AF37]/10 disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                                {isGeneratingInvite
+                                    ? "Generating..."
+                                    : "Generate Invite Link"}
+                            </button>
+
+                            <button
+                                type="button"
                                 onClick={handleLeaveTeam}
                                 disabled={
                                     isLeaving || isDeleting
@@ -981,6 +1037,33 @@ export default function TeamDetailsPage() {
                                     : "Delete Team"}
                             </button>
                         </div>
+
+                        {inviteLink && (
+                            <div className="mt-5 rounded border border-[#252525] bg-[#0A0A0A] p-4">
+                                <p className="magizh-gold text-[10px] font-semibold uppercase tracking-[0.2em]">
+                                    Invite Link
+                                </p>
+
+                                <p className="magizh-muted mt-2 text-xs leading-5">
+                                    Share this link with other participants so
+                                    they can request to join this team.
+                                </p>
+
+                                <code className="mt-3 block break-all rounded border border-[#252525] bg-[#0A0A0A] px-3 py-2 text-[11px] text-[#F5F3ED]">
+                                    {inviteLink}
+                                </code>
+
+                                <button
+                                    type="button"
+                                    onClick={handleCopyInvite}
+                                    className="mt-3 w-full rounded border border-[#252525] px-3 py-2 text-xs font-semibold uppercase tracking-wider transition-colors hover:border-[#D4AF37] hover:text-[#D4AF37]"
+                                >
+                                    {inviteCopied
+                                        ? "Copied!"
+                                        : "Copy Link"}
+                                </button>
+                            </div>
+                        )}
                     </div>
 
                     {/* Realtime */}

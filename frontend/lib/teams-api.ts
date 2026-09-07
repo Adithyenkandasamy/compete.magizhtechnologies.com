@@ -45,6 +45,22 @@ export type TeamInvite = {
   [key: string]: unknown;
 };
 
+export type InviteInfo = {
+  team_id: string;
+  team_name: string;
+  event: {
+    id: string;
+    title: string;
+    event_type: string;
+    start_date?: string | null;
+    end_date?: string | null;
+    mode: string;
+  };
+  member_count: number;
+  max_members: number;
+  is_full: boolean;
+};
+
 export type JoinInviteResponse = {
   message?: string;
   status?: string;
@@ -189,6 +205,43 @@ export async function requestToJoinTeam(
 ): Promise<JoinInviteResponse> {
   const response = await apiClient.post<JoinInviteResponse>(
     `/team-invites/${encodeURIComponent(token)}/request`,
+  );
+
+  return response.data;
+}
+
+/*
+ * Generate or regenerate an invite link (leader only).
+ */
+export async function generateInvite(
+  teamId: string,
+): Promise<{ team_id: string; token: string; created_at: string }> {
+  const response = await apiClient.post<{
+    team_id: string;
+    token: string;
+    created_at: string;
+  }>(`/teams/${teamId}/invite`);
+
+  return response.data;
+}
+
+/*
+ * Revoke an invite link (leader only).
+ */
+export async function revokeInvite(
+  teamId: string,
+): Promise<void> {
+  await apiClient.delete(`/teams/${teamId}/invite`);
+}
+
+/*
+ * Get public info about an invite (no auth required).
+ */
+export async function getInviteInfo(
+  token: string,
+): Promise<InviteInfo> {
+  const response = await apiClient.get<InviteInfo>(
+    `/team-invites/${encodeURIComponent(token)}`,
   );
 
   return response.data;
