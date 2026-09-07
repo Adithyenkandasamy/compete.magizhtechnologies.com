@@ -9,9 +9,27 @@ import { useAuth } from "@/providers/auth-provider";
 import { getErrorMessage } from "@/lib/error-message";
 import { LoadingButton } from "@/components/loading";
 
+function getRedirectTarget(
+  user: { role?: string } | null | undefined,
+): string {
+  if (typeof window !== "undefined") {
+    const redirect = new URLSearchParams(window.location.search).get(
+      "redirect",
+    );
+
+    // Only allow same-site paths (no open redirect).
+    if (redirect && redirect.startsWith("/") && !redirect.startsWith("//")) {
+      return redirect;
+    }
+  }
+
+  const isAdmin = user?.role === "ADMIN" || user?.role === "SUPER_ADMIN";
+  return isAdmin ? "/admin" : "/dashboard";
+}
+
 export default function LoginPage() {
   const router = useRouter();
-  const { login, status } = useAuth();
+  const { login, status, user } = useAuth();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -20,19 +38,14 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (status === "authenticated") {
-      router.replace("/dashboard");
+      router.replace(getRedirectTarget(user));
     }
-  }, [status, router]);
+  }, [status, user, router]);
 
   const loginMutation = useMutation({
     mutationFn: () => login(email, password),
-    onSuccess: () => {
-      const redirectParam =
-        typeof window !== "undefined"
-          ? new URLSearchParams(window.location.search).get("redirect")
-          : null;
-
-      router.replace(redirectParam || "/dashboard");
+    onSuccess: (loggedUser) => {
+      router.replace(getRedirectTarget(loggedUser));
     },
     onError: (err) => {
       setError(

@@ -114,7 +114,11 @@ export function setupInterceptors(client: AxiosInstance): void {
       // Never try to refresh in response to an auth endpoint itself.
       if (!config || shouldSkipRefresh(config.url)) {
         clearTokens();
-        redirectToLogin();
+        // Logout and login endpoints handle their own redirect/error flow.
+        // Only redirect for refresh failures (truly expired session).
+        if (config?.url?.includes("/auth/refresh")) {
+          redirectToLogin();
+        }
         return Promise.reject(error);
       }
 

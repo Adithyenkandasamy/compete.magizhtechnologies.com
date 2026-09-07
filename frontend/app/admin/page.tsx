@@ -479,7 +479,7 @@ export default function AdminDashboardPage() {
 
               return (
                 <a
-                  key={link.href}
+                  key={link.title}
                   href={link.href}
                   className="group rounded border border-[#252525] bg-[#0D0D0F] p-6 transition hover:border-[#D4AF37]/60"
                 >

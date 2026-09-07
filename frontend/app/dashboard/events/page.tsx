@@ -27,6 +27,7 @@ export default function MyEventsPage() {
   const [error, setError] = useState("");
 
   const [creatingForEvent, setCreatingForEvent] = useState("");
+  const [isCreating, setIsCreating] = useState(false);
   const [teamName, setTeamName] = useState("");
   const [teamError, setTeamError] = useState("");
   const [teamSuccess, setTeamSuccess] = useState("");
@@ -95,7 +96,7 @@ export default function MyEventsPage() {
 
     setTeamError("");
     setTeamSuccess("");
-    setCreatingForEvent(eventId);
+    setIsCreating(true);
 
     try {
       const newTeam = await createTeam(eventId, {
@@ -118,6 +119,7 @@ export default function MyEventsPage() {
       );
     } finally {
       setCreatingForEvent("");
+      setIsCreating(false);
     }
   }
 
@@ -267,7 +269,7 @@ export default function MyEventsPage() {
 
                         <button
                           type="button"
-                          disabled={creatingForEvent === event.id}
+                          disabled={isCreating}
                           onClick={() =>
                             handleCreateTeam(event.id)
                           }
