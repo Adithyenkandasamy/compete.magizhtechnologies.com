@@ -20,6 +20,8 @@ from app.models.enums import (  # noqa: F401
     EventType,
     NotificationType,
     RegistrationStatus,
+    RoundStatus,
+    RoundType,
     SecurityAlertSeverity,
     SecurityAlertStatus,
     SubmissionStatus,
@@ -31,7 +33,7 @@ from app.models.enums import (  # noqa: F401
 from app.models.user import Profile, User  # noqa: F401
 
 # Events
-from app.models.event import Event, EventSponsor  # noqa: F401
+from app.models.event import Event, EventRound, EventSponsor  # noqa: F401
 
 # Participation
 from app.models.registration import Registration  # noqa: F401

@@ -6,7 +6,9 @@ from fastapi import APIRouter, Query
 from app.api.deps import SessionDep
 from app.models.enums import EventStatus, EventType
 from app.schemas.event import EventPublicResponse, PaginatedResponse
+from app.schemas.round import EventRoundResponse
 from app.services.event_service import EventService
+from app.services.round_service import RoundService
 
 router = APIRouter(prefix="/events", tags=["Events (Public)"])
 
@@ -55,3 +57,20 @@ async def get_event(
     service = EventService(session)
     event = await service.get_event_or_404(event_id, public_only=True)
     return event # type: ignore
+
+
+@router.get(
+    "/{event_id}/rounds",
+    response_model=list[EventRoundResponse],
+    summary="Get public event rounds",
+)
+async def get_event_rounds(
+    event_id: uuid.UUID,
+    session: SessionDep,
+) -> list[EventRoundResponse]:
+    """
+    Get the ordered round pipeline for a published event (404 for drafts).
+    """
+    await EventService(session).get_event_or_404(event_id, public_only=True)
+    service = RoundService(session)
+    return await service.list_rounds(event_id)  # type: ignore

@@ -11,11 +11,27 @@ import type {
 
 export type AdminDashboardStats = {
   total_users: number;
+  total_students: number;
   total_events: number;
+  total_hackathons: number;
   total_registrations: number;
   total_teams: number;
   total_projects: number;
   total_submissions: number;
+};
+
+export type HackathonOverviewItem = {
+  id: string;
+  title: string;
+  status: string;
+  registrations: number;
+  teams: number;
+  students: number;
+};
+
+export type AdminDashboardResponse = {
+  stats: AdminDashboardStats;
+  hackathons: HackathonOverviewItem[];
 };
 
 export type AdminActivity = {
@@ -25,8 +41,37 @@ export type AdminActivity = {
   created_at: string;
 };
 
-export async function getAdminDashboard(): Promise<AdminDashboardStats> {
-  const response = await apiClient.get<AdminDashboardStats>(
+export type EventStudent = {
+  id: string;
+  email: string;
+  full_name?: string | null;
+  registration_status: string;
+  registered_at: string;
+};
+
+export type EventTeamOverview = {
+  id: string;
+  name: string;
+  leader_id: string;
+  leader_name?: string | null;
+  member_count: number;
+};
+
+export type EventOverviewResponse = {
+  event_id: string;
+  title: string;
+  status: string;
+  event_type: string;
+  start_date?: string | null;
+  end_date?: string | null;
+  students: EventStudent[];
+  teams: EventTeamOverview[];
+  total_students: number;
+  total_teams: number;
+};
+
+export async function getAdminDashboard(): Promise<AdminDashboardResponse> {
+  const response = await apiClient.get<AdminDashboardResponse>(
     "/admin/dashboard",
   );
 
@@ -36,6 +81,16 @@ export async function getAdminDashboard(): Promise<AdminDashboardStats> {
 export async function getAdminDashboardActivity(): Promise<AdminActivity[]> {
   const response = await apiClient.get<AdminActivity[]>(
     "/admin/dashboard/activity",
+  );
+
+  return response.data;
+}
+
+export async function getEventOverview(
+  eventId: string,
+): Promise<EventOverviewResponse> {
+  const response = await apiClient.get<EventOverviewResponse>(
+    `/admin/events/${eventId}/overview`,
   );
 
   return response.data;

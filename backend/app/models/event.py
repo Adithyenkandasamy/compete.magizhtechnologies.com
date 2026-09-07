@@ -25,13 +25,104 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import text
 
 from app.database.session import Base
-from app.models.enums import EventMode, EventStatus, EventType
+from app.models.enums import (
+    EventMode,
+    EventStatus,
+    EventType,
+    RoundStatus,
+    RoundType,
+)
 
 if TYPE_CHECKING:
     from app.models.certificate import Certificate
     from app.models.project import Project, Submission
     from app.models.registration import Registration
     from app.models.team import Team
+
+
+class EventRound(Base):
+    """A configurable stage in an event's (hackathon) journey.
+
+    Rounds form an ordered pipeline, e.g.:
+      qualifier (submit github/linkedin/portfolio) →
+      idea submission →
+      main 48h/32h online-or-offline hack round.
+    """
+
+    __tablename__ = "event_rounds"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+        server_default=text("gen_random_uuid()"),
+    )
+    event_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("events.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    title: Mapped[str] = mapped_column(String(255), nullable=False)
+    round_type: Mapped[RoundType] = mapped_column(
+        SAEnum(RoundType, name="roundtype", create_type=True),
+        nullable=False,
+    )
+    order: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+
+    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+
+    # Qualifier criteria — e.g. which profile/portfolio link is expected.
+    criteria_url: Mapped[Optional[str]] = mapped_column(String(2048), nullable=True)
+    # Duration of the main hack round (48 or 32 hours, etc.)
+    duration_hours: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+
+    mode: Mapped[Optional[EventMode]] = mapped_column(
+        SAEnum(EventMode, name="eventmode", create_type=True), nullable=True
+    )
+
+    starts_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    ends_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+
+    status: Mapped[RoundStatus] = mapped_column(
+        SAEnum(RoundStatus, name="roundstatus", create_type=True),
+        nullable=False,
+        default=RoundStatus.UPCOMING,
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=False,
+    )
+
+    event: Mapped["Event"] = relationship("Event", back_populates="rounds")
+
+    __table_args__ = (
+        Index("ix_event_rounds_status", "status"),
+        # Round ordering is unique within a single event.
+        Index(
+            "uq_event_rounds_event_order",
+            "event_id",
+            "order",
+            unique=True,
+        ),
+        CheckConstraint(
+            "duration_hours IS NULL OR duration_hours > 0",
+            name="ck_event_rounds_duration_positive",
+        ),
+    )
+
+    def __repr__(self) -> str:
+        return f"<EventRound id={self.id} title={self.title} event_id={self.event_id}>"
 
 
 class Event(Base):
@@ -108,6 +199,12 @@ class Event(Base):
     )
     sponsors: Mapped[list["EventSponsor"]] = relationship(
         "EventSponsor", back_populates="event", cascade="all, delete-orphan"
+    )
+    rounds: Mapped[list["EventRound"]] = relationship(
+        "EventRound",
+        back_populates="event",
+        cascade="all, delete-orphan",
+        order_by="EventRound.order",
     )
 
     __table_args__ = (

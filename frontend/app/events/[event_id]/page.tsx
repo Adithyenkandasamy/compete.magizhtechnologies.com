@@ -10,16 +10,14 @@ import { useEventWebSocket } from "@/hooks/use-event-websocket";
 import { registerForEvent } from "@/lib/registrations-api";
 import { getAccessToken } from "@/lib/auth";
 import { getEventSponsors, type Sponsor } from "@/lib/sponsors-api";
-<<<<<<< HEAD
+import { getPublicRounds, type EventRound } from "@/lib/admin-rounds-api";
 import {
   getRealtimeEventType,
   getRealtimeMessage,
 } from "@/lib/realtime";
 import type { WebSocketMessage } from "@/hooks/use-websocket";
-=======
 import { getErrorMessage } from "@/lib/error-message";
 import { ErrorState, LoadingButton, PageLoader, SmartImage } from "@/components/loading";
->>>>>>> e9267dfe5ddf938a4d6ac2efd5e1b0ac0921637d
 
 export default function EventDetailsPage() {
   const params = useParams();
@@ -32,6 +30,9 @@ export default function EventDetailsPage() {
 
   const [sponsors, setSponsors] = useState<Sponsor[]>([]);
   const [sponsorsLoading, setSponsorsLoading] = useState(true);
+
+  const [rounds, setRounds] = useState<EventRound[]>([]);
+  const [roundsLoading, setRoundsLoading] = useState(true);
 
   const [isRegistering, setIsRegistering] = useState(false);
   const [success, setSuccess] = useState("");
@@ -96,6 +97,26 @@ export default function EventDetailsPage() {
     }
   }, [eventId]);
 
+  useEffect(() => {
+    async function loadRounds() {
+      try {
+        setRoundsLoading(true);
+
+        const data = await getPublicRounds(eventId);
+        setRounds(data);
+      } catch (err) {
+        console.error("Unable to load rounds:", err);
+        setRounds([]);
+      } finally {
+        setRoundsLoading(false);
+      }
+    }
+
+    if (eventId) {
+      loadRounds();
+    }
+  }, [eventId]);
+
   async function handleRegister() {
     setSuccess("");
     setError("");
@@ -113,18 +134,9 @@ export default function EventDetailsPage() {
       await registerForEvent(eventId);
 
       setSuccess("You have successfully registered for this event.");
-<<<<<<< HEAD
-
-      queryClient.invalidateQueries({
+queryClient.invalidateQueries({
         queryKey: ["event", eventId],
       });
-    } catch (err: any) {
-      const message =
-        err?.response?.data?.detail ||
-        "Unable to register for this event. Please try again.";
-
-      setError(message);
-=======
     } catch (err: unknown) {
       setError(
         getErrorMessage(
@@ -132,7 +144,6 @@ export default function EventDetailsPage() {
           "Unable to register for this event. Please try again.",
         ),
       );
->>>>>>> e9267dfe5ddf938a4d6ac2efd5e1b0ac0921637d
     } finally {
       setIsRegistering(false);
     }
@@ -249,6 +260,94 @@ export default function EventDetailsPage() {
               <p className="magizh-muted mt-4 whitespace-pre-line leading-7">
                 {event.rules}
               </p>
+            </div>
+          )}
+
+          {!roundsLoading && rounds.length > 0 && (
+            <div className="mt-14">
+              <p className="magizh-gold text-xs font-semibold uppercase tracking-[0.25em]">
+                HOW IT WORKS
+              </p>
+
+              <h2 className="magizh-heading mt-3 text-2xl font-bold md:text-3xl">
+                Hackathon Pipeline
+              </h2>
+
+              <ol className="mt-10 space-y-6">
+                {rounds.map((round, index) => (
+                  <li
+                    key={round.id}
+                    className="magizh-card relative p-6 md:p-8"
+                  >
+                    <div className="flex flex-wrap items-center gap-3">
+                      <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#D4AF37] text-sm font-bold text-black">
+                        {index + 1}
+                      </span>
+
+                      <span className="rounded border border-[#252525] px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.15em] text-[#A1A1A1]">
+                        {round.round_type.replaceAll("_", " ")}
+                      </span>
+
+                      <span
+                        className={`rounded border px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.15em] ${
+                          round.status === "OPEN"
+                            ? "border-[#6FAF7B] text-[#6FAF7B]"
+                            : round.status === "CLOSED"
+                              ? "border-[#777] text-[#777]"
+                              : "border-[#252525] text-[#A1A1A1]"
+                        }`}
+                      >
+                        {round.status.replaceAll("_", " ")}
+                      </span>
+                    </div>
+
+                    <h3 className="magizh-heading mt-5 text-2xl font-bold">
+                      {round.title}
+                    </h3>
+
+                    {round.description && (
+                      <p className="magizh-muted mt-3 text-sm leading-7">
+                        {round.description}
+                      </p>
+                    )}
+
+                    <div className="mt-4 flex flex-wrap gap-x-6 gap-y-2 text-xs text-[#A1A1A1]">
+                      {round.duration_hours !== null && (
+                        <span>{round.duration_hours} hours</span>
+                      )}
+
+                      {round.mode && (
+                        <span>{round.mode.replaceAll("_", " ")}</span>
+                      )}
+
+                      {round.starts_at && (
+                        <span>
+                          Starts{" "}
+                          {new Date(round.starts_at).toLocaleString()}
+                        </span>
+                      )}
+
+                      {round.ends_at && (
+                        <span>
+                          Ends{" "}
+                          {new Date(round.ends_at).toLocaleString()}
+                        </span>
+                      )}
+
+                      {round.criteria_url && (
+                        <a
+                          href={round.criteria_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="break-all text-[#D4AF37] hover:underline"
+                        >
+                          {round.criteria_url}
+                        </a>
+                      )}
+                    </div>
+                  </li>
+                ))}
+              </ol>
             </div>
           )}
 

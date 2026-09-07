@@ -1,52 +1,36 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import Link from "next/link";
+import { useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
   Activity,
   BarChart3,
-  Bell,
   BookOpen,
   CalendarDays,
   CheckCircle2,
   ChevronRight,
   FileCheck2,
-  FolderKanban,
   Gavel,
+  GraduationCap,
   LayoutDashboard,
-  Radio,
   RefreshCw,
   Shield,
   Trophy,
   UserRound,
   Users,
-  Wifi,
-  WifiOff,
 } from "lucide-react";
 
-<<<<<<< HEAD
 import {
   getAdminDashboard,
   getAdminDashboardActivity,
 } from "@/lib/admin-api";
-import {
-  useWebSocket,
-  type WebSocketMessage,
-} from "@/hooks/use-websocket";
-import {
-  getRealtimeEventType,
-  getRealtimeMessage,
-} from "@/lib/realtime";
-=======
-import { getAdminDashboard, getAdminDashboardActivity } from "@/lib/admin-api";
-import { useWebSocket, type WebSocketMessage } from "@/hooks/use-websocket";
 import {
   EmptyState,
   ErrorState,
   RefetchIndicator,
   Skeleton,
 } from "@/components/loading";
->>>>>>> e9267dfe5ddf938a4d6ac2efd5e1b0ac0921637d
 
 type QuickLink = {
   title: string;
@@ -55,10 +39,7 @@ type QuickLink = {
   icon: React.ComponentType<{
     size?: number;
     strokeWidth?: number;
-<<<<<<< HEAD
-=======
     className?: string;
->>>>>>> e9267dfe5ddf938a4d6ac2efd5e1b0ac0921637d
   }>;
 };
 
@@ -90,7 +71,7 @@ const quickLinks: QuickLink[] = [
   {
     title: "Results",
     description: "Manage event results and publication.",
-    href: "/admin/results",
+    href: "/admin/events",
     icon: Trophy,
   },
   {
@@ -129,6 +110,12 @@ const quickLinks: QuickLink[] = [
     href: "/admin/analytics",
     icon: BarChart3,
   },
+  {
+    title: "Evaluations",
+    description: "Review submission evaluations.",
+    href: "/admin/evaluations",
+    icon: FileCheck2,
+  },
 ];
 
 function formatDate(value: string) {
@@ -141,24 +128,7 @@ function formatDate(value: string) {
   return date.toLocaleString();
 }
 
-function getEventLabel(message: WebSocketMessage) {
-  const eventType = getRealtimeEventType(message);
-
-  if (eventType === "unknown") {
-    return "Realtime";
-  }
-
-  return eventType
-    .replace(/_/g, " ")
-    .replace(/\b\w/g, (character) => character.toUpperCase());
-}
-
 export default function AdminDashboardPage() {
-  const queryClient = useQueryClient();
-
-  const [lastRealtimeMessage, setLastRealtimeMessage] =
-    useState<WebSocketMessage | null>(null);
-
   const dashboardQuery = useQuery({
     queryKey: ["admin-dashboard"],
     queryFn: getAdminDashboard,
@@ -169,54 +139,7 @@ export default function AdminDashboardPage() {
     queryFn: getAdminDashboardActivity,
   });
 
-  const handleRealtimeMessage = useCallback(
-    (message: WebSocketMessage) => {
-      setLastRealtimeMessage(message);
-
-      /*
-       * WebSocket only informs the frontend that something changed.
-       * PostgreSQL remains the source of truth.
-       *
-       * Therefore, invalidate the relevant queries and fetch the
-       * latest dashboard data from the REST API.
-       */
-      queryClient.invalidateQueries({
-        queryKey: ["admin-dashboard"],
-      });
-
-      queryClient.invalidateQueries({
-        queryKey: ["admin-dashboard-activity"],
-      });
-    },
-    [queryClient],
-  );
-
-  const {
-    connected: websocketConnected,
-    connecting: websocketConnecting,
-    reconnect: reconnectWebSocket,
-  } = useWebSocket("/ws/admin", {
-    enabled: true,
-    reconnect: true,
-    reconnectDelay: 3000,
-    onMessage: handleRealtimeMessage,
-  });
-
-  useEffect(() => {
-    if (!lastRealtimeMessage) {
-      return;
-    }
-
-    const timer = window.setTimeout(() => {
-      setLastRealtimeMessage(null);
-    }, 5000);
-
-    return () => {
-      window.clearTimeout(timer);
-    };
-  }, [lastRealtimeMessage]);
-
-  const stats = dashboardQuery.data;
+  const stats = dashboardQuery.data?.stats;
 
   const statCards = useMemo(
     () => [
@@ -226,9 +149,19 @@ export default function AdminDashboardPage() {
         icon: UserRound,
       },
       {
+        label: "Students",
+        value: stats?.total_students ?? 0,
+        icon: GraduationCap,
+      },
+      {
         label: "Events",
         value: stats?.total_events ?? 0,
         icon: CalendarDays,
+      },
+      {
+        label: "Hackathons",
+        value: stats?.total_hackathons ?? 0,
+        icon: Trophy,
       },
       {
         label: "Registrations",
@@ -240,19 +173,11 @@ export default function AdminDashboardPage() {
         value: stats?.total_teams ?? 0,
         icon: Users,
       },
-      {
-        label: "Projects",
-        value: stats?.total_projects ?? 0,
-        icon: FolderKanban,
-      },
-      {
-        label: "Submissions",
-        value: stats?.total_submissions ?? 0,
-        icon: FileCheck2,
-      },
     ],
     [stats],
   );
+
+  const hackathons = dashboardQuery.data?.hackathons ?? [];
 
   const handleRefresh = async () => {
     await Promise.all([
@@ -312,79 +237,6 @@ export default function AdminDashboardPage() {
           </button>
         </div>
 
-        {/* WebSocket status */}
-        <section className="mb-8">
-          <div
-            className={`flex flex-col gap-4 rounded border px-5 py-4 md:flex-row md:items-center md:justify-between ${
-              websocketConnected
-                ? "border-[#6FAF7B]/30 bg-[#0D0D0F]"
-                : "border-[#252525] bg-[#0D0D0F]"
-            }`}
-          >
-            <div className="flex items-center gap-3">
-              {websocketConnected ? (
-                <Wifi
-                  size={18}
-                  strokeWidth={1.7}
-                  className="text-[#6FAF7B]"
-                />
-              ) : (
-                <WifiOff
-                  size={18}
-                  strokeWidth={1.7}
-                  className="text-[#A1A1A1]"
-                />
-              )}
-
-              <div>
-                <p className="text-sm font-semibold">
-                  {websocketConnected
-                    ? "Live updates connected"
-                    : websocketConnecting
-                      ? "Connecting to live updates..."
-                      : "Live updates disconnected"}
-                </p>
-
-                <p className="mt-1 text-xs text-[#A1A1A1]">
-                  {websocketConnected
-                    ? "Admin dashboard is listening for realtime events."
-                    : "The dashboard will automatically try to reconnect."}
-                </p>
-              </div>
-            </div>
-
-            {!websocketConnected && !websocketConnecting && (
-              <button
-                type="button"
-                onClick={reconnectWebSocket}
-                className="inline-flex items-center justify-center gap-2 rounded border border-[#252525] px-4 py-2 text-xs font-semibold uppercase tracking-[0.15em] text-[#F5F3ED] transition hover:border-[#D4AF37] hover:text-[#D4AF37]"
-              >
-                <Radio size={14} />
-                Reconnect
-              </button>
-            )}
-          </div>
-
-          {lastRealtimeMessage && (
-            <div className="mt-3 rounded border border-[#D4AF37]/30 bg-[#0D0D0F] px-4 py-3">
-              <div className="flex items-center gap-2">
-                <Bell
-                  size={16}
-                  className="shrink-0 text-[#D4AF37]"
-                />
-
-                <span className="text-xs font-semibold uppercase tracking-[0.15em] text-[#D4AF37]">
-                  {getEventLabel(lastRealtimeMessage)}
-                </span>
-              </div>
-
-              <p className="mt-2 pl-6 text-sm text-[#F5F3ED]">
-                {getRealtimeMessage(lastRealtimeMessage)}
-              </p>
-            </div>
-          )}
-        </section>
-
         {/* Stats */}
         <section className="mb-12">
           <div className="mb-6 flex items-center justify-between gap-3">
@@ -399,7 +251,6 @@ export default function AdminDashboardPage() {
               </h2>
             </div>
 
-            {/* Background refetch: keep stats visible, show subtle update */}
             {dashboardQuery.isFetching && !dashboardQuery.isLoading && (
               <RefetchIndicator active label="Updating" />
             )}
@@ -415,40 +266,134 @@ export default function AdminDashboardPage() {
             ) : dashboardQuery.isError ? (
               <ErrorState
                 title="Unable to load dashboard statistics."
+                message="The admin dashboard API may be offline."
                 onRetry={() => dashboardQuery.refetch()}
                 retryLabel="Try Again"
               />
             ) : (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {statCards.map((stat) => {
-                const Icon = stat.icon;
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {statCards.map((stat) => {
+                  const Icon = stat.icon;
 
-                return (
-                  <div
-                    key={stat.label}
-                    className="rounded border border-[#252525] bg-[#0D0D0F] p-6 transition hover:border-[#3a3a3a]"
-                  >
-                    <div className="flex items-center justify-between">
-                      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#A1A1A1]">
-                        {stat.label}
+                  return (
+                    <div
+                      key={stat.label}
+                      className="rounded border border-[#252525] bg-[#0D0D0F] p-6 transition hover:border-[#3a3a3a]"
+                    >
+                      <div className="flex items-center justify-between">
+                        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#A1A1A1]">
+                          {stat.label}
+                        </p>
+
+                        <Icon
+                          size={18}
+                          strokeWidth={1.5}
+                          className="text-[#D4AF37]"
+                        />
+                      </div>
+
+                      <p className="mt-5 text-3xl font-semibold">
+                        {stat.value.toLocaleString()}
                       </p>
-
-                      <Icon
-                        size={18}
-                        strokeWidth={1.5}
-                        className="text-[#D4AF37]"
-                      />
                     </div>
-
-                    <p className="mt-5 text-3xl font-semibold">
-                      {stat.value.toLocaleString()}
-                    </p>
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
             )}
           </div>
+        </section>
+
+        {/* Hackathon overview */}
+        <section className="mb-12">
+          <div className="mb-6 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <Trophy size={18} className="text-[#D4AF37]" />
+
+              <h2 className="text-sm font-semibold uppercase tracking-[0.2em] text-[#A1A1A1]">
+                Hackathon Overview
+              </h2>
+            </div>
+
+            <Link
+              href="/admin/events"
+              className="text-xs font-semibold uppercase tracking-wider text-[#D4AF37] hover:text-[#E5C04A]"
+            >
+              Manage Events →
+            </Link>
+          </div>
+
+          {dashboardQuery.isLoading ? (
+            <div className="space-y-4" aria-hidden>
+              {Array.from({ length: 4 }).map((_, index) => (
+                <Skeleton key={index} className="h-16" />
+              ))}
+            </div>
+          ) : dashboardQuery.isError ? (
+            <ErrorState
+              title="Unable to load hackathon overview."
+              onRetry={() => dashboardQuery.refetch()}
+              retryLabel="Try Again"
+            />
+          ) : hackathons.length === 0 ? (
+            <EmptyState
+              kicker="HACKATHONS"
+              title="No hackathons yet"
+              description="Create your first hackathon to see live statistics here."
+            />
+          ) : (
+            <div className="overflow-hidden rounded border border-[#252525] bg-[#0D0D0F]">
+              <div className="divide-y divide-[#252525]">
+                {hackathons.map((hackathon) => (
+                  <div
+                    key={hackathon.id}
+                    className="flex flex-col gap-4 px-6 py-5 md:flex-row md:items-center md:justify-between"
+                  >
+                    <div className="min-w-0">
+                      <Link
+                        href={`/admin/events/${hackathon.id}/overview`}
+                        className="text-base font-semibold transition-colors hover:text-[#D4AF37]"
+                      >
+                        {hackathon.title}
+                      </Link>
+
+                      <div className="mt-2 flex flex-wrap items-center gap-3">
+                        <span className="rounded border border-[#252525] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-[#A1A1A1]">
+                          {hackathon.status}
+                        </span>
+
+                        <span className="text-xs text-[#777]">
+                          {hackathon.students} students
+                        </span>
+
+                        <span className="text-xs text-[#777]">
+                          {hackathon.teams} teams
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex shrink-0 items-center gap-6">
+                      <div className="text-right">
+                        <p className="text-xl font-semibold">
+                          {hackathon.registrations.toLocaleString()}
+                        </p>
+                        <p className="text-[10px] uppercase tracking-[0.15em] text-[#777]">
+                          Registrations
+                        </p>
+                      </div>
+
+                      <Link
+                        href={`/admin/events/${hackathon.id}/overview`}
+                        aria-label={`View ${hackathon.title}`}
+                        className="inline-flex items-center justify-center rounded border border-[#252525] px-3 py-2 text-[#D4AF37] transition hover:border-[#D4AF37]/60"
+                      >
+                        <ChevronRight size={16} />
+                      </Link>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </section>
 
         {/* Recent activity */}
@@ -459,22 +404,14 @@ export default function AdminDashboardPage() {
               className="text-[#D4AF37]"
             />
 
-<<<<<<< HEAD
             <h2 className="text-sm font-semibold uppercase tracking-[0.2em] text-[#A1A1A1]">
               Recent Activity
             </h2>
-=======
-              <h2 className="text-sm font-semibold uppercase tracking-[0.2em] text-[#A1A1A1]">
-                Recent Activity
-              </h2>
-            </div>
-
-            {/* Background refetch keeps existing activity visible */}
-            {activityQuery.isFetching && !activityQuery.isLoading && (
-              <RefetchIndicator active label="Updating" />
-            )}
->>>>>>> e9267dfe5ddf938a4d6ac2efd5e1b0ac0921637d
           </div>
+
+          {activityQuery.isFetching && !activityQuery.isLoading && (
+            <RefetchIndicator active label="Updating" />
+          )}
 
           <div className="overflow-hidden rounded border border-[#252525] bg-[#0D0D0F]">
             {activityQuery.isLoading ? (
@@ -486,6 +423,7 @@ export default function AdminDashboardPage() {
             ) : activityQuery.isError ? (
               <ErrorState
                 title="Unable to load recent activity."
+                message="The admin activity API may be offline."
                 onRetry={() => activityQuery.refetch()}
                 retryLabel="Try Again"
               />

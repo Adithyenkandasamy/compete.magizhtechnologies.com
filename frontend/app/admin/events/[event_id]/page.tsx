@@ -329,6 +329,20 @@ export default function AdminEventEditPage() {
               <span className="text-xs text-[#666]">
                 ID: {event.id}
               </span>
+
+              <Link
+                href={`/admin/events/${eventId}/rounds`}
+                className="text-xs font-semibold uppercase tracking-wider text-[#D4AF37] transition-colors hover:text-[#E5C04A]"
+              >
+                Edit Rounds →
+              </Link>
+
+              <Link
+                href={`/admin/events/${eventId}/overview`}
+                className="text-xs font-semibold uppercase tracking-wider text-[#D4AF37] transition-colors hover:text-[#E5C04A]"
+              >
+                View Overview →
+              </Link>
             </div>
           )}
         </div>

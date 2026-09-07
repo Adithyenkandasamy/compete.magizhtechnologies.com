@@ -1,9 +1,22 @@
 "use client";
 
-<<<<<<< HEAD
 import Link from "next/link";
-import { ArrowRight, CalendarDays, Trophy, Users, Sparkles } from "lucide-react";
+import {
+  ArrowRight,
+  CalendarDays,
+  Trophy,
+  Users,
+  Sparkles,
+} from "lucide-react";
 import { motion } from "framer-motion";
+
+import { useEvents } from "@/hooks/use-events";
+import { EventCard } from "@/components/events/event-card";
+import {
+  EventCardSkeleton,
+  ErrorState,
+  EmptyState,
+} from "@/components/loading";
 
 const stats = [
   { value: "40+", label: "Events" },
@@ -34,6 +47,15 @@ const highlights = [
 ];
 
 export default function HomePage() {
+  const {
+    data: events,
+    isLoading: eventsLoading,
+    isError: eventsError,
+    refetch: refetchEvents,
+  } = useEvents();
+
+  const featuredEvents = events?.slice(0, 3) ?? [];
+
   return (
     <main className="min-h-screen bg-black text-[#F5F3ED]">
       {/* NAVBAR */}
@@ -71,18 +93,27 @@ export default function HomePage() {
             </Link>
           </nav>
 
-          <Link
-            href="/login"
-            className="border border-[#252525] px-5 py-2.5 text-xs font-semibold uppercase tracking-[0.18em] transition hover:border-[#D4AF37] hover:text-[#D4AF37]"
-          >
-            Login
-          </Link>
+          <div className="flex items-center gap-5">
+            <Link
+              href="/register"
+              className="bg-[#D4AF37] px-5 py-2.5 text-xs font-semibold uppercase tracking-[0.18em] text-black transition hover:bg-[#E5C04A]"
+            >
+              Create Account
+            </Link>
+
+            <Link
+              href="/login"
+              className="border border-[#252525] px-5 py-2.5 text-xs font-semibold uppercase tracking-[0.18em] transition hover:border-[#D4AF37] hover:text-[#D4AF37]"
+            >
+              Login
+            </Link>
+          </div>
         </div>
       </header>
 
       {/* HERO */}
       <section className="relative overflow-hidden border-b border-[#252525]">
-        <div className="absolute inset-0 pointer-events-none">
+        <div className="pointer-events-none absolute inset-0">
           <div className="absolute left-1/2 top-0 h-[500px] w-[500px] -translate-x-1/2 rounded-full bg-[#D4AF37]/[0.04] blur-[120px]" />
         </div>
 
@@ -106,7 +137,7 @@ export default function HomePage() {
               Innovation begins
               <br />
               with an{" "}
-              <span className="text-[#D4AF37] italic">idea.</span>
+              <span className="italic text-[#D4AF37]">idea.</span>
             </motion.h1>
 
             <motion.p
@@ -127,22 +158,22 @@ export default function HomePage() {
               className="mt-10 flex flex-col gap-4 sm:flex-row"
             >
               <Link
-                href="/events"
-                className="group inline-flex items-center justify-center gap-3 bg-[#D4AF37] px-7 py-4 text-sm font-semibold text-black transition hover:bg-[#E5C04A]"
+                href="/register"
+                className="inline-flex items-center justify-center gap-3 bg-[#D4AF37] px-7 py-4 text-sm font-semibold text-black transition hover:bg-[#E5C04A]"
               >
-                Explore Events
+                Create Account
                 <ArrowRight
                   size={17}
                   className="transition-transform group-hover:translate-x-1"
                 />
               </Link>
 
-              <a
-                href="#about"
-                className="inline-flex items-center justify-center border border-[#252525] px-7 py-4 text-sm font-semibold transition hover:border-[#D4AF37] hover:text-[#D4AF37]"
+              <Link
+                href="/events"
+                className="inline-flex items-center justify-center gap-3 border border-[#252525] px-7 py-4 text-sm font-semibold transition hover:border-[#D4AF37] hover:text-[#D4AF37]"
               >
-                Learn More
-              </a>
+                Explore Events
+              </Link>
             </motion.div>
           </div>
         </div>
@@ -175,96 +206,58 @@ export default function HomePage() {
                 {stat.label}
               </p>
             </div>
-=======
-const stats = [
-  { value: "40+", label: "Events Hosted" },
-  { value: "1.2k", label: "Participants" },
-  { value: "300+", label: "Projects Built" },
-  { value: "25+", label: "Partner Communities" },
-];
-
-const programs = [
-  {
-    title: "Hackathons",
-    description:
-      "48-hour sprints where bold ideas meet relentless execution. Ship, demo, and compete for recognition.",
-  },
-  {
-    title: "Workshops",
-    description:
-      "Hands-on sessions led by engineers and designers, from first commit to production deployment.",
-  },
-  {
-    title: "Competitions",
-    description:
-      "Structured challenges that reward craft, creativity, and technical depth across every discipline.",
-  },
-  {
-    title: "Project Showcases",
-    description:
-      "A curated gallery of standout work — the stories, the builds, and the people behind them.",
-  },
-];
-
-export default function Home() {
-  return (
-    <main className="magizh-container py-20">
-      <section className="max-w-3xl">
-        <p className="magizh-kicker magizh-gold mb-6 text-xs font-semibold uppercase">
-          Magizh Technologies
-        </p>
-
-        <h1 className="magizh-display text-5xl font-bold leading-[1.05] md:text-7xl">
-          Innovation begins <span className="magizh-gold italic">with an idea.</span>
-        </h1>
-
-        <p className="magizh-muted mt-6 max-w-xl text-lg leading-8">
-          Discover hackathons, workshops, competitions, meetups, and project
-          showcases powered by Magizh Technologies — where makers gather to
-          build what&apos;s next.
-        </p>
-
-        <div className="mt-10 flex flex-wrap gap-4">
-          <Button>Explore Events</Button>
-          <Button variant="outline">Learn More</Button>
-        </div>
-      </section>
-
-      <section className="mt-24 grid grid-cols-2 gap-px overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--border)] md:grid-cols-4">
-        {stats.map((stat) => (
-          <div key={stat.label} className="bg-[var(--card)] px-6 py-8">
-            <p className="magizh-accent magizh-gold text-4xl font-semibold tracking-tight">
-              {stat.value}
-            </p>
-            <p className="magizh-muted mt-2 text-sm">{stat.label}</p>
-          </div>
-        ))}
-      </section>
-
-      <section className="mt-24">
-        <SectionTitle
-          label="What we run"
-          title="Programs built for builders."
-          description="Every format is designed around one belief: the best way to learn is to make something real."
-        />
-
-        <div className="grid gap-6 md:grid-cols-2">
-          {programs.map((program) => (
-            <Card key={program.title} className="group p-8 transition-colors hover:border-[var(--gold)]">
-              <p className="magizh-gold text-sm font-semibold uppercase tracking-widest">
-                {program.title}
-              </p>
-              <p className="magizh-muted mt-3 leading-7">{program.description}</p>
-              <p className="magizh-accent mt-6 text-sm font-medium text-[var(--gold)] opacity-0 transition-opacity group-hover:opacity-100">
-                Join the next one →
-              </p>
-            </Card>
->>>>>>> e9267dfe5ddf938a4d6ac2efd5e1b0ac0921637d
           ))}
         </div>
       </section>
 
-<<<<<<< HEAD
+      {/* FEATURED EVENTS */}
+      <section className="border-b border-[#252525] py-24">
+        <div className="magizh-container">
+          <div className="mb-12 flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
+            <div>
+              <p className="mb-4 text-xs font-semibold uppercase tracking-[0.3em] text-[#D4AF37]">
+                Upcoming Hackathons
+              </p>
+
+              <h2 className="magizh-heading text-4xl font-bold md:text-5xl">
+                Find your next challenge.
+              </h2>
+            </div>
+
+            <Link
+              href="/events"
+              className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-[#D4AF37] transition-colors hover:text-[#E5C04A]"
+            >
+              View All Events
+              <ArrowRight size={14} />
+            </Link>
+          </div>
+
+          {eventsLoading ? (
+            <EventCardSkeleton count={3} />
+          ) : eventsError ? (
+            <ErrorState
+              title="Unable to load events."
+              message="The backend may be offline. Please try again."
+              onRetry={() => refetchEvents()}
+              retryLabel="Try Again"
+            />
+          ) : featuredEvents.length === 0 ? (
+            <EmptyState
+              kicker="EVENTS"
+              title="No events yet"
+              description="New hackathons will be announced here. Check back soon."
+            />
+          ) : (
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {featuredEvents.map((event) => (
+                <EventCard key={event.id} event={event} />
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
+
       {/* ABOUT */}
       <section id="about" className="border-b border-[#252525] py-24">
         <div className="magizh-container">
@@ -363,17 +356,26 @@ export default function Home() {
             </h2>
 
             <p className="mx-auto mt-6 max-w-xl text-sm leading-7 text-[#777]">
-              Explore upcoming Magizh Technologies events and find your next
-              opportunity to innovate.
+              Create an account to register for events, build your team, and
+              start innovating today.
             </p>
 
-            <Link
-              href="/events"
-              className="mt-9 inline-flex items-center gap-3 bg-[#D4AF37] px-7 py-4 text-sm font-semibold text-black transition hover:bg-[#E5C04A]"
-            >
-              Explore Events
-              <ArrowRight size={17} />
-            </Link>
+            <div className="mt-9 flex flex-col items-center justify-center gap-4 sm:flex-row">
+              <Link
+                href="/register"
+                className="inline-flex items-center gap-3 bg-[#D4AF37] px-7 py-4 text-sm font-semibold text-black transition hover:bg-[#E5C04A]"
+              >
+                Create an Account
+                <ArrowRight size={17} />
+              </Link>
+
+              <Link
+                href="/events"
+                className="inline-flex items-center gap-3 border border-[#252525] px-7 py-4 text-sm font-semibold text-[#F5F3ED] transition hover:border-[#D4AF37] hover:text-[#D4AF37]"
+              >
+                Explore Events
+              </Link>
+            </div>
           </div>
         </div>
       </section>
@@ -403,26 +405,6 @@ export default function Home() {
           </Link>
         </div>
       </footer>
-=======
-      <section className="mt-24 text-center">
-        <Card className="mx-auto max-w-2xl p-10">
-          <p className="magizh-kicker magizh-gold mb-4 text-xs font-semibold uppercase">
-            Get involved
-          </p>
-          <h2 className="magizh-heading text-3xl font-bold leading-tight md:text-4xl">
-            Ready to build something&nbsp;<span className="magizh-gold italic">remarkable?</span>
-          </h2>
-          <p className="magizh-muted mx-auto mt-4 max-w-md leading-7">
-            Join the community, find your next event, and put your ideas into
-            the world.
-          </p>
-          <div className="mt-8 flex flex-wrap justify-center gap-4">
-            <Button>Create an Account</Button>
-            <Button variant="outline">Browse Projects</Button>
-          </div>
-        </Card>
-      </section>
->>>>>>> e9267dfe5ddf938a4d6ac2efd5e1b0ac0921637d
     </main>
   );
 }

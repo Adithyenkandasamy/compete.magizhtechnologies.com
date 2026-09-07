@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 
 import {
@@ -11,11 +11,7 @@ import {
 } from "@/lib/teams-api";
 
 import { getAccessToken } from "@/lib/auth";
-<<<<<<< HEAD
-=======
-import type { TeamInvite } from "@/lib/team-invites-api";
 import { getErrorMessage } from "@/lib/error-message";
->>>>>>> e9267dfe5ddf938a4d6ac2efd5e1b0ac0921637d
 
 export default function TeamInvitePage() {
   const params = useParams();
@@ -31,53 +27,39 @@ export default function TeamInvitePage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-<<<<<<< HEAD
-  const loadInvite = useCallback(async () => {
+useEffect(() => {
     if (!token) {
-      setError("Invalid invite link.");
-      setIsLoading(false);
       return;
-=======
-  useEffect(() => {
-    async function loadInvite() {
-      try {
-        setError("");
-
-        const data = await getTeamInvite(token);
-        setInvite(data);
-      } catch (err: unknown) {
-        setError(
-          getErrorMessage(
-            err,
-            "This team invitation is invalid or has expired.",
-          ),
-        );
-      } finally {
-        setIsLoading(false);
-      }
->>>>>>> e9267dfe5ddf938a4d6ac2efd5e1b0ac0921637d
     }
 
-    try {
-      setError("");
+    let cancelled = false;
 
-      const data = await getTeamInvite(token);
+    getTeamInvite(token)
+      .then((data) => {
+        if (!cancelled) {
+          setInvite(data);
+        }
+      })
+      .catch((err: unknown) => {
+        if (!cancelled) {
+          setError(
+            getErrorMessage(
+              err,
+              "This team invitation is invalid or has expired.",
+            ),
+          );
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setIsLoading(false);
+        }
+      });
 
-      setInvite(data);
-    } catch (err: any) {
-      const message =
-        err?.response?.data?.detail ||
-        "This invite link is invalid or no longer available.";
-
-      setError(message);
-    } finally {
-      setIsLoading(false);
-    }
+    return () => {
+      cancelled = true;
+    };
   }, [token]);
-
-  useEffect(() => {
-    loadInvite();
-  }, [loadInvite]);
 
   async function handleJoinRequest() {
     setError("");
@@ -108,19 +90,10 @@ export default function TeamInvitePage() {
         response?.message ||
           "Your request to join the team has been sent successfully.",
       );
-<<<<<<< HEAD
-    } catch (err: any) {
-      const message =
-        err?.response?.data?.detail ||
-        "Unable to send the join request.";
-
-      setError(message);
-=======
-    } catch (err: unknown) {
+} catch (err: unknown) {
       setError(
         getErrorMessage(err, "Unable to send your join request."),
       );
->>>>>>> e9267dfe5ddf938a4d6ac2efd5e1b0ac0921637d
     } finally {
       setIsJoining(false);
     }

@@ -42,6 +42,18 @@ class EventStatus(str, enum.Enum):
     CANCELLED = "CANCELLED"
 
 
+class RoundType(str, enum.Enum):
+    QUALIFIER = "QUALIFIER"
+    IDEA_SUBMISSION = "IDEA_SUBMISSION"
+    HACK = "HACK"
+
+
+class RoundStatus(str, enum.Enum):
+    UPCOMING = "UPCOMING"
+    OPEN = "OPEN"
+    CLOSED = "CLOSED"
+
+
 class RegistrationStatus(str, enum.Enum):
     CONFIRMED = "CONFIRMED"
     CANCELLED = "CANCELLED"

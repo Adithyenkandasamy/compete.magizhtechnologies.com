@@ -16,7 +16,6 @@ import {
     transferTeamLeadership,
     updateTeam,
 } from "@/lib/teams-api";
-<<<<<<< HEAD
 
 import type {
     JoinRequest,
@@ -33,6 +32,8 @@ import {
     getRealtimeMessage,
 } from "@/lib/realtime";
 
+import { getErrorMessage } from "@/lib/error-message";
+
 type TeamMember = {
     id: string;
     user_id?: string;
@@ -43,10 +44,6 @@ type TeamMember = {
 type TeamWithMembers = Team & {
     members?: TeamMember[];
 };
-=======
-import type { Team } from "@/lib/teams-api";
-import { getErrorMessage } from "@/lib/error-message";
->>>>>>> e9267dfe5ddf938a4d6ac2efd5e1b0ac0921637d
 
 export default function TeamDetailsPage() {
     const params = useParams();
@@ -89,35 +86,14 @@ export default function TeamDetailsPage() {
 
             const data = await getTeam(teamId);
 
-<<<<<<< HEAD
             setTeam(data as TeamWithMembers);
             setTeamName(data.name);
-        } catch (err: any) {
-            const message =
-                err?.response?.data?.detail ||
-                "Unable to load this team.";
-
-            setError(message);
+        } catch (err: unknown) {
+            setError(
+                getErrorMessage(err, "Unable to load this team."),
+            );
         } finally {
             setIsLoading(false);
-=======
-                setTeam(data);
-                setTeamName(data.name);
-            } catch (err: unknown) {
-                setError(
-                    getErrorMessage(
-                        err,
-                        "Unable to load this team.",
-                    ),
-                );
-            } finally {
-                setIsLoading(false);
-            }
-        }
-
-        if (teamId) {
-            loadTeam();
->>>>>>> e9267dfe5ddf938a4d6ac2efd5e1b0ac0921637d
         }
     }, [teamId]);
 
@@ -131,14 +107,12 @@ export default function TeamDetailsPage() {
             const data = await getJoinRequests(teamId);
 
             setJoinRequests(data);
-        } catch (err: any) {
+        } catch (err: unknown) {
             /*
              * Non-leaders may not have permission to view
              * join requests. We don't replace the main team error.
              */
-            const message =
-                err?.response?.data?.detail ||
-                "";
+            const message = getErrorMessage(err, "");
 
             if (message) {
                 setError(message);
@@ -156,9 +130,66 @@ export default function TeamDetailsPage() {
             return;
         }
 
-        loadTeam();
-        loadJoinRequests();
-    }, [teamId, loadTeam, loadJoinRequests]);
+        let cancelled = false;
+
+        getTeam(teamId)
+            .then((data) => {
+                if (cancelled) {
+                    return;
+                }
+
+                setTeam(data as TeamWithMembers);
+                setTeamName(data.name);
+            })
+            .catch((err: unknown) => {
+                if (cancelled) {
+                    return;
+                }
+
+                setError(
+                    getErrorMessage(
+                        err,
+                        "Unable to load this team.",
+                    ),
+                );
+            })
+            .finally(() => {
+                if (!cancelled) {
+                    setIsLoading(false);
+                }
+            });
+
+        getJoinRequests(teamId)
+            .then((data) => {
+                if (!cancelled) {
+                    setJoinRequests(data);
+                }
+            })
+            .catch((err: unknown) => {
+                if (cancelled) {
+                    return;
+                }
+
+                /*
+                 * Non-leaders may not have permission to view
+                 * join requests. We don't replace the main team error.
+                 */
+                const message = getErrorMessage(err, "");
+
+                if (message) {
+                    setError(message);
+                }
+            })
+            .finally(() => {
+                if (!cancelled) {
+                    setIsRequestsLoading(false);
+                }
+            });
+
+        return () => {
+            cancelled = true;
+        };
+    }, [teamId]);
 
     /*
      * Team realtime updates.
@@ -311,12 +342,13 @@ export default function TeamDetailsPage() {
                 loadTeam(),
                 loadJoinRequests(),
             ]);
-        } catch (err: any) {
-            const message =
-                err?.response?.data?.detail ||
-                "Unable to accept the join request.";
-
-            setError(message);
+        } catch (err: unknown) {
+            setError(
+                getErrorMessage(
+                    err,
+                    "Unable to accept the join request.",
+                ),
+            );
         } finally {
             setProcessingRequestId(null);
         }
@@ -336,12 +368,13 @@ export default function TeamDetailsPage() {
             setSuccess("Join request rejected.");
 
             await loadJoinRequests();
-        } catch (err: any) {
-            const message =
-                err?.response?.data?.detail ||
-                "Unable to reject the join request.";
-
-            setError(message);
+        } catch (err: unknown) {
+            setError(
+                getErrorMessage(
+                    err,
+                    "Unable to reject the join request.",
+                ),
+            );
         } finally {
             setProcessingRequestId(null);
         }
@@ -362,12 +395,13 @@ export default function TeamDetailsPage() {
             setSuccess("Join request cancelled.");
 
             await loadJoinRequests();
-        } catch (err: any) {
-            const message =
-                err?.response?.data?.detail ||
-                "Unable to cancel the join request.";
-
-            setError(message);
+        } catch (err: unknown) {
+            setError(
+                getErrorMessage(
+                    err,
+                    "Unable to cancel the join request.",
+                ),
+            );
         } finally {
             setProcessingRequestId(null);
         }
@@ -398,12 +432,13 @@ export default function TeamDetailsPage() {
             setSuccess("Team member removed successfully.");
 
             await loadTeam();
-        } catch (err: any) {
-            const message =
-                err?.response?.data?.detail ||
-                "Unable to remove the team member.";
-
-            setError(message);
+        } catch (err: unknown) {
+            setError(
+                getErrorMessage(
+                    err,
+                    "Unable to remove the team member.",
+                ),
+            );
         } finally {
             setProcessingMemberId(null);
         }
@@ -439,12 +474,13 @@ export default function TeamDetailsPage() {
             );
 
             await loadTeam();
-        } catch (err: any) {
-            const message =
-                err?.response?.data?.detail ||
-                "Unable to transfer team leadership.";
-
-            setError(message);
+        } catch (err: unknown) {
+            setError(
+                getErrorMessage(
+                    err,
+                    "Unable to transfer team leadership.",
+                ),
+            );
         } finally {
             setProcessingMemberId(null);
         }
