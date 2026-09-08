@@ -7,6 +7,7 @@ import {
   Loader2,
   RefreshCw,
 } from "lucide-react";
+import { PageLoader } from "@/components/loading";
 import {
   getSecurityAlerts,
   resolveSecurityAlert,
@@ -91,12 +92,7 @@ export default function AdminSecurityPage() {
         </div>
 
         {isLoading && (
-          <div className="flex min-h-60 items-center justify-center">
-            <div className="flex items-center gap-3 text-[#A1A1A1]">
-              <Loader2 size={20} className="animate-spin" />
-              Loading security alerts...
-            </div>
-          </div>
+          <PageLoader variant="section" label="Loading security alerts..." />
         )}
 
         {isError && !isLoading && (

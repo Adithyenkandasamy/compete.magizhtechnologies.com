@@ -6,6 +6,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Users, CalendarDays, CheckCircle } from "lucide-react";
 
 import { useAuth } from "@/providers/auth-provider";
+import { PageLoader } from "@/components/loading";
 import { getInviteInfo, requestToJoinTeam } from "@/lib/teams-api";
 import type { InviteInfo } from "@/lib/teams-api";
 import { getErrorMessage } from "@/lib/error-message";
@@ -64,7 +65,7 @@ export default function JoinTeamPage() {
   if (status === "loading" || isLoading) {
     return (
       <main className="min-h-screen flex items-center justify-center px-5 py-16">
-        <p className="magizh-muted">Loading invite...</p>
+        <PageLoader label="Loading invite..." />
       </main>
     );
   }

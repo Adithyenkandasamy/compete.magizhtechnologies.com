@@ -11,6 +11,7 @@ import {
 } from "@/lib/team-invites-api";
 import type { JoinRequest } from "@/lib/team-invites-api";
 import { getErrorMessage } from "@/lib/error-message";
+import { PageLoader } from "@/components/loading";
 
 export default function TeamJoinRequestsPage() {
   const params = useParams();
@@ -150,9 +151,7 @@ export default function TeamJoinRequestsPage() {
       )}
 
       {isLoading ? (
-        <div className="magizh-card p-10 text-center">
-          <p className="magizh-muted">Loading join requests...</p>
-        </div>
+        <PageLoader variant="section" label="Loading join requests..." />
       ) : requests.length === 0 ? (
         <div className="magizh-card p-10 text-center">
           <p className="magizh-heading text-2xl font-bold">

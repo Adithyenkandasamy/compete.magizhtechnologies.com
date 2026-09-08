@@ -7,6 +7,7 @@ import { getMyCertificates, downloadCertificate } from "@/lib/certificates-api";
 import type { Certificate } from "@/lib/certificates-api";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { PageLoader } from "@/components/loading";
 
 export default function CertificatesPage() {
   const [certificates, setCertificates] = useState<Certificate[]>([]);
@@ -81,10 +82,7 @@ export default function CertificatesPage() {
         </div>
 
         {loading && (
-          <div className="flex items-center gap-3 text-[#A1A1A1]">
-            <Loader2 className="h-5 w-5 animate-spin" />
-            Loading certificates...
-          </div>
+          <PageLoader variant="section" label="Loading certificates..." />
         )}
 
         {!loading && error && (

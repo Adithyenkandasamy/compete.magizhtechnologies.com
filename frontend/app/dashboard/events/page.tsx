@@ -11,6 +11,7 @@ import type { Registration } from "@/lib/registrations-api";
 import type { Event } from "@/types/events";
 import type { Team } from "@/lib/teams-api";
 import { getErrorMessage } from "@/lib/error-message";
+import { PageLoader } from "@/components/loading";
 
 type RegisteredEvent = {
   registration: Registration;
@@ -126,7 +127,7 @@ export default function MyEventsPage() {
   if (isLoading) {
     return (
       <main className="magizh-container py-20">
-        <p className="magizh-muted">Loading your events...</p>
+        <PageLoader label="Loading your events..." />
       </main>
     );
   }

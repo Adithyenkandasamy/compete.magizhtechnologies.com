@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import apiClient from "@/lib/api-client";
+import { PageLoader } from "@/components/loading";
 
 type Notification = {
   id: string;
@@ -115,11 +116,7 @@ export default function NotificationsPage() {
       </div>
 
       {loading && (
-        <div className="magizh-card p-6">
-          <p className="magizh-muted">
-            Loading notifications...
-          </p>
-        </div>
+        <PageLoader variant="section" label="Loading notifications..." />
       )}
 
       {error && (

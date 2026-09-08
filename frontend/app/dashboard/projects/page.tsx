@@ -12,6 +12,7 @@ import {
   getTeamProjects,
   type Project,
 } from "@/lib/projects-api";
+import { PageLoader } from "@/components/loading";
 
 export default function ProjectsPage() {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -97,11 +98,7 @@ export default function ProjectsPage() {
       </div>
 
       {loading && (
-        <div className="magizh-card p-6">
-          <p className="magizh-muted">
-            Loading projects...
-          </p>
-        </div>
+        <PageLoader variant="section" label="Loading projects..." />
       )}
 
       {error && (

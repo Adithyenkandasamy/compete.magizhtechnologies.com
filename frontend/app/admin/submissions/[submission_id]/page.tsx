@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
+import { PageLoader } from "@/components/loading";
 
 import {
   getAdminSubmission,
@@ -97,11 +98,7 @@ export default function AdminSubmissionDetailsPage() {
         </div>
 
         {loading && (
-          <div className="magizh-card mt-10 p-8">
-            <p className="magizh-muted">
-              Loading submission...
-            </p>
-          </div>
+          <PageLoader variant="section" label="Loading submission..." />
         )}
 
         {error && (

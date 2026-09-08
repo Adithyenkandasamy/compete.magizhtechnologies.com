@@ -10,6 +10,7 @@ import {
   unpublishAdminEvent,
 } from "@/lib/admin-events-api";
 
+import { PageLoader } from "@/components/loading";
 import type { Event } from "@/types/events";
 
 export default function AdminEventsPage() {
@@ -162,9 +163,7 @@ export default function AdminEventsPage() {
 
         {/* Loading */}
         {loading && (
-          <div className="magizh-card mt-10 p-8">
-            <p className="magizh-muted">Loading events...</p>
-          </div>
+          <PageLoader variant="section" label="Loading events..." />
         )}
 
         {/* Empty */}

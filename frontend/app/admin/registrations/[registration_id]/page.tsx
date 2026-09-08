@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import { PageLoader } from "@/components/loading";
 
 import {
   getAdminRegistration,
@@ -117,11 +118,7 @@ export default function AdminRegistrationDetailsPage() {
         </div>
 
         {loading && (
-          <div className="magizh-card mt-10 p-8">
-            <p className="magizh-muted">
-              Loading registration...
-            </p>
-          </div>
+          <PageLoader variant="section" label="Loading registration..." />
         )}
 
         {error && (

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { getProjects, type Project } from "@/lib/projects-api";
+import { PageLoader } from "@/components/loading";
 import { ProjectShowcaseFilters } from "@/components/projects/showcase-filters";
 
 export default function ProjectsShowcasePage() {
@@ -74,9 +75,7 @@ export default function ProjectsShowcasePage() {
         )}
 
         {loading && (
-          <div className="magizh-card mt-12 p-8">
-            <p className="magizh-muted">Loading projects...</p>
-          </div>
+          <PageLoader variant="section" label="Loading projects..." />
         )}
 
         {error && (

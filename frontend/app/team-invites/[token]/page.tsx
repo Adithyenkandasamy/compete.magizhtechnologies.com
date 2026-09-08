@@ -11,6 +11,7 @@ import {
 } from "@/lib/teams-api";
 
 import { getAccessToken } from "@/lib/auth";
+import { PageLoader } from "@/components/loading";
 import { getErrorMessage } from "@/lib/error-message";
 
 export default function TeamInvitePage() {
@@ -104,9 +105,7 @@ useEffect(() => {
       <main className="min-h-screen bg-black px-5 py-20 text-[#F5F3ED]">
         <div className="magizh-container">
           <div className="magizh-card mx-auto max-w-xl p-8">
-            <p className="magizh-muted text-sm">
-              Loading invite...
-            </p>
+            <PageLoader label="Loading invite..." />
           </div>
         </div>
       </main>

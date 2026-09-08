@@ -2,10 +2,10 @@
 
 import { useQuery } from "@tanstack/react-query";
 import {
-  Loader2,
   LogIn,
   RefreshCw,
 } from "lucide-react";
+import { PageLoader } from "@/components/loading";
 import { getLoginAttempts } from "@/lib/admin-security-api";
 
 export default function LoginAttemptsPage() {
@@ -61,12 +61,7 @@ export default function LoginAttemptsPage() {
         </div>
 
         {isLoading && (
-          <div className="flex min-h-60 items-center justify-center">
-            <div className="flex items-center gap-3 text-[#A1A1A1]">
-              <Loader2 size={20} className="animate-spin" />
-              Loading login attempts...
-            </div>
-          </div>
+          <PageLoader variant="section" label="Loading login attempts..." />
         )}
 
         {isError && !isLoading && (

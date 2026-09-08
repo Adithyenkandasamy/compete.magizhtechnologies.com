@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 
+import { PageLoader } from "@/components/loading";
 import {
   deleteAdminJudge,
   getAdminJudges,
@@ -97,9 +98,7 @@ export default function AdminJudgesPage() {
         </div>
 
         {loading && (
-          <div className="magizh-card mt-10 p-8">
-            <p className="magizh-muted">Loading judges...</p>
-          </div>
+          <PageLoader variant="section" label="Loading judges..." />
         )}
 
         {error && (

@@ -3,10 +3,10 @@
 import { useQuery } from "@tanstack/react-query";
 import {
   Clock,
-  Loader2,
   RefreshCw,
   ShieldCheck,
 } from "lucide-react";
+import { PageLoader } from "@/components/loading";
 import { getSecuritySessions } from "@/lib/admin-security-api";
 
 export default function SecuritySessionsPage() {
@@ -62,12 +62,7 @@ export default function SecuritySessionsPage() {
         </div>
 
         {isLoading && (
-          <div className="flex min-h-60 items-center justify-center">
-            <div className="flex items-center gap-3 text-[#A1A1A1]">
-              <Loader2 size={20} className="animate-spin" />
-              Loading sessions...
-            </div>
-          </div>
+          <PageLoader variant="section" label="Loading sessions..." />
         )}
 
         {isError && !isLoading && (

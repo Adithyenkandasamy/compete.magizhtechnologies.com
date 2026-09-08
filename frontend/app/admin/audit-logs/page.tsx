@@ -2,10 +2,10 @@
 
 import { useQuery } from "@tanstack/react-query";
 import {
-  Loader2,
   RefreshCw,
   Shield,
 } from "lucide-react";
+import { PageLoader } from "@/components/loading";
 import { getAdminAuditLogs } from "@/lib/admin-activity-api";
 
 export default function AdminAuditLogsPage() {
@@ -60,12 +60,7 @@ export default function AdminAuditLogsPage() {
         </div>
 
         {isLoading && (
-          <div className="flex min-h-60 items-center justify-center">
-            <div className="flex items-center gap-3 text-[#A1A1A1]">
-              <Loader2 size={20} className="animate-spin" />
-              Loading audit logs...
-            </div>
-          </div>
+          <PageLoader variant="section" label="Loading audit logs..." />
         )}
 
         {isError && !isLoading && (

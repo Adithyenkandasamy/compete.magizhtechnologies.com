@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import apiClient from "@/lib/api-client";
+import { PageLoader } from "@/components/loading";
 
 type Badge = {
   id: string;
@@ -57,9 +58,7 @@ export default function BadgesPage() {
       </div>
 
       {loading && (
-        <div className="magizh-card p-6">
-          <p className="magizh-muted">Loading badges...</p>
-        </div>
+        <PageLoader variant="section" label="Loading badges..." />
       )}
 
       {error && (

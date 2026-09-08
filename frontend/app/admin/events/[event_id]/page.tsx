@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import { PageLoader } from "@/components/loading";
 
 import {
   getAdminEvent,
@@ -264,13 +265,7 @@ export default function AdminEventEditPage() {
   if (loading) {
     return (
       <main className="min-h-screen bg-black">
-        <section className="magizh-container py-12 md:py-20">
-          <div className="magizh-card p-8">
-            <p className="magizh-muted">
-              Loading event details...
-            </p>
-          </div>
-        </section>
+        <PageLoader label="Loading event details..." />
       </main>
     );
   }

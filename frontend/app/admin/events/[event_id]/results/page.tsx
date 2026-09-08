@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import { PageLoader } from "@/components/loading";
 
 import {
   getAdminEventResults,
@@ -137,9 +138,7 @@ export default function AdminEventResultsPage() {
         )}
 
         {loading && (
-          <div className="magizh-card mt-8 p-8">
-            <p className="magizh-muted">Loading results...</p>
-          </div>
+          <PageLoader variant="section" label="Loading results..." />
         )}
 
         {!loading && !error && results.length === 0 && (

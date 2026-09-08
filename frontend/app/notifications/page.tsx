@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Bell, Check, CheckCheck, Loader2 } from "lucide-react";
 
+import { PageLoader } from "@/components/loading";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -148,10 +149,7 @@ export default function NotificationsPage() {
         )}
 
         {loading && (
-          <div className="flex items-center gap-3 text-[#A1A1A1]">
-            <Loader2 className="h-5 w-5 animate-spin" />
-            Loading notifications...
-          </div>
+          <PageLoader variant="section" label="Loading notifications..." />
         )}
 
         {!loading && error && (

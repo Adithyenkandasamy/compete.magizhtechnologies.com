@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { ArrowDown, ArrowUp, ChevronLeft, Plus, Trash2 } from "lucide-react";
+import { PageLoader } from "@/components/loading";
 
 import {
   createAdminRound,
@@ -280,13 +281,7 @@ export default function AdminEventRoundsPage() {
   if (loading) {
     return (
       <main className="min-h-screen bg-black">
-        <section className="magizh-container py-12 md:py-20">
-          <div className="magizh-card p-8">
-            <p className="magizh-muted">
-              Loading rounds...
-            </p>
-          </div>
-        </section>
+        <PageLoader label="Loading rounds..." />
       </main>
     );
   }

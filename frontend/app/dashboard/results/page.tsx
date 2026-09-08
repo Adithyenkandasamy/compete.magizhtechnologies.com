@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { getMyRegistrations } from "@/lib/registrations-api";
 import { getEvent } from "@/lib/events-api";
 import { getEventResults, type EventResult } from "@/lib/results-api";
+import { PageLoader } from "@/components/loading";
 
 type EventWithResults = {
   eventId: string;
@@ -95,9 +96,7 @@ export default function ResultsPage() {
       </div>
 
       {loading && (
-        <div className="magizh-card p-6">
-          <p className="magizh-muted">Loading results...</p>
-        </div>
+        <PageLoader variant="section" label="Loading results..." />
       )}
 
       {error && (

@@ -10,6 +10,7 @@ import {
   Shield,
   UserRound,
 } from "lucide-react";
+import { PageLoader } from "@/components/loading";
 import {
   getAdminUser,
   updateAdminUserRole,
@@ -75,12 +76,7 @@ export default function AdminUserDetailPage() {
   if (isLoading) {
     return (
       <main className="min-h-screen bg-black text-[#F5F3ED]">
-        <div className="magizh-container flex min-h-screen items-center justify-center">
-          <div className="flex items-center gap-3 text-[#A1A1A1]">
-            <Loader2 size={20} className="animate-spin" />
-            Loading user...
-          </div>
-        </div>
+        <PageLoader label="Loading user..." />
       </main>
     );
   }

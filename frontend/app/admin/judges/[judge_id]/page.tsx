@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 
+import { PageLoader } from "@/components/loading";
 import {
   getAdminJudge,
   updateAdminJudge,
@@ -112,9 +113,7 @@ export default function AdminJudgeDetailsPage() {
         </div>
 
         {loading && (
-          <div className="magizh-card mt-10 max-w-3xl p-8">
-            <p className="magizh-muted">Loading judge...</p>
-          </div>
+          <PageLoader variant="section" label="Loading judge..." />
         )}
 
         {error && (

@@ -10,6 +10,7 @@ import { createTeamProject } from "@/lib/projects-api";
 import { getErrorMessage } from "@/lib/error-message";
 import type { Event } from "@/types/events";
 import type { Team } from "@/lib/teams-api";
+import { PageLoader } from "@/components/loading";
 
 export default function NewProjectPage() {
   const params = useParams();
@@ -98,7 +99,7 @@ export default function NewProjectPage() {
   if (isLoading) {
     return (
       <main className="magizh-container py-20">
-        <p className="magizh-muted">Loading...</p>
+        <PageLoader label="Loading project..." />
       </main>
     );
   }

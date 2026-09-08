@@ -17,6 +17,7 @@ import type { Registration } from "@/lib/registrations-api";
 import type { Event } from "@/types/events";
 import type { Team, TeamMember } from "@/lib/teams-api";
 import { getErrorMessage } from "@/lib/error-message";
+import { PageLoader } from "@/components/loading";
 
 type TeamWithMembers = Team & {
   members?: TeamMember[];
@@ -152,7 +153,7 @@ export default function MyTeamsPage() {
   if (isLoading) {
     return (
       <main className="magizh-container py-20">
-        <p className="magizh-muted">Loading your teams...</p>
+        <PageLoader label="Loading your teams..." />
       </main>
     );
   }

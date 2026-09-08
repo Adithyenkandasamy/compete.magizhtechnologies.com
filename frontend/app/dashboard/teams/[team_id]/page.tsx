@@ -34,6 +34,7 @@ import {
 } from "@/lib/realtime";
 
 import { getErrorMessage } from "@/lib/error-message";
+import { PageLoader } from "@/components/loading";
 
 type TeamMember = {
     id: string;
@@ -532,9 +533,7 @@ export default function TeamDetailsPage() {
     if (isLoading) {
         return (
             <main className="magizh-container py-20">
-                <p className="magizh-muted">
-                    Loading team...
-                </p>
+                <PageLoader label="Loading team..." />
             </main>
         );
     }
@@ -870,9 +869,7 @@ export default function TeamDetailsPage() {
                         </div>
 
                         {isRequestsLoading ? (
-                            <p className="magizh-muted text-sm">
-                                Loading join requests...
-                            </p>
+                            <PageLoader variant="section" label="Loading join requests..." />
                         ) : joinRequests.length === 0 ? (
                             <div className="rounded border border-[#252525] bg-[#0A0A0A] p-6">
                                 <p className="magizh-muted text-sm">

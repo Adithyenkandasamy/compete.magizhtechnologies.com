@@ -10,6 +10,7 @@ import {
   getProjectSubmission,
   type Submission,
 } from "@/lib/submissions-api";
+import { PageLoader } from "@/components/loading";
 
 type ProjectSubmission = {
   project: Project;
@@ -125,11 +126,7 @@ export default function SubmissionsPage() {
       </div>
 
       {loading && (
-        <div className="magizh-card p-6">
-          <p className="magizh-muted">
-            Loading submissions...
-          </p>
-        </div>
+        <PageLoader variant="section" label="Loading submissions..." />
       )}
 
       {error && (

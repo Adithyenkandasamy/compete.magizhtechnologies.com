@@ -3,9 +3,9 @@
 import { useQuery } from "@tanstack/react-query";
 import {
   BarChart3,
-  Loader2,
   RefreshCw,
 } from "lucide-react";
+import { PageLoader } from "@/components/loading";
 import { getAnalyticsOverview } from "@/lib/admin-analytics-api";
 
 function formatValue(value: unknown): string {
@@ -81,12 +81,7 @@ export default function AdminAnalyticsPage() {
         </div>
 
         {isLoading && (
-          <div className="flex min-h-60 items-center justify-center">
-            <div className="flex items-center gap-3 text-[#A1A1A1]">
-              <Loader2 size={20} className="animate-spin" />
-              Loading analytics...
-            </div>
-          </div>
+          <PageLoader variant="section" label="Loading analytics..." />
         )}
 
         {isError && !isLoading && (

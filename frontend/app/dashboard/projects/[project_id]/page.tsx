@@ -19,6 +19,7 @@ import {
 
 import { getTeam, type Team } from "@/lib/teams-api";
 import { getErrorMessage } from "@/lib/error-message";
+import { PageLoader } from "@/components/loading";
 import type { Project } from "@/types/project";
 
 type FormState = {
@@ -270,11 +271,7 @@ export default function ProjectDetailsPage() {
   if (loading) {
     return (
       <main className="magizh-container py-20">
-        <div className="magizh-card p-6">
-          <p className="magizh-muted">
-            Loading project...
-          </p>
-        </div>
+        <PageLoader label="Loading project..." />
       </main>
     );
   }

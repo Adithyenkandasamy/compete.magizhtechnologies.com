@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
-import { Loader2, RefreshCw, Users } from "lucide-react";
+import { RefreshCw, Users } from "lucide-react";
+import { PageLoader } from "@/components/loading";
 import { getAdminUsers } from "@/lib/admin-users-api";
 
 export default function AdminUsersPage() {
@@ -57,12 +58,7 @@ export default function AdminUsersPage() {
 
         {/* Loading */}
         {isLoading && (
-          <div className="flex min-h-60 items-center justify-center">
-            <div className="flex items-center gap-3 text-[#A1A1A1]">
-              <Loader2 size={20} className="animate-spin" />
-              Loading users...
-            </div>
-          </div>
+          <PageLoader variant="section" label="Loading users..." />
         )}
 
         {/* Error */}

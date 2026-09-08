@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { getProject, type Project } from "@/lib/projects-api";
+import { PageLoader } from "@/components/loading";
 
 export default function PublicProjectDetailsPage() {
   const params = useParams();
@@ -45,9 +46,7 @@ export default function PublicProjectDetailsPage() {
         </Link>
 
         {loading && (
-          <div className="magizh-card mt-10 p-8">
-            <p className="magizh-muted">Loading project...</p>
-          </div>
+          <PageLoader variant="section" label="Loading project..." />
         )}
 
         {error && (
