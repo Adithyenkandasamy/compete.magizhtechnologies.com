@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { FormEvent, useEffect, useState } from "react";
 
@@ -111,12 +110,11 @@ export default function NewProjectPage() {
         <div className="magizh-card p-8">
           <p className="text-[#C75C5C]">{error || "Team not found."}</p>
 
-          <Link
+          <BackButton
+            label="Back to Projects"
             href="/dashboard/projects"
-            className="mt-5 inline-flex text-sm font-semibold uppercase tracking-wider text-[#D4AF37] hover:text-[#E5C04A]"
-          >
-            ← Back to Projects
-          </Link>
+            className="mt-5"
+          />
         </div>
       </main>
     );

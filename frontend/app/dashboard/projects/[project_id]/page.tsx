@@ -285,12 +285,11 @@ export default function ProjectDetailsPage() {
             {error || "Project not found."}
           </p>
 
-          <Link
+          <BackButton
+            label="Back to Projects"
             href="/dashboard/projects"
-            className="mt-5 inline-flex text-sm font-semibold uppercase tracking-wider text-[#D4AF37] hover:text-[#E5C04A]"
-          >
-            ← Back to Projects
-          </Link>
+            className="mt-5"
+          />
         </div>
       </main>
     );

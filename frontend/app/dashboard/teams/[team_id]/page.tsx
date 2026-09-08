@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 
@@ -547,12 +546,11 @@ export default function TeamDetailsPage() {
                         {error || "Team not found."}
                     </p>
 
-                    <Link
+                    <BackButton
+                        label="Back to Teams"
                         href="/dashboard/teams"
-                        className="mt-5 inline-flex text-sm font-semibold uppercase tracking-wider text-[#D4AF37] hover:text-[#E5C04A]"
-                    >
-                        ← Back to Teams
-                    </Link>
+                        className="mt-5"
+                    />
                 </div>
             </main>
         );
