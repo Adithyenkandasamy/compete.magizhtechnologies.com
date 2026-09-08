@@ -21,7 +21,7 @@ export default function DashboardPage() {
   if (status === "loading") {
     return (
       <main className="magizh-container py-20">
-        <CircularHudLoader message="VERIFYING IDENTITY" />
+        <CircularHudLoader mode="session" />
       </main>
     );
   }
@@ -45,7 +45,7 @@ export default function DashboardPage() {
   return (
     <main className="magizh-container py-12 md:py-16">
       {signingOut && (
-        <CircularHudLoader fullScreen message="TERMINATING SESSION" />
+        <CircularHudLoader fullScreen mode="logout" />
       )}
 
       <section className="mb-12">

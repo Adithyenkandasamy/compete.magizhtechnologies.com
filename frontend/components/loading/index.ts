@@ -15,7 +15,10 @@
  *   Empty    -> EmptyState (only after the request resolved with zero results)
  *   Data     -> real content stays visible; RefetchIndicator during background refetch
  */
-export { CircularHudLoader } from "./CircularHudLoader";
+export {
+  CircularHudLoader,
+  type CircularHudMode,
+} from "./CircularHudLoader";
 export {
   HackerSnakeLoader,
   type HackerSnakeSize,

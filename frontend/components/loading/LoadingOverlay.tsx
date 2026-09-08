@@ -1,12 +1,16 @@
 "use client";
 
-import { CircularHudLoader } from "./CircularHudLoader";
+import {
+  CircularHudLoader,
+  type CircularHudMode,
+} from "./CircularHudLoader";
 import { HackerSnakeLoader } from "./HackerSnakeLoader";
 
 /**
  * Generic blocking overlay that uses one of the two Magizh loader families:
  *
- *   <LoadingOverlay open={mutation.isPending} variant="hud" message="AUTHENTICATING" />
+ *   <LoadingOverlay open={mutation.isPending} variant="hud" mode="logout" />
+ *   <LoadingOverlay open={query.isPending} variant="snake" message="SYNCING" />
  *
  *   variant="hud"    → Circular HUD (authentication operations only)
  *   variant="snake"  → Hacker Snake (everything else)
@@ -17,6 +21,8 @@ import { HackerSnakeLoader } from "./HackerSnakeLoader";
 type LoadingOverlayProps = {
   open: boolean;
   variant?: "hud" | "snake";
+  /** HUD auth-lifecycle mode (used when variant is "hud"). */
+  mode?: CircularHudMode;
   message?: string;
   className?: string;
 };
@@ -24,6 +30,7 @@ type LoadingOverlayProps = {
 export function LoadingOverlay({
   open,
   variant = "snake",
+  mode = "login",
   message,
   className = "",
 }: LoadingOverlayProps) {
@@ -38,7 +45,7 @@ export function LoadingOverlay({
       className={`fixed inset-0 z-[80] flex items-center justify-center bg-black/70 backdrop-blur-sm ${className}`}
     >
       {variant === "hud" ? (
-        <CircularHudLoader message={message} />
+        <CircularHudLoader mode={mode} message={message} />
       ) : (
         <HackerSnakeLoader size="lg" message={message} />
       )}

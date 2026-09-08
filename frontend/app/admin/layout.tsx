@@ -42,7 +42,7 @@ export default function AdminLayout({
   if (status === "loading") {
     return (
       <main className="magizh-container py-20">
-        <CircularHudLoader message="VERIFYING IDENTITY" />
+        <CircularHudLoader mode="session" />
       </main>
     );
   }
@@ -70,7 +70,7 @@ export default function AdminLayout({
   return (
     <div className="min-h-screen bg-black text-[#F5F3ED]">
       {signingOut && (
-        <CircularHudLoader fullScreen message="TERMINATING SESSION" />
+        <CircularHudLoader fullScreen mode="logout" />
       )}
 
       <header className="sticky top-0 z-50 border-b border-[#252525] bg-[#0A0A0C]/90 backdrop-blur">

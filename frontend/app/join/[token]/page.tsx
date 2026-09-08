@@ -66,7 +66,7 @@ export default function JoinTeamPage() {
   if (status === "loading") {
     return (
       <main className="min-h-screen flex items-center justify-center px-5 py-16">
-        <CircularHudLoader message="VERIFYING IDENTITY" />
+        <CircularHudLoader mode="session" />
       </main>
     );
   }

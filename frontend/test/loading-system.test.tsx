@@ -5,7 +5,13 @@ import { describe, expect, it, vi } from "vitest";
 import type { ReactNode } from "react";
 
 import LoginPage from "@/app/login/page";
-import { PageLoader, RefetchIndicator } from "@/components/loading";
+import RegisterPage from "@/app/register/page";
+import {
+  CircularHudLoader,
+  LoadingButton,
+  PageLoader,
+  RefetchIndicator,
+} from "@/components/loading";
 
 /**
  * System behavior tests for the Magizh two-loader language:
@@ -47,7 +53,7 @@ vi.mock("@/providers/auth-provider", () => ({
   }),
 }));
 
-function renderLogin() {
+function withQueryClient(ui: ReactNode) {
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: { retry: false },
@@ -55,11 +61,17 @@ function renderLogin() {
     },
   });
 
-  return render(
-    <QueryClientProvider client={queryClient}>
-      <LoginPage />
-    </QueryClientProvider>,
+  return (
+    <QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>
   );
+}
+
+function renderLogin() {
+  return render(withQueryClient(<LoginPage />));
+}
+
+function renderRegister() {
+  return render(withQueryClient(<RegisterPage />));
 }
 
 describe("Loading system: Circular HUD vs Hacker Snake", () => {
@@ -86,6 +98,49 @@ describe("Loading system: Circular HUD vs Hacker Snake", () => {
     ).not.toBeInTheDocument();
     expect(
       container.querySelector(".animate-spin"),
+    ).not.toBeInTheDocument();
+  });
+
+  it("shows the Circular HUD while registration is pending (auth lifecycle)", async () => {
+    authMock.register.mockReturnValue(new Promise(() => {}));
+
+    const { container } = renderRegister();
+
+    const user = userEvent.setup();
+    await user.type(screen.getByLabelText(/full name/i), "Ada Magizh");
+    await user.type(screen.getByLabelText(/email/i), "ada@magizh.io");
+    await user.type(screen.getByLabelText(/password/i), "Secret123!");
+    await user.click(
+      screen.getByRole("button", { name: /create account/i }),
+    );
+
+    expect(
+      container.querySelector('[data-testid="circular-hud"]'),
+    ).toBeInTheDocument();
+    expect(
+      container.querySelector('[data-testid="hacker-snake"]'),
+    ).not.toBeInTheDocument();
+  });
+
+  it("uses the Circular HUD for logout (auth lifecycle)", () => {
+    const { container } = render(
+      <CircularHudLoader mode="logout" fullScreen />,
+    );
+    expect(
+      container.querySelector('[data-testid="circular-hud"]'),
+    ).toBeInTheDocument();
+    expect(
+      container.querySelector('[data-testid="hacker-snake"]'),
+    ).not.toBeInTheDocument();
+  });
+
+  it("uses the Circular HUD for initial session restoration", () => {
+    const { container } = render(<CircularHudLoader mode="session" />);
+    expect(
+      container.querySelector('[data-testid="circular-hud"]'),
+    ).toBeInTheDocument();
+    expect(
+      container.querySelector('[data-testid="hacker-snake"]'),
     ).not.toBeInTheDocument();
   });
 
@@ -123,6 +178,35 @@ describe("Loading system: Circular HUD vs Hacker Snake", () => {
     ).toHaveLength(1);
   });
 
+  it("renders a small snake + disabled state for mutations, not a full-page overlay", () => {
+    const { container } = render(
+      <LoadingButton loading loadingText="Registering...">
+        Register
+      </LoadingButton>,
+    );
+
+    // Small inline snake in the button.
+    expect(
+      container.querySelector('[data-testid="hacker-snake"]'),
+    ).toBeInTheDocument();
+    expect(
+      container.querySelector('[data-testid="loading-overlay"]'),
+    ).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /registering/i })).toBeDisabled();
+  });
+
+  it("uses a large snake for initial page load and a small one for refetch", () => {
+    const page = render(<PageLoader variant="page" label="loading events" />);
+    expect(page.container.querySelector(".magizh-snake-track")).toHaveClass(
+      "w-80",
+    );
+
+    const refetch = render(<RefetchIndicator active label="Updating" />);
+    expect(
+      refetch.container.querySelector(".magizh-snake-track"),
+    ).toHaveClass("w-12");
+  });
+
   it("never renders a third loader icon across the loading families", () => {
     const { container } = render(<PageLoader label="loading" />);
 
@@ -138,5 +222,13 @@ describe("Loading system: Circular HUD vs Hacker Snake", () => {
     expect(
       container.querySelector(".magizh-skeleton"),
     ).not.toBeInTheDocument();
+  });
+
+  it("never fakes a progress percentage in any loader family", () => {
+    const hud = render(<CircularHudLoader mode="login" />);
+    expect(hud.container.textContent).not.toMatch(/\d+%/);
+
+    const snake = render(<PageLoader label="loading" />);
+    expect(snake.container.textContent).not.toMatch(/\d+%/);
   });
 });

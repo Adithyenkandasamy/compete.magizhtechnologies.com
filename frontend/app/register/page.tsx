@@ -55,7 +55,7 @@ export default function RegisterPage() {
   return (
     <main className="min-h-screen flex items-center justify-center px-5 py-16">
       {registerMutation.isPending && (
-        <CircularHudLoader fullScreen message="ESTABLISHING IDENTITY" />
+        <CircularHudLoader fullScreen mode="login" message="ESTABLISHING IDENTITY..." />
       )}
 
       <div className="w-full max-w-md">

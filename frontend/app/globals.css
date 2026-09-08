@@ -117,7 +117,14 @@ button {
  *   2. Hacker Snake   → everything else, at any size
  *
  * No other loading animation exists in the product. The skeleton below is a
- * STATIC layout reservation — it never animates.
+ * STATIC layout reservation — it never animates. Decorative telemetry in the
+ * loaders never carries real secrets (tokens, JWTs, passwords) and never
+ * fakes a percentage.
+ *
+ * Motion contracts:
+ *   - Snake segments travel left→right through the track.
+ *   - HUD rings rotate at different speeds / directions for a layered read.
+ *   - All loaders drop to a static, readable state under reduced motion.
  * ------------------------------------------------------------------------- */
 
 /* Skeleton base — static reserved block, never animates. */
@@ -134,13 +141,40 @@ button {
 
 /* --- HACKER SNAKE ------------------------------------------------------- */
 
-/* Track the segments flow through (static reserved bar — never animates). */
+/* Dark track the data signal travels through. */
 .magizh-snake-track {
   position: relative;
   overflow: hidden;
   border-radius: 2px;
   border: 1px solid var(--border);
   background: #060607;
+  box-shadow: inset 0 0 0 1px rgba(212, 175, 55, 0.04);
+}
+
+/* Gold segmented snake — a repeating data signal that visibly flows L→R. */
+.magizh-snake-flow {
+  position: absolute;
+  inset: 0;
+  background-image: repeating-linear-gradient(
+    90deg,
+    transparent 0 5px,
+    rgba(212, 175, 55, 0.35) 5px 7px,
+    var(--gold) 7px 12px,
+    var(--gold-bright) 12px 14px,
+    rgba(229, 192, 74, 0.7) 14px 16px,
+    transparent 16px 24px
+  );
+  animation: magizh-snake-move var(--magizh-snake-duration, 1s) linear infinite;
+  will-change: background-position;
+}
+
+@keyframes magizh-snake-move {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: 24px 0;
+  }
 }
 
 /* Technical tick bar shown above large/full snakes. */
@@ -150,6 +184,14 @@ button {
     rgba(212, 175, 55, 0.35) 0 1px,
     transparent 1px 8px
   );
+}
+
+/* Decorative readout row (NODE / REQUEST / STATUS) for lg/full snakes. */
+.magizh-snake-telemetry {
+  font-family: var(--font-geist-mono), ui-monospace, SFMono-Regular, monospace;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(212, 175, 55, 0.7);
 }
 
 /* --- CIRCULAR HUD ------------------------------------------------------- */
@@ -166,18 +208,22 @@ button {
   transform-origin: center;
 }
 
+/* Outer layered segmented ring. */
 .magizh-hud-spin {
   animation: magizh-hud-rot 7s linear infinite;
 }
 
+/* Inner technical tick ring. */
 .magizh-hud-spin-slow {
   animation: magizh-hud-rot 16s linear infinite;
 }
 
+/* Secondary ring, counter-rotating. */
 .magizh-hud-reverse {
   animation: magizh-hud-rot 10s linear infinite reverse;
 }
 
+/* Slow scanning sweep segment. */
 .magizh-hud-sweep {
   animation: magizh-hud-rot 3.4s linear infinite;
 }
@@ -188,16 +234,88 @@ button {
   }
 }
 
+/* Centre emissive mark (the "M" monogram). */
+.magizh-hud-emissive {
+  animation: magizh-hud-emissive 2.6s ease-in-out infinite;
+}
+
+@keyframes magizh-hud-emissive {
+  0%,
+  100% {
+    opacity: 0.75;
+    text-shadow: 0 0 8px rgba(212, 175, 55, 0.25);
+  }
+  50% {
+    opacity: 1;
+    text-shadow: 0 0 16px rgba(229, 192, 74, 0.5);
+  }
+}
+
+/* Small drifting gold particles within the HUD field. */
+.magizh-hud-particle {
+  position: absolute;
+  border-radius: 9999px;
+  background: var(--gold-bright);
+  box-shadow: 0 0 6px rgba(229, 192, 74, 0.55);
+  animation: magizh-hud-particle var(--magizh-hud-particle-duration, 4s)
+    ease-in-out infinite;
+  will-change: transform, opacity;
+}
+
+@keyframes magizh-hud-particle {
+  0%,
+  100% {
+    opacity: 0.15;
+    transform: translateY(0) scale(0.8);
+  }
+  50% {
+    opacity: 0.9;
+    transform: translateY(-14px) scale(1.1);
+  }
+}
+
+/* Stage indicator row inside the HUD (indeterminate — never a percentage). */
+.magizh-hud-stage {
+  transition: opacity 200ms ease, color 200ms ease;
+  opacity: 0.55;
+}
+
+/* Stages "march" in sequence with a 3s loop (delay set per-stage in JSX). */
+.magizh-hud-stages .magizh-hud-stage {
+  animation: magizh-hud-march 3s ease-in-out infinite;
+}
+
+@keyframes magizh-hud-march {
+  0%,
+  60%,
+  100% {
+    opacity: 0.5;
+    color: var(--gold);
+  }
+  20%,
+  40% {
+    opacity: 1;
+    color: var(--gold-bright);
+  }
+}
+
 /* Respect reduced motion — kill movement, keep a clear static indication. */
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
   }
 
+  .magizh-snake-flow {
+    animation: none;
+  }
+
   .magizh-hud-spin,
   .magizh-hud-spin-slow,
   .magizh-hud-reverse,
-  .magizh-hud-sweep {
+  .magizh-hud-sweep,
+  .magizh-hud-emissive,
+  .magizh-hud-particle,
+  .magizh-hud-stages .magizh-hud-stage {
     animation: none;
   }
 }

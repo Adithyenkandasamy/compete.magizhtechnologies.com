@@ -58,8 +58,21 @@ export function LoadingButton({
       aria-busy={loading}
       {...props}
     >
-      {loading && <HackerSnakeLoader size="sm" announce={false} />}
-      <span>{loading ? loadingText : children}</span>
+      {loading ? (
+        <>
+          <HackerSnakeLoader
+            size="sm"
+            announce={false}
+            className="shrink-0"
+          />
+          <span aria-hidden className="magizh-mono text-[10px] tracking-[0.15em] opacity-70">
+            &gt;&gt;&gt;
+          </span>
+          <span>{loadingText}</span>
+        </>
+      ) : (
+        children
+      )}
     </button>
   );
 }

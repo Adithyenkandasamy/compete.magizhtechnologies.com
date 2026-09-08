@@ -103,7 +103,7 @@ export default function ProfilePage() {
   if (status === "loading") {
     return (
       <main className="magizh-container py-20">
-        <CircularHudLoader message="VERIFYING IDENTITY" />
+        <CircularHudLoader mode="session" />
       </main>
     );
   }

@@ -72,4 +72,39 @@ describe("HackerSnakeLoader", () => {
     expect(screen.getByText("LOADING")).toBeInTheDocument();
     expect(container.querySelector(".magizh-snake-track")).toBeInTheDocument();
   });
+
+  it("renders the flowing data signal inside the track", () => {
+    const { container } = render(<HackerSnakeLoader message="LOADING" />);
+    expect(container.querySelector(".magizh-snake-flow")).toBeInTheDocument();
+  });
+
+  it("shows decorative telemetry on large sizes by default", () => {
+    const { container } = render(<HackerSnakeLoader size="lg" />);
+    const telemetry = container.querySelector(".magizh-snake-telemetry");
+    expect(telemetry).toBeInTheDocument();
+    expect(telemetry?.textContent).toContain("STATUS: PROCESSING");
+    expect(telemetry).toHaveAttribute("aria-hidden", "true");
+  });
+
+  it("omits telemetry on small sizes unless requested", () => {
+    const { container } = render(<HackerSnakeLoader size="sm" />);
+    expect(
+      container.querySelector(".magizh-snake-telemetry"),
+    ).not.toBeInTheDocument();
+
+    const { container: withTelemetry } = render(
+      <HackerSnakeLoader size="sm" showTelemetry />,
+    );
+    expect(
+      withTelemetry.querySelector(".magizh-snake-telemetry"),
+    ).toBeInTheDocument();
+  });
+
+  it("never renders a fake progress percentage or a circular HUD", () => {
+    const { container } = render(<HackerSnakeLoader size="full" />);
+    expect(container.textContent).not.toMatch(/\d+%/);
+    expect(
+      container.querySelector('[data-testid="circular-hud"]'),
+    ).not.toBeInTheDocument();
+  });
 });

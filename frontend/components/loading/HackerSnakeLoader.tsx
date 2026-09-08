@@ -4,9 +4,10 @@
  * Hacker Snake — the single loader for every non-authentication loading
  * state in Magizh.
  *
- * Visual language: a gold technical track with a static tick bar — a clean
- * reserved indicator, never a moving/key animation. Indeterminate by
- * design: no fake progress values are ever rendered.
+ * Visual language: a dark technical track with a gold segmented data signal
+ * that visibly flows left→right (never a fake progress percentage), an
+ * optional tick reticle above large/full snakes, a contextual message, and a
+ * decorative telemetry readout (NODE / REQUEST / STATUS) for lg/full sizes.
  *
  * Sizes:
  *   sm    — buttons & small inline actions
@@ -14,8 +15,9 @@
  *   lg    — page/data loading within a section
  *   full  — page-level loading (response required to render content)
  *
- * The indicator is static CSS (lightweight) and always respects
- * prefers-reduced-motion.
+ * The flowing signal is pure CSS (lightweight) and always respects
+ * prefers-reduced-motion: under reduced motion the segments stay static on
+ * the track and the readable label/status remain.
  */
 
 export type HackerSnakeSize = "sm" | "md" | "lg" | "full";
@@ -26,6 +28,11 @@ type HackerSnakeLoaderProps = {
   size?: HackerSnakeSize;
   /** false → decorative (aria-hidden); the parent owns the live region. */
   announce?: boolean;
+  /**
+   * Show the decorative telemetry readout (NODE / REQUEST / STATUS).
+   * Defaults to true for lg/full, false for sm/md.
+   */
+  showTelemetry?: boolean;
   className?: string;
 };
 
@@ -50,15 +57,38 @@ const containerHeights: Record<HackerSnakeSize, string> = {
   full: "min-h-[55vh]",
 };
 
+/**
+ * Deterministic decorative telemetry code — derived from the label text so it
+ * never carries real secrets and always renders the same value per label.
+ */
+function telemetryCode(label: string): string {
+  let hash = 0;
+  for (let i = 0; i < label.length; i += 1) {
+    hash = (hash * 31 + label.charCodeAt(i)) & 0xffff;
+  }
+  return hash.toString(16).toUpperCase().padStart(4, "0");
+}
+
+function telemetryNode(label: string): string {
+  const slug = label
+    .replace(/[^a-zA-Z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 12);
+  return `MZ-${slug || "CORE"}`;
+}
+
 export function HackerSnakeLoader({
   message,
   size = "md",
   announce = true,
+  showTelemetry,
   className = "",
 }: HackerSnakeLoaderProps) {
   const label = message?.trim();
   const showReticle = size === "lg" || size === "full";
   const showLabel = Boolean(label) && size !== "sm";
+  const hasTelemetry =
+    showTelemetry ?? (size === "lg" || size === "full");
 
   return (
     <div
@@ -76,7 +106,22 @@ export function HackerSnakeLoader({
         />
       )}
 
-      <div className={`magizh-snake-track ${trackHeights[size]} ${trackWidths[size]}`} />
+      <div
+        className={`magizh-snake-track ${trackHeights[size]} ${trackWidths[size]}`}
+      >
+        <div aria-hidden className="magizh-snake-flow" />
+      </div>
+
+      {hasTelemetry && (
+        <div
+          aria-hidden
+          className="magizh-snake-telemetry mt-2.5 flex items-center gap-3 text-[9px]"
+        >
+          <span>NODE: {telemetryNode(label ?? "CORE")}</span>
+          <span>REQ: {telemetryCode(label ?? "CORE")}</span>
+          <span>STATUS: PROCESSING</span>
+        </div>
+      )}
 
       {showLabel && (
         <div className="mt-3 max-w-full text-center">
