@@ -1,15 +1,19 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { useAuth } from "@/providers/auth-provider";
-import { DashboardSkeleton } from "@/components/loading";
+import {
+  DashboardSkeleton,
+  LoadingButton,
+} from "@/components/loading";
 
 export default function DashboardPage() {
   const router = useRouter();
   const { user, status, logout } = useAuth();
+  const [signingOut, setSigningOut] = useState(false);
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -32,8 +36,13 @@ export default function DashboardPage() {
   const displayName = user.profile?.full_name || user.email.split("@")[0];
 
   async function handleSignOut() {
-    await logout();
-    router.replace("/login");
+    setSigningOut(true);
+    try {
+      await logout();
+      router.replace("/login");
+    } finally {
+      setSigningOut(false);
+    }
   }
 
   return (
@@ -55,13 +64,15 @@ export default function DashboardPage() {
             </p>
           </div>
 
-          <button
+          <LoadingButton
             type="button"
             onClick={handleSignOut}
-            className="magizh-button"
+            loading={signingOut}
+            loadingText="Signing out..."
+            size="md"
           >
             Sign Out
-          </button>
+          </LoadingButton>
         </div>
       </section>
 

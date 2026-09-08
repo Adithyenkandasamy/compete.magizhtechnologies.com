@@ -663,11 +663,7 @@ export default function AdminEventEditPage() {
 
             <div className="mt-8">
               {loadingJudges ? (
-                <div className="rounded border border-[#252525] bg-[#0A0A0A] p-5">
-                  <p className="magizh-muted text-sm">
-                    Loading judges...
-                  </p>
-                </div>
+                <PageLoader variant="section" label="Loading judges..." />
               ) : judgeError && judges.length === 0 ? (
                 <div className="rounded border border-[#C75C5C] bg-[#0A0A0A] p-5">
                   <p className="text-sm text-[#C75C5C]">
