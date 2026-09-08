@@ -4,10 +4,9 @@
  * Hacker Snake — the single loader for every non-authentication loading
  * state in Magizh.
  *
- * Visual language: a gold segmented signal flows through a dark technical
- * track with a subtle scanning reticle — advanced-engineering / hacker
- * terminal, not a gaming spinner. Indeterminate by design: no fake
- * progress values are ever rendered.
+ * Visual language: a gold technical track with a static tick bar — a clean
+ * reserved indicator, never a moving/key animation. Indeterminate by
+ * design: no fake progress values are ever rendered.
  *
  * Sizes:
  *   sm    — buttons & small inline actions
@@ -15,9 +14,8 @@
  *   lg    — page/data loading within a section
  *   full  — page-level loading (response required to render content)
  *
- * The animation is pure CSS (lightweight). It respects
- * prefers-reduced-motion: the flow stops and a static segmented track
- * remains as a clear indication.
+ * The indicator is static CSS (lightweight) and always respects
+ * prefers-reduced-motion.
  */
 
 export type HackerSnakeSize = "sm" | "md" | "lg" | "full";
@@ -78,10 +76,7 @@ export function HackerSnakeLoader({
         />
       )}
 
-      <div className={`magizh-snake-track ${trackHeights[size]} ${trackWidths[size]}`}>
-        <div className="magizh-snake-flow" aria-hidden />
-        <div className="magizh-snake-scan" aria-hidden />
-      </div>
+      <div className={`magizh-snake-track ${trackHeights[size]} ${trackWidths[size]}`} />
 
       {showLabel && (
         <div className="mt-3 max-w-full text-center">

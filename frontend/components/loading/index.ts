@@ -21,7 +21,6 @@ export {
   type HackerSnakeSize,
 } from "./HackerSnakeLoader";
 export { LoadingOverlay } from "./LoadingOverlay";
-export { RouteTransition } from "./RouteTransition";
 export { PageLoader, BlockLoader } from "./PageLoader";
 export { Skeleton, SkeletonText, SkeletonCircle } from "./Skeleton";
 export { EventCardSkeleton } from "./EventCardSkeleton";

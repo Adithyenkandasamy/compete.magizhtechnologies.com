@@ -134,68 +134,13 @@ button {
 
 /* --- HACKER SNAKE ------------------------------------------------------- */
 
-/* Track the segments flow through. */
+/* Track the segments flow through (static reserved bar — never animates). */
 .magizh-snake-track {
   position: relative;
   overflow: hidden;
   border-radius: 2px;
   border: 1px solid var(--border);
   background: #060607;
-}
-
-/* Flowing gold segments (the snake). */
-.magizh-snake-flow {
-  position: absolute;
-  inset: 0;
-  background-image: repeating-linear-gradient(
-    90deg,
-    transparent 0 10px,
-    rgba(212, 175, 55, 0.12) 10px 14px,
-    #d4af37 14px 19px,
-    #e5c04a 19px 21px,
-    transparent 21px 26px
-  );
-  background-size: 26px 100%;
-  background-repeat: repeat-x;
-  animation: magizh-snake-move 0.85s linear infinite;
-}
-
-@keyframes magizh-snake-move {
-  to {
-    background-position: 26px 0;
-  }
-}
-
-/* Subtle scanning reticle traveling across the track. */
-.magizh-snake-scan {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  width: 2px;
-  background: linear-gradient(
-    180deg,
-    transparent,
-    rgba(229, 192, 74, 0.55),
-    transparent
-  );
-  animation: magizh-snake-scan 1.3s ease-in-out infinite;
-}
-
-@keyframes magizh-snake-scan {
-  0% {
-    transform: translateX(-2px);
-    opacity: 0;
-  }
-  14% {
-    opacity: 1;
-  }
-  86% {
-    opacity: 1;
-  }
-  100% {
-    transform: translateX(150px);
-    opacity: 0;
-  }
 }
 
 /* Technical tick bar shown above large/full snakes. */
@@ -249,16 +194,10 @@ button {
     scroll-behavior: auto;
   }
 
-  .magizh-snake-flow,
-  .magizh-snake-scan,
   .magizh-hud-spin,
   .magizh-hud-spin-slow,
   .magizh-hud-reverse,
   .magizh-hud-sweep {
     animation: none;
-  }
-
-  .magizh-snake-flow {
-    opacity: 0.7;
   }
 }
