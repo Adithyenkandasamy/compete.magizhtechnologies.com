@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 import { useAuth } from "@/providers/auth-provider";
-import { PageLoader } from "@/components/loading";
+import { CircularHudLoader } from "@/components/loading";
 
 export default function DashboardLayout({
   children,
@@ -29,7 +29,7 @@ export default function DashboardLayout({
   if (status === "loading") {
     return (
       <main className="magizh-container py-20">
-        <PageLoader label="loading dashboard" />
+        <CircularHudLoader message="VERIFYING IDENTITY" />
       </main>
     );
   }

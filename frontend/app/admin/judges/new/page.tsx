@@ -4,6 +4,7 @@ import { FormEvent, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
+import { BackButton } from "@/components/ui/BackButton";
 import {
   createAdminJudge,
   type CreateAdminJudgeRequest,
@@ -64,14 +65,9 @@ export default function NewJudgePage() {
   return (
     <main className="min-h-screen bg-black">
       <section className="magizh-container py-12 md:py-20">
-        <Link
-          href="/admin/judges"
-          className="text-sm font-semibold text-[#A1A1A1] transition-colors hover:text-[#D4AF37]"
-        >
-          ← Back to Judges
-        </Link>
+        <BackButton label="Back" href="/admin" className="mb-8" />
 
-        <div className="mt-8 max-w-3xl">
+        <div className="max-w-3xl">
           <p className="magizh-gold text-xs font-semibold uppercase tracking-[0.3em]">
             ADMINISTRATION
           </p>

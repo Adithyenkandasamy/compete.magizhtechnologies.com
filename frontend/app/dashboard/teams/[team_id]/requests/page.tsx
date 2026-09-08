@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -12,6 +11,7 @@ import {
 import type { JoinRequest } from "@/lib/team-invites-api";
 import { getErrorMessage } from "@/lib/error-message";
 import { PageLoader } from "@/components/loading";
+import { BackButton } from "@/components/ui/BackButton";
 
 export default function TeamJoinRequestsPage() {
   const params = useParams();
@@ -117,15 +117,10 @@ export default function TeamJoinRequestsPage() {
 
   return (
     <main className="magizh-container py-12 md:py-16">
-      <div className="mb-10">
-        <Link
-          href={`/dashboard/teams/${teamId}`}
-          className="text-sm font-semibold uppercase tracking-wider text-[#D4AF37] transition-colors hover:text-[#E5C04A]"
-        >
-          ← Back to Team
-        </Link>
+      <BackButton label="Back" href="/dashboard/teams" className="mb-6" />
 
-        <p className="magizh-gold mt-8 text-xs font-semibold uppercase tracking-[0.25em]">
+      <div className="mb-10">
+        <p className="magizh-gold text-xs font-semibold uppercase tracking-[0.25em]">
           TEAM MANAGEMENT
         </p>
 

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { PageLoader } from "@/components/loading";
 
+import { BackButton } from "@/components/ui/BackButton";
 import {
   getAdminEvent,
   updateAdminEvent,
@@ -296,16 +297,11 @@ export default function AdminEventEditPage() {
   return (
     <main className="min-h-screen bg-black">
       <section className="magizh-container py-12 md:py-20">
+        <BackButton label="Back" href="/admin/events" className="mb-8" />
+
         {/* Header */}
         <div className="mb-10">
-          <Link
-            href="/admin/events"
-            className="text-sm font-semibold text-[#A1A1A1] transition-colors hover:text-[#D4AF37]"
-          >
-            ← Back to Events
-          </Link>
-
-          <p className="magizh-gold mt-8 text-xs font-semibold uppercase tracking-[0.3em]">
+          <p className="magizh-gold text-xs font-semibold uppercase tracking-[0.3em]">
             ADMINISTRATION
           </p>
 

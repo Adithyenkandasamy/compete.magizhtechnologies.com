@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import apiClient from "@/lib/api-client";
 import { PageLoader } from "@/components/loading";
+import { BackButton } from "@/components/ui/BackButton";
 
 type Notification = {
   id: string;
@@ -86,6 +87,8 @@ export default function NotificationsPage() {
 
   return (
     <main className="magizh-container py-12">
+      <BackButton label="Back" href="/dashboard" className="mb-6" />
+
       <div className="mb-10 flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
         <div>
           <p className="magizh-gold text-xs font-semibold uppercase tracking-[0.25em]">

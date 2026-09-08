@@ -1,7 +1,6 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import {
@@ -11,7 +10,12 @@ import {
 import { useAuth } from "@/providers/auth-provider";
 import type { Profile } from "@/types/auth";
 import { getErrorMessage } from "@/lib/error-message";
-import { LoadingButton, PageLoader } from "@/components/loading";
+import {
+  CircularHudLoader,
+  LoadingButton,
+  PageLoader,
+} from "@/components/loading";
+import { BackButton } from "@/components/ui/BackButton";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -96,7 +100,15 @@ export default function ProfilePage() {
     }
   }
 
-  if (isLoading || status === "loading") {
+  if (status === "loading") {
+    return (
+      <main className="magizh-container py-20">
+        <CircularHudLoader message="VERIFYING IDENTITY" />
+      </main>
+    );
+  }
+
+  if (isLoading) {
     return (
       <main className="magizh-container py-20">
         <PageLoader label="loading profile" />
@@ -111,12 +123,7 @@ export default function ProfilePage() {
   return (
     <main className="magizh-container py-12 md:py-16">
       <div className="mb-10">
-        <Link
-          href="/dashboard"
-          className="text-sm font-semibold uppercase tracking-wider text-[#D4AF37] hover:text-[#E5C04A]"
-        >
-          ← Dashboard
-        </Link>
+        <BackButton label="Back" href="/" className="mb-8" />
 
         <p className="magizh-gold mt-8 text-xs font-semibold uppercase tracking-[0.25em]">
           STUDENT PROFILE

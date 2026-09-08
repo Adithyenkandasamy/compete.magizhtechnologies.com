@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { getProject, type Project } from "@/lib/projects-api";
 import { PageLoader } from "@/components/loading";
+import { BackButton } from "@/components/ui/BackButton";
 
 export default function PublicProjectDetailsPage() {
   const params = useParams();
@@ -38,12 +39,7 @@ export default function PublicProjectDetailsPage() {
   return (
     <main className="min-h-screen bg-black">
       <section className="magizh-container py-12 md:py-20">
-        <Link
-          href="/projects"
-          className="text-sm font-semibold text-[#A1A1A1] transition-colors hover:text-[#D4AF37]"
-        >
-          ← Back to Showcase
-        </Link>
+        <BackButton label="Back" href="/projects" className="mb-8" />
 
         {loading && (
           <PageLoader variant="section" label="Loading project..." />

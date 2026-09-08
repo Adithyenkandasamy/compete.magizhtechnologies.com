@@ -1,4 +1,8 @@
 import { Skeleton } from "./Skeleton";
+import {
+  HackerSnakeLoader,
+  type HackerSnakeSize,
+} from "./HackerSnakeLoader";
 
 type PageLoaderProps = {
   label?: string;
@@ -16,15 +20,21 @@ const wrapperClasses: Record<
   inline: "",
 };
 
+const snakeSizes: Record<
+  NonNullable<PageLoaderProps["variant"]>,
+  HackerSnakeSize
+> = {
+  page: "full",
+  section: "lg",
+  inline: "sm",
+};
+
 /**
- * Branded Magizh loading indicator.
+ * Branded page/section loading state — renders the Magizh Hacker Snake at
+ * the correct scale for the context. Used by every page-level TanStack
+ * Query fetch; disappears as soon as the actual data arrives.
  *
- * Lightweight: "MAGIZH" wordmark, a thin gold line that travels across,
- * and a small muted label. No infinite flashy spinner. The loading state
- * disappears on its own as soon as the actual data arrives.
- *
- * Pass `aria-busy` is intentionally set here so assistive tech announces
- * pending state; keep the visible label for clarity.
+ * This is the Hacker Snake family; never a Circular HUD (authentic‑only).
  */
 export function PageLoader({
   label = "loading",
@@ -33,22 +43,15 @@ export function PageLoader({
 }: PageLoaderProps) {
   return (
     <div
-      role="status"
-      aria-live="polite"
-      aria-busy="true"
       className={`flex flex-col items-center justify-center ${wrapperClasses[variant]} ${className}`}
     >
-      <div className="text-center">
-        <p className="magizh-accent text-xs font-semibold uppercase tracking-[0.35em] text-[#F5F3ED]">
+      {variant === "page" && (
+        <p className="magizh-kicker mb-6 text-xs font-semibold uppercase tracking-[0.35em] text-[#F5F3ED]">
           MAGIZH
         </p>
+      )}
 
-        <div className="magizh-loader-line mx-auto mt-4 w-28 max-w-full" />
-
-        <p className="magizh-muted magizh-accent mt-3 text-[10px] font-medium uppercase tracking-[0.3em]">
-          {label}
-        </p>
-      </div>
+      <HackerSnakeLoader size={snakeSizes[variant]} message={label} />
     </div>
   );
 }
@@ -59,7 +62,9 @@ type BlockLoaderProps = {
 };
 
 /**
- * Generic set of skeleton blocks used when loading a grid of cards.
+ * Generic set of static reserved blocks used when loading a grid of cards,
+ * so the real cards swap in without layout shift. (Static scaffold only —
+ * the loading signal itself comes from the Hacker Snake family.)
  */
 export function BlockLoader({ count = 3, className = "" }: BlockLoaderProps) {
   return (

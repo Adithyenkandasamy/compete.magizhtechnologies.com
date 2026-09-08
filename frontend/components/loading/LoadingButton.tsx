@@ -1,4 +1,5 @@
 import type { ButtonHTMLAttributes } from "react";
+import { HackerSnakeLoader } from "./HackerSnakeLoader";
 
 type LoadingButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   loading?: boolean;
@@ -27,14 +28,18 @@ const variants: Record<NonNullable<LoadingButtonProps["variant"]>, string> = {
 };
 
 /**
- * Button that communicates an async action is pending.
+ * Button that communicates an async mutation is pending using the Magizh
+ * Hacker Snake inside the button (never a full-page cover):
  *
- * - Disables itself while `loading` (prevents accidental double clicks).
- * - Shows a visible text label ("Registering…", "Saving…") alongside a small
- *   gold dot, so the pending state is not conveyed by motion alone.
- * - Sets `aria-busy` for assistive tech.
+ *   [ Register ]          → idle
+ *   [ <snake> Registering... ] → pending
  *
- * When not `loading`, it renders exactly like a standard button.
+ * - Disables itself while `loading` (prevents duplicate clicks).
+ * - Sets `aria-busy` and keeps a visible text label so the pending state is
+ *   not conveyed by motion alone.
+ * - Retains the exact button dimensions while loading (mini snake + label).
+ *
+ * Authentication operations should NOT use this — use CircularHudLoader.
  */
 export function LoadingButton({
   loading = false,
@@ -53,9 +58,7 @@ export function LoadingButton({
       aria-busy={loading}
       {...props}
     >
-      {loading && (
-        <span className="magizh-pulse-dot" aria-hidden />
-      )}
+      {loading && <HackerSnakeLoader size="sm" announce={false} />}
       <span>{loading ? loadingText : children}</span>
     </button>
   );

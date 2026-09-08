@@ -20,6 +20,7 @@ import {
 import { getTeam, type Team } from "@/lib/teams-api";
 import { getErrorMessage } from "@/lib/error-message";
 import { PageLoader } from "@/components/loading";
+import { BackButton } from "@/components/ui/BackButton";
 import type { Project } from "@/types/project";
 
 type FormState = {
@@ -315,15 +316,10 @@ export default function ProjectDetailsPage() {
 
   return (
     <main className="magizh-container py-12 md:py-16">
-      <div className="mb-10">
-        <Link
-          href="/dashboard/projects"
-          className="text-sm font-semibold uppercase tracking-wider text-[#D4AF37] transition-colors hover:text-[#E5C04A]"
-        >
-          ← My Projects
-        </Link>
+      <BackButton label="Back" href="/dashboard/projects" className="mb-6" />
 
-        <p className="magizh-gold mt-8 text-xs font-semibold uppercase tracking-[0.25em]">
+      <div className="mb-10">
+        <p className="magizh-gold text-xs font-semibold uppercase tracking-[0.25em]">
           PROJECT
         </p>
 

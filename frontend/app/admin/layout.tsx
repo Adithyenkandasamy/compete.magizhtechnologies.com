@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { LogOut, Shield } from "lucide-react";
 
 import { useAuth } from "@/providers/auth-provider";
-import { LoadingButton, PageLoader } from "@/components/loading";
+import { CircularHudLoader, LoadingButton } from "@/components/loading";
 
 export default function AdminLayout({
   children,
@@ -42,7 +42,7 @@ export default function AdminLayout({
   if (status === "loading") {
     return (
       <main className="magizh-container py-20">
-        <PageLoader label="loading admin" />
+        <CircularHudLoader message="VERIFYING IDENTITY" />
       </main>
     );
   }
@@ -69,6 +69,10 @@ export default function AdminLayout({
 
   return (
     <div className="min-h-screen bg-black text-[#F5F3ED]">
+      {signingOut && (
+        <CircularHudLoader fullScreen message="TERMINATING SESSION" />
+      )}
+
       <header className="sticky top-0 z-50 border-b border-[#252525] bg-[#0A0A0C]/90 backdrop-blur">
         <div className="magizh-container flex items-center justify-between py-3">
           <Link
@@ -94,8 +98,7 @@ export default function AdminLayout({
             <LoadingButton
               type="button"
               onClick={handleSignOut}
-              loading={signingOut}
-              loadingText="Signing out..."
+              disabled={signingOut}
               variant="outline"
               size="sm"
               className="uppercase tracking-wider"

@@ -5,10 +5,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { useAuth } from "@/providers/auth-provider";
-import {
-  DashboardSkeleton,
-  LoadingButton,
-} from "@/components/loading";
+import { CircularHudLoader, LoadingButton } from "@/components/loading";
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -24,7 +21,7 @@ export default function DashboardPage() {
   if (status === "loading") {
     return (
       <main className="magizh-container py-20">
-        <DashboardSkeleton variant="student" />
+        <CircularHudLoader message="VERIFYING IDENTITY" />
       </main>
     );
   }
@@ -47,6 +44,10 @@ export default function DashboardPage() {
 
   return (
     <main className="magizh-container py-12 md:py-16">
+      {signingOut && (
+        <CircularHudLoader fullScreen message="TERMINATING SESSION" />
+      )}
+
       <section className="mb-12">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
@@ -67,8 +68,7 @@ export default function DashboardPage() {
           <LoadingButton
             type="button"
             onClick={handleSignOut}
-            loading={signingOut}
-            loadingText="Signing out..."
+            disabled={signingOut}
             size="md"
           >
             Sign Out

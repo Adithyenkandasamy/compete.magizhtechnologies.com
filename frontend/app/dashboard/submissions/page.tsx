@@ -11,6 +11,7 @@ import {
   type Submission,
 } from "@/lib/submissions-api";
 import { PageLoader } from "@/components/loading";
+import { BackButton } from "@/components/ui/BackButton";
 
 type ProjectSubmission = {
   project: Project;
@@ -110,6 +111,8 @@ export default function SubmissionsPage() {
 
   return (
     <main className="magizh-container py-12">
+      <BackButton label="Back" href="/dashboard" className="mb-6" />
+
       <div className="mb-10">
         <p className="magizh-gold text-xs font-semibold uppercase tracking-[0.25em]">
           MY WORK

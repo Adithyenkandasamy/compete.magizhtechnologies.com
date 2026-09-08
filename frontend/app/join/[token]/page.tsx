@@ -6,10 +6,11 @@ import { useCallback, useEffect, useState } from "react";
 import { Users, CalendarDays, CheckCircle } from "lucide-react";
 
 import { useAuth } from "@/providers/auth-provider";
-import { PageLoader } from "@/components/loading";
+import { CircularHudLoader, PageLoader } from "@/components/loading";
 import { getInviteInfo, requestToJoinTeam } from "@/lib/teams-api";
 import type { InviteInfo } from "@/lib/teams-api";
 import { getErrorMessage } from "@/lib/error-message";
+import { BackButton } from "@/components/ui/BackButton";
 
 export default function JoinTeamPage() {
   const params = useParams();
@@ -62,7 +63,15 @@ export default function JoinTeamPage() {
     }
   }
 
-  if (status === "loading" || isLoading) {
+  if (status === "loading") {
+    return (
+      <main className="min-h-screen flex items-center justify-center px-5 py-16">
+        <CircularHudLoader message="VERIFYING IDENTITY" />
+      </main>
+    );
+  }
+
+  if (isLoading) {
     return (
       <main className="min-h-screen flex items-center justify-center px-5 py-16">
         <PageLoader label="Loading invite..." />
@@ -75,12 +84,11 @@ export default function JoinTeamPage() {
       <main className="min-h-screen flex items-center justify-center px-5 py-16">
         <div className="w-full max-w-md magizh-card p-10 text-center">
           <p className="text-[#C75C5C] text-sm">{error}</p>
-          <Link
-            href="/dashboard"
-            className="mt-6 inline-flex text-sm font-semibold uppercase tracking-wider text-[#D4AF37] hover:text-[#E5C04A]"
-          >
-            ← Back to Dashboard
-          </Link>
+          <BackButton
+            label="Back"
+            href="/"
+            className="mb-8 mt-6"
+          />
         </div>
       </main>
     );
@@ -89,6 +97,8 @@ export default function JoinTeamPage() {
   return (
     <main className="min-h-screen flex items-center justify-center px-5 py-16">
       <div className="w-full max-w-lg">
+        <BackButton label="Back" href="/" className="mb-8" />
+
         {success ? (
           <div className="magizh-card p-10 text-center">
             <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-full border border-[#6FAF7B]/40 bg-[#6FAF7B]/10">
@@ -196,7 +206,7 @@ export default function JoinTeamPage() {
             <button
               type="button"
               onClick={handleJoin}
-              disabled={isRequesting || invite.is_full || (!user && status === "loading")}
+              disabled={isRequesting || invite.is_full}
               className="magizh-button mt-8 w-full disabled:cursor-not-allowed disabled:opacity-50"
             >
               {isRequesting

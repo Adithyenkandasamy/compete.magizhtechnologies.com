@@ -3,7 +3,8 @@
 import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { ArrowDown, ArrowUp, ChevronLeft, Plus, Trash2 } from "lucide-react";
+import { BackButton } from "@/components/ui/BackButton";
+import { ArrowDown, ArrowUp, Plus, Trash2 } from "lucide-react";
 import { PageLoader } from "@/components/loading";
 
 import {
@@ -289,17 +290,11 @@ export default function AdminEventRoundsPage() {
   return (
     <main className="min-h-screen bg-black">
       <section className="magizh-container py-12 md:py-20">
+        <BackButton label="Back" href={`/admin/events/${eventId}`} className="mb-8" />
+
         {/* Header */}
         <div className="mb-10">
-          <Link
-            href={`/admin/events/${eventId}`}
-            className="inline-flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-[#A1A1A1] transition-colors hover:text-[#D4AF37]"
-          >
-            <ChevronLeft size={16} />
-            Back to Event
-          </Link>
-
-          <p className="magizh-gold mt-8 text-xs font-semibold uppercase tracking-[0.3em]">
+          <p className="magizh-gold text-xs font-semibold uppercase tracking-[0.3em]">
             ADMINISTRATION
           </p>
 

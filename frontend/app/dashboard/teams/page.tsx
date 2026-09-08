@@ -18,6 +18,7 @@ import type { Event } from "@/types/events";
 import type { Team, TeamMember } from "@/lib/teams-api";
 import { getErrorMessage } from "@/lib/error-message";
 import { PageLoader } from "@/components/loading";
+import { BackButton } from "@/components/ui/BackButton";
 
 type TeamWithMembers = Team & {
   members?: TeamMember[];
@@ -160,15 +161,10 @@ export default function MyTeamsPage() {
 
   return (
     <main className="magizh-container py-12 md:py-16">
-      <div className="mb-10">
-        <Link
-          href="/dashboard"
-          className="text-sm font-semibold uppercase tracking-wider text-[#D4AF37] transition-colors hover:text-[#E5C04A]"
-        >
-          ← Dashboard
-        </Link>
+      <BackButton label="Back" href="/dashboard" className="mb-6" />
 
-        <p className="magizh-gold mt-8 text-xs font-semibold uppercase tracking-[0.25em]">
+      <div className="mb-10">
+        <p className="magizh-gold text-xs font-semibold uppercase tracking-[0.25em]">
           MY TEAMS
         </p>
 

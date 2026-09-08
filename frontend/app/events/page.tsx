@@ -5,9 +5,10 @@ import { useEvents } from "@/hooks/use-events";
 import {
   EmptyState,
   ErrorState,
-  EventCardSkeleton,
+  HackerSnakeLoader,
   RefetchIndicator,
 } from "@/components/loading";
+import { BackButton } from "@/components/ui/BackButton";
 
 export default function EventsPage() {
   const {
@@ -20,6 +21,8 @@ export default function EventsPage() {
 
   return (
     <main className="magizh-container py-16 md:py-20">
+      <BackButton label="Back" href="/" className="mb-6" />
+
       <div className="mb-12 flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="magizh-gold mb-3 text-xs font-semibold uppercase tracking-[0.25em]">
@@ -42,7 +45,9 @@ export default function EventsPage() {
         )}
       </div>
 
-      {isLoading && <EventCardSkeleton count={3} />}
+      {isLoading && (
+        <HackerSnakeLoader size="lg" message="SCANNING EVENTS" />
+      )}
 
       {isError && !isLoading && (
         <div className="mt-8">

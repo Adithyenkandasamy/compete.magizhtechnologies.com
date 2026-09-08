@@ -13,6 +13,7 @@ import {
   type Project,
 } from "@/lib/projects-api";
 import { PageLoader } from "@/components/loading";
+import { BackButton } from "@/components/ui/BackButton";
 
 export default function ProjectsPage() {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -75,15 +76,10 @@ export default function ProjectsPage() {
 
   return (
     <main className="magizh-container py-12 md:py-16">
-      <div className="mb-10">
-        <Link
-          href="/dashboard"
-          className="text-sm font-semibold uppercase tracking-wider text-[#D4AF37] transition-colors hover:text-[#E5C04A]"
-        >
-          ← Dashboard
-        </Link>
+      <BackButton label="Back" href="/dashboard" className="mb-6" />
 
-        <p className="magizh-gold mt-8 text-xs font-semibold uppercase tracking-[0.25em]">
+      <div className="mb-10">
+        <p className="magizh-gold text-xs font-semibold uppercase tracking-[0.25em]">
           MY PROJECTS
         </p>
 

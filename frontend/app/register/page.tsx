@@ -7,7 +7,7 @@ import { useMutation } from "@tanstack/react-query";
 
 import { useAuth } from "@/providers/auth-provider";
 import { getErrorMessage } from "@/lib/error-message";
-import { LoadingButton } from "@/components/loading";
+import { CircularHudLoader, LoadingButton } from "@/components/loading";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -54,6 +54,10 @@ export default function RegisterPage() {
 
   return (
     <main className="min-h-screen flex items-center justify-center px-5 py-16">
+      {registerMutation.isPending && (
+        <CircularHudLoader fullScreen message="ESTABLISHING IDENTITY" />
+      )}
+
       <div className="w-full max-w-md">
         <div className="mb-8 text-center">
           <p className="magizh-gold text-xs font-semibold uppercase tracking-[0.3em]">
@@ -140,8 +144,7 @@ export default function RegisterPage() {
 
 <LoadingButton
               type="submit"
-              loading={registerMutation.isPending}
-              loadingText="Creating account..."
+              disabled={registerMutation.isPending}
               className="w-full"
             >
               Create Account

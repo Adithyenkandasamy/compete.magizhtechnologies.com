@@ -3,11 +3,13 @@ type SkeletonProps = {
 };
 
 /**
- * Base skeletal placeholder.
+ * Base static placeholder used to reserve space while content loads.
  *
- * Renders a dark block that pulses subtly until real content replaces it.
- * Use along with width/height classes at the call site so the reserved
- * space approximately matches the final content (prevents layout shift).
+ * Renders a dark block WITHOUT animation — it is a layout reservation only.
+ * The visual loading signal always comes from one of the two Magizh loader
+ * families (Hacker Snake / Circular HUD); this block never shows a third
+ * loading animation. Use width/height classes at the call site so the
+ * reserved space approximately matches the final content.
  */
 export function Skeleton({ className = "" }: SkeletonProps) {
   return <div aria-hidden className={`magizh-skeleton ${className}`} />;

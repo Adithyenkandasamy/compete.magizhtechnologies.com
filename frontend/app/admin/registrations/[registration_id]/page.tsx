@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import { BackButton } from "@/components/ui/BackButton";
 import { PageLoader } from "@/components/loading";
 
 import {
@@ -96,12 +97,7 @@ export default function AdminRegistrationDetailsPage() {
   return (
     <main className="min-h-screen bg-black">
       <section className="magizh-container py-12 md:py-20">
-        <Link
-          href="/admin/registrations"
-          className="text-sm font-semibold text-[#A1A1A1] transition-colors hover:text-[#D4AF37]"
-        >
-          ← Back to Registrations
-        </Link>
+        <BackButton label="Back" href="/admin/registrations" className="mb-6" />
 
         <div className="mt-10">
           <p className="magizh-gold text-xs font-semibold uppercase tracking-[0.3em]">

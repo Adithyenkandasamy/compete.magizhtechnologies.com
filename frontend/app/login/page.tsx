@@ -7,7 +7,7 @@ import { useMutation } from "@tanstack/react-query";
 
 import { useAuth } from "@/providers/auth-provider";
 import { getErrorMessage } from "@/lib/error-message";
-import { LoadingButton } from "@/components/loading";
+import { CircularHudLoader, LoadingButton } from "@/components/loading";
 
 function getRedirectTarget(
   user: { role?: string } | null | undefined,
@@ -66,6 +66,10 @@ export default function LoginPage() {
 
   return (
     <main className="min-h-screen flex items-center justify-center px-5 py-16">
+      {loginMutation.isPending && (
+        <CircularHudLoader fullScreen message="AUTHENTICATING" />
+      )}
+
       <div className="w-full max-w-md">
         <div className="mb-8 text-center">
           <p className="magizh-gold text-xs font-semibold uppercase tracking-[0.3em]">
@@ -131,8 +135,7 @@ export default function LoginPage() {
 
 <LoadingButton
               type="submit"
-              loading={loginMutation.isPending}
-              loadingText="Signing in..."
+              disabled={loginMutation.isPending}
               className="w-full"
             >
               Sign In

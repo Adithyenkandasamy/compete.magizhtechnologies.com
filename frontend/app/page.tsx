@@ -13,7 +13,7 @@ import { motion } from "framer-motion";
 import { useEvents } from "@/hooks/use-events";
 import { EventCard } from "@/components/events/event-card";
 import {
-  EventCardSkeleton,
+  HackerSnakeLoader,
   ErrorState,
   EmptyState,
 } from "@/components/loading";
@@ -234,7 +234,7 @@ export default function HomePage() {
           </div>
 
           {eventsLoading ? (
-            <EventCardSkeleton count={3} />
+            <HackerSnakeLoader size="lg" message="SCANNING EVENTS" />
           ) : eventsError ? (
             <ErrorState
               title="Unable to load events."

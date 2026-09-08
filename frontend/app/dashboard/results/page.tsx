@@ -7,6 +7,7 @@ import { getMyRegistrations } from "@/lib/registrations-api";
 import { getEvent } from "@/lib/events-api";
 import { getEventResults, type EventResult } from "@/lib/results-api";
 import { PageLoader } from "@/components/loading";
+import { BackButton } from "@/components/ui/BackButton";
 
 type EventWithResults = {
   eventId: string;
@@ -80,6 +81,8 @@ export default function ResultsPage() {
 
   return (
     <main className="magizh-container py-12">
+      <BackButton label="Back" href="/dashboard" className="mb-6" />
+
       <div className="mb-10">
         <p className="magizh-gold text-xs font-semibold uppercase tracking-[0.25em]">
           COMPETITION RESULTS

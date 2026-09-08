@@ -3,8 +3,8 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
+import { BackButton } from "@/components/ui/BackButton";
 import {
-  ChevronLeft,
   GraduationCap,
   Trophy,
   Users,
@@ -32,17 +32,11 @@ export default function AdminEventOverviewPage() {
   return (
     <main className="min-h-screen bg-black text-[#F5F3ED]">
       <div className="magizh-container py-10 md:py-14">
+        <BackButton label="Back" href="/admin/events" className="mb-6" />
+
         {/* Header */}
         <div className="mb-10">
           <div className="flex flex-wrap items-center gap-4">
-            <Link
-              href="/admin/events"
-              className="inline-flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-[#D4AF37] transition-colors hover:text-[#E5C04A]"
-            >
-              <ChevronLeft size={16} />
-              Events
-            </Link>
-
             {data && (
               <Link
                 href={`/admin/events/${eventId}`}

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import apiClient from "@/lib/api-client";
 import { PageLoader } from "@/components/loading";
+import { BackButton } from "@/components/ui/BackButton";
 
 type Badge = {
   id: string;
@@ -42,6 +43,8 @@ export default function BadgesPage() {
 
   return (
     <main className="magizh-container py-12">
+      <BackButton label="Back" href="/dashboard" className="mb-6" />
+
       <div className="mb-10">
         <p className="magizh-gold text-xs font-semibold uppercase tracking-[0.25em]">
           ACHIEVEMENTS

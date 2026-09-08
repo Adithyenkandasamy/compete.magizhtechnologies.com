@@ -4,10 +4,10 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   AlertTriangle,
   CheckCircle,
-  Loader2,
   RefreshCw,
 } from "lucide-react";
-import { PageLoader } from "@/components/loading";
+import { BackButton } from "@/components/ui/BackButton";
+import { HackerSnakeLoader, PageLoader } from "@/components/loading";
 import {
   getSecurityAlerts,
   resolveSecurityAlert,
@@ -65,6 +65,8 @@ export default function AdminSecurityPage() {
   return (
     <main className="min-h-screen bg-black text-[#F5F3ED]">
       <div className="magizh-container py-10 md:py-14">
+        <BackButton label="Back" href="/admin" className="mb-6" />
+
         <div className="mb-10 flex flex-col gap-5 border-b border-[#252525] pb-8 md:flex-row md:items-end md:justify-between">
           <div>
             <p className="mb-3 text-xs font-semibold uppercase tracking-[0.25em] text-[#D4AF37]">
@@ -238,10 +240,7 @@ export default function AdminSecurityPage() {
                                 className="inline-flex items-center gap-2 rounded border border-[#252525] px-3 py-2 text-xs transition hover:border-[#6FAF7B] hover:text-[#6FAF7B] disabled:cursor-not-allowed disabled:opacity-50"
                               >
                                 {isResolving ? (
-                                  <Loader2
-                                    size={14}
-                                    className="animate-spin"
-                                  />
+                                  <HackerSnakeLoader size="sm" announce={false} />
                                 ) : (
                                   <CheckCircle size={14} />
                                 )}

@@ -5,12 +5,12 @@ import { useParams } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowLeft,
-  Loader2,
   Save,
   Shield,
   UserRound,
 } from "lucide-react";
-import { PageLoader } from "@/components/loading";
+import { BackButton } from "@/components/ui/BackButton";
+import { HackerSnakeLoader, PageLoader } from "@/components/loading";
 import {
   getAdminUser,
   updateAdminUserRole,
@@ -109,14 +109,7 @@ export default function AdminUserDetailPage() {
   return (
     <main className="min-h-screen bg-black text-[#F5F3ED]">
       <div className="magizh-container py-10 md:py-14">
-        {/* Back */}
-        <Link
-          href="/admin/users"
-          className="mb-8 inline-flex items-center gap-2 text-sm text-[#A1A1A1] transition hover:text-[#D4AF37]"
-        >
-          <ArrowLeft size={16} />
-          Back to Users
-        </Link>
+        <BackButton label="Back" href="/admin/users" className="mb-6" />
 
         {/* Header */}
         <div className="mb-10 border-b border-[#252525] pb-8">
@@ -271,10 +264,7 @@ export default function AdminUserDetailPage() {
 
                 {isBusy && (
                   <div className="flex items-center gap-2 text-sm text-[#A1A1A1]">
-                    <Loader2
-                      size={16}
-                      className="animate-spin"
-                    />
+                    <HackerSnakeLoader size="sm" announce={false} />
                     Updating...
                   </div>
                 )}

@@ -10,6 +10,7 @@ import {
   unpublishAdminEvent,
 } from "@/lib/admin-events-api";
 
+import { BackButton } from "@/components/ui/BackButton";
 import { PageLoader } from "@/components/loading";
 import type { Event } from "@/types/events";
 
@@ -126,6 +127,8 @@ export default function AdminEventsPage() {
   return (
     <main className="min-h-screen bg-black">
       <section className="magizh-container py-12 md:py-20">
+        <BackButton label="Back" href="/admin" className="mb-6" />
+
         {/* Header */}
         <div className="flex flex-col justify-between gap-6 md:flex-row md:items-end">
           <div>
@@ -328,15 +331,6 @@ export default function AdminEventsPage() {
           </div>
         )}
 
-        {/* Back */}
-        <div className="mt-8">
-          <Link
-            href="/admin"
-            className="text-sm font-semibold text-[#A1A1A1] transition-colors hover:text-[#D4AF37]"
-          >
-            ← Back to Dashboard
-          </Link>
-        </div>
       </section>
     </main>
   );

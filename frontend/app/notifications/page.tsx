@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Bell, Check, CheckCheck, Loader2 } from "lucide-react";
+import { Bell, Check, CheckCheck } from "lucide-react";
 
-import { PageLoader } from "@/components/loading";
+import { HackerSnakeLoader, PageLoader } from "@/components/loading";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { BackButton } from "@/components/ui/BackButton";
 import {
   getMyNotifications,
   markAllNotificationsAsRead,
@@ -101,6 +102,8 @@ export default function NotificationsPage() {
   return (
     <main className="min-h-screen bg-black px-5 py-12 text-[#F5F3ED]">
       <div className="magizh-container">
+        <BackButton label="Back" href="/" className="mb-6" />
+
         <div className="mb-10 flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
           <div>
             <p className="mb-3 text-xs font-semibold uppercase tracking-[0.25em] text-[#D4AF37]">
@@ -127,7 +130,7 @@ export default function NotificationsPage() {
             >
               {markingAll ? (
                 <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <HackerSnakeLoader size="sm" announce={false} />
                   Updating...
                 </>
               ) : (
@@ -241,7 +244,7 @@ export default function NotificationsPage() {
                         >
                           {markingId === notification.id ? (
                             <>
-                              <Loader2 className="h-4 w-4 animate-spin" />
+                              <HackerSnakeLoader size="sm" announce={false} />
                               Marking...
                             </>
                           ) : (

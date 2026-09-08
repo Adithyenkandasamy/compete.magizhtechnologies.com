@@ -13,6 +13,7 @@ import {
 import { getAccessToken } from "@/lib/auth";
 import { PageLoader } from "@/components/loading";
 import { getErrorMessage } from "@/lib/error-message";
+import { BackButton } from "@/components/ui/BackButton";
 
 export default function TeamInvitePage() {
   const params = useParams();
@@ -116,6 +117,8 @@ useEffect(() => {
     <main className="min-h-screen bg-black px-5 py-16 text-[#F5F3ED] md:py-24">
       <div className="magizh-container">
         <div className="mx-auto max-w-2xl">
+          <BackButton label="Back" href="/" className="mb-8" />
+
           {/* Brand */}
           <div className="mb-12 text-center">
             <p className="magizh-gold text-xs font-semibold uppercase tracking-[0.3em]">
@@ -260,16 +263,6 @@ useEffect(() => {
               </div>
             </div>
           )}
-
-          {/* Back */}
-          <div className="mt-8 text-center">
-            <Link
-              href="/"
-              className="text-sm font-semibold uppercase tracking-wider text-[#D4AF37] transition-colors hover:text-[#E5C04A]"
-            >
-              ← Back to MAGIZH
-            </Link>
-          </div>
         </div>
       </div>
     </main>

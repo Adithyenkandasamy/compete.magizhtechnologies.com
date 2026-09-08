@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { RefreshCw, Users } from "lucide-react";
+import { BackButton } from "@/components/ui/BackButton";
 import { PageLoader } from "@/components/loading";
 import { getAdminUsers } from "@/lib/admin-users-api";
 
@@ -28,6 +29,8 @@ export default function AdminUsersPage() {
   return (
     <main className="min-h-screen bg-black text-[#F5F3ED]">
       <div className="magizh-container py-10 md:py-14">
+        <BackButton label="Back" href="/admin" className="mb-6" />
+
         {/* Header */}
         <div className="mb-10 flex flex-col gap-5 border-b border-[#252525] pb-8 md:flex-row md:items-end md:justify-between">
           <div>

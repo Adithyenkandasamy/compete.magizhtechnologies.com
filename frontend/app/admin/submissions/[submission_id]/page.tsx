@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
+import { BackButton } from "@/components/ui/BackButton";
 import { PageLoader } from "@/components/loading";
 
 import {
@@ -80,12 +80,7 @@ export default function AdminSubmissionDetailsPage() {
   return (
     <main className="min-h-screen bg-black">
       <section className="magizh-container py-12 md:py-20">
-        <Link
-          href="/admin/submissions"
-          className="text-sm font-semibold text-[#A1A1A1] transition-colors hover:text-[#D4AF37]"
-        >
-          ← Back to Submissions
-        </Link>
+        <BackButton label="Back" href="/admin/submissions" className="mb-6" />
 
         <div className="mt-8">
           <p className="magizh-gold text-xs font-semibold uppercase tracking-[0.3em]">

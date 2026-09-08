@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 
+import { BackButton } from "@/components/ui/BackButton";
 import { PageLoader } from "@/components/loading";
 import {
   getAdminRegistrations,
@@ -48,6 +49,8 @@ export default function AdminRegistrationsPage() {
   return (
     <main className="min-h-screen bg-black">
       <section className="magizh-container py-12 md:py-20">
+        <BackButton label="Back" href="/admin" className="mb-6" />
+
         <div className="flex flex-col justify-between gap-6 md:flex-row md:items-end">
           <div>
             <p className="magizh-gold text-xs font-semibold uppercase tracking-[0.3em]">
@@ -192,15 +195,6 @@ export default function AdminRegistrationsPage() {
             </div>
           </div>
         )}
-
-        <div className="mt-8">
-          <Link
-            href="/admin"
-            className="text-sm font-semibold text-[#A1A1A1] transition-colors hover:text-[#D4AF37]"
-          >
-            ← Back to Dashboard
-          </Link>
-        </div>
       </section>
     </main>
   );

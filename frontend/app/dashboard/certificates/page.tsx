@@ -1,13 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Award, Download, Loader2, Search } from "lucide-react";
+import { Award, Download, Search } from "lucide-react";
 
 import { getMyCertificates, downloadCertificate } from "@/lib/certificates-api";
 import type { Certificate } from "@/lib/certificates-api";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { PageLoader } from "@/components/loading";
+import { HackerSnakeLoader, PageLoader } from "@/components/loading";
+import { BackButton } from "@/components/ui/BackButton";
 
 export default function CertificatesPage() {
   const [certificates, setCertificates] = useState<Certificate[]>([]);
@@ -66,6 +67,8 @@ export default function CertificatesPage() {
   return (
     <main className="min-h-screen bg-black px-5 py-12 text-[#F5F3ED]">
       <div className="magizh-container">
+        <BackButton label="Back" href="/dashboard" className="mb-6" />
+
         <div className="mb-10">
           <p className="mb-3 text-xs font-semibold uppercase tracking-[0.25em] text-[#D4AF37]">
             Student Dashboard
@@ -159,7 +162,7 @@ export default function CertificatesPage() {
                 >
                   {downloadingId === certificate.id ? (
                     <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <HackerSnakeLoader size="sm" announce={false} />
                       Downloading...
                     </>
                   ) : (

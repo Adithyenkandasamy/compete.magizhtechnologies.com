@@ -5,6 +5,7 @@ import Link from "next/link";
 import { getProjects, type Project } from "@/lib/projects-api";
 import { PageLoader } from "@/components/loading";
 import { ProjectShowcaseFilters } from "@/components/projects/showcase-filters";
+import { BackButton } from "@/components/ui/BackButton";
 
 export default function ProjectsShowcasePage() {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -52,6 +53,8 @@ export default function ProjectsShowcasePage() {
   return (
     <main className="min-h-screen bg-black">
       <section className="magizh-container py-16 md:py-24">
+        <BackButton label="Back" href="/" className="mb-6" />
+
         <div className="max-w-3xl">
           <p className="magizh-gold text-xs font-semibold uppercase tracking-[0.3em]">
             MAGIZH | INNOVATION

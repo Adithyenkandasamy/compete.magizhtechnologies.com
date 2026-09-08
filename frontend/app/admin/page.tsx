@@ -28,6 +28,7 @@ import {
 import {
   EmptyState,
   ErrorState,
+  HackerSnakeLoader,
   RefetchIndicator,
   Skeleton,
 } from "@/components/loading";
@@ -223,15 +224,12 @@ export default function AdminDashboardPage() {
             }
             className="inline-flex items-center justify-center gap-2 rounded border border-[#252525] px-5 py-3 text-sm font-semibold text-[#F5F3ED] transition hover:border-[#D4AF37] hover:text-[#D4AF37] disabled:cursor-not-allowed disabled:opacity-50"
           >
-            <RefreshCw
-              size={16}
-              className={
-                dashboardQuery.isFetching ||
-                activityQuery.isFetching
-                  ? "animate-spin"
-                  : ""
-              }
-            />
+            {dashboardQuery.isFetching ||
+            activityQuery.isFetching ? (
+              <HackerSnakeLoader size="sm" announce={false} />
+            ) : (
+              <RefreshCw size={16} />
+            )}
 
             Refresh
           </button>

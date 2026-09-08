@@ -6,6 +6,7 @@ import {
   BarChart3,
   RefreshCw,
 } from "lucide-react";
+import { BackButton } from "@/components/ui/BackButton";
 import { PageLoader } from "@/components/loading";
 import { getEventAnalytics } from "@/lib/admin-analytics-api";
 
@@ -53,6 +54,8 @@ export default function EventAnalyticsPage() {
   return (
     <main className="min-h-screen bg-black text-[#F5F3ED]">
       <div className="magizh-container py-10 md:py-14">
+        <BackButton label="Back" href="/admin" className="mb-6" />
+
         <div className="mb-10 flex flex-col gap-5 border-b border-[#252525] pb-8 md:flex-row md:items-end md:justify-between">
           <div>
             <p className="mb-3 text-xs font-semibold uppercase tracking-[0.25em] text-[#D4AF37]">

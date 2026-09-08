@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import { BackButton } from "@/components/ui/BackButton";
 import { PageLoader } from "@/components/loading";
 
 import {
@@ -70,14 +71,9 @@ export default function AdminEvaluationDetailPage() {
   return (
     <main className="min-h-screen bg-black text-[#F5F3ED]">
       <div className="magizh-container py-10 md:py-14">
-        <div className="mb-10">
-          <Link
-            href="/admin/evaluations"
-            className="text-sm font-semibold text-[#A1A1A1] transition-colors hover:text-[#D4AF37]"
-          >
-            ← Back to Evaluations
-          </Link>
+        <BackButton label="Back" href="/admin/evaluations" className="mb-6" />
 
+        <div className="mb-10">
           <p className="magizh-gold mt-8 text-xs font-semibold uppercase tracking-[0.3em]">
             ADMINISTRATION
           </p>

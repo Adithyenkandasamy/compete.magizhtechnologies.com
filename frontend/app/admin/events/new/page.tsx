@@ -4,6 +4,7 @@ import { FormEvent, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
+import { BackButton } from "@/components/ui/BackButton";
 import {
   createAdminEvent,
   type CreateEventRequest,
@@ -125,16 +126,11 @@ export default function CreateAdminEventPage() {
   return (
     <main className="min-h-screen bg-black">
       <section className="magizh-container py-12 md:py-20">
+        <BackButton label="Back" href="/admin/events" className="mb-6" />
+
         {/* Header */}
         <div className="mb-10">
-          <Link
-            href="/admin/events"
-            className="text-sm font-semibold text-[#A1A1A1] transition-colors hover:text-[#D4AF37]"
-          >
-            ← Back to Events
-          </Link>
-
-          <p className="magizh-gold mt-8 text-xs font-semibold uppercase tracking-[0.3em]">
+          <p className="magizh-gold text-xs font-semibold uppercase tracking-[0.3em]">
             ADMINISTRATION
           </p>
 

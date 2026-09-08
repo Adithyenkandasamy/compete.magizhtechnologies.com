@@ -53,8 +53,15 @@ describe("LoadingButton", () => {
     expect(screen.getByRole("button")).toBeDisabled();
   });
 
-  it("renders the pulse dot indicator while loading (not motion-only)", () => {
+  it("renders a Hacker Snake indicator while loading (not motion-only)", () => {
     const { container } = render(<LoadingButton loading>Save</LoadingButton>);
-    expect(container.querySelector(".magizh-pulse-dot")).toBeInTheDocument();
+    const snake = container.querySelector('[data-testid="hacker-snake"]');
+    expect(snake).toBeInTheDocument();
+    expect(
+      container.querySelector(".magizh-pulse-dot"),
+    ).not.toBeInTheDocument();
+    expect(
+      container.querySelector(".animate-spin"),
+    ).not.toBeInTheDocument();
   });
 });

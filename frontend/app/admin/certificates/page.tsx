@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Award, CheckCircle, RefreshCw } from "lucide-react";
+import { BackButton } from "@/components/ui/BackButton";
 import {
   getAdminCertificates,
   issueCertificate,
@@ -9,8 +10,8 @@ import {
 import {
   EmptyState,
   ErrorState,
+  HackerSnakeLoader,
   LoadingButton,
-  TableSkeleton,
 } from "@/components/loading";
 
 export default function AdminCertificatesPage() {
@@ -54,6 +55,8 @@ export default function AdminCertificatesPage() {
   return (
     <main className="min-h-screen bg-black text-[#F5F3ED]">
       <div className="magizh-container py-10 md:py-14">
+        <BackButton label="Back" href="/admin" className="mb-6" />
+
         {/* Header */}
         <div className="mb-10 flex flex-col gap-5 border-b border-[#252525] pb-8 md:flex-row md:items-end md:justify-between">
           <div>
@@ -83,7 +86,9 @@ export default function AdminCertificatesPage() {
         </div>
 
         {/* Loading */}
-        {isLoading && <TableSkeleton rows={6} columns={7} />}
+        {isLoading && (
+          <HackerSnakeLoader size="lg" message="LOADING CERTIFICATES" />
+        )}
 
         {/* Error */}
         {isError && !isLoading && (

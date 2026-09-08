@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -18,6 +17,7 @@ import {
 import type { WebSocketMessage } from "@/hooks/use-websocket";
 import { getErrorMessage } from "@/lib/error-message";
 import { ErrorState, LoadingButton, PageLoader, SmartImage } from "@/components/loading";
+import { BackButton } from "@/components/ui/BackButton";
 
 export default function EventDetailsPage() {
   const params = useParams();
@@ -170,12 +170,7 @@ queryClient.invalidateQueries({
 
   return (
     <main className="magizh-container py-12 md:py-16">
-      <Link
-        href="/events"
-        className="mb-8 inline-flex text-sm font-semibold uppercase tracking-wider text-[#D4AF37] hover:text-[#E5C04A]"
-      >
-        ← Back to Events
-      </Link>
+      <BackButton label="Back" href="/events" className="mb-8" />
 
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-3">

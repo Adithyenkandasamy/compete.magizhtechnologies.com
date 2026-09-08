@@ -35,6 +35,7 @@ import {
 
 import { getErrorMessage } from "@/lib/error-message";
 import { PageLoader } from "@/components/loading";
+import { BackButton } from "@/components/ui/BackButton";
 
 type TeamMember = {
     id: string;
@@ -561,16 +562,11 @@ export default function TeamDetailsPage() {
 
     return (
         <main className="magizh-container py-12 md:py-16">
+            <BackButton label="Back" href="/dashboard/teams" className="mb-6" />
+
             {/* Header */}
             <div className="mb-10">
-                <Link
-                    href="/dashboard/teams"
-                    className="text-sm font-semibold uppercase tracking-wider text-[#D4AF37] transition-colors hover:text-[#E5C04A]"
-                >
-                    ← My Teams
-                </Link>
-
-                <div className="mt-8 flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
+                <div className="flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
                     <div>
                         <p className="magizh-gold text-xs font-semibold uppercase tracking-[0.25em]">
                             TEAM MANAGEMENT
