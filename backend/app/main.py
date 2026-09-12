@@ -4,7 +4,29 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.health import router as health_router
-from app.api.routers import admin_dashboard, admin_event_judges, admin_events, admin_judges, admin_registrations, admin_submissions, admin_users, auth, events, profile as profile_router, registrations, rounds, teams, team_invites, projects, sponsors, submissions
+from app.api.routers import (
+    admin_dashboard,
+    admin_evaluations,
+    admin_event_judges,
+    admin_events,
+    admin_judges,
+    admin_registrations,
+    admin_results,
+    admin_submissions,
+    admin_users,
+    auth,
+    events,
+    judge_api,
+    leaderboard,
+    profile as profile_router,
+    projects,
+    registrations,
+    rounds,
+    sponsors,
+    submissions,
+    team_invites,
+    teams,
+)
 from app.core.config import settings
 from app.core.logging import configure_logging
 from app.middleware.error_handler import GlobalErrorMiddleware
@@ -57,6 +79,10 @@ app.include_router(admin_registrations.router, prefix="/api")
 app.include_router(admin_submissions.router, prefix="/api")
 app.include_router(admin_judges.router, prefix="/api")
 app.include_router(admin_event_judges.router, prefix="/api")
+app.include_router(admin_evaluations.router, prefix="/api")
+app.include_router(judge_api.router, prefix="/api")
+app.include_router(admin_results.router, prefix="/api")
+app.include_router(leaderboard.router, prefix="/api")
 app.include_router(registrations.router)
 app.include_router(profile_router.router)
 app.include_router(teams.router)

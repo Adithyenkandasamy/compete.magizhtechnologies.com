@@ -9,6 +9,7 @@ from datetime import datetime
 from typing import TYPE_CHECKING, Optional
 
 from sqlalchemy import (
+    Boolean,
     CheckConstraint,
     DateTime,
     Enum as SAEnum,
@@ -35,8 +36,10 @@ from app.models.enums import (
 
 if TYPE_CHECKING:
     from app.models.certificate import Certificate
+    from app.models.judge import EventJudge
     from app.models.project import Project, Submission
     from app.models.registration import Registration
+    from app.models.result import EventResult
     from app.models.team import Team
 
 
@@ -172,6 +175,13 @@ class Event(Base):
         default=EventStatus.DRAFT,
     )
 
+    results_published: Mapped[bool] = mapped_column(
+        Boolean, default=False, server_default=text("false"), nullable=False
+    )
+    results_published_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
@@ -206,6 +216,17 @@ class Event(Base):
         cascade="all, delete-orphan",
         order_by="EventRound.order",
     )
+    event_judges: Mapped[list["EventJudge"]] = relationship(
+        "EventJudge",
+        back_populates="event",
+        cascade="all, delete-orphan",
+    )
+    results: Mapped[list["EventResult"]] = relationship(
+        "EventResult",
+        back_populates="event",
+        cascade="all, delete-orphan",
+        order_by="EventResult.rank",
+    )
 
     __table_args__ = (
         CheckConstraint(
@@ -223,6 +244,7 @@ class Event(Base):
         Index("ix_events_status", "status"),
         Index("ix_events_event_type", "event_type"),
         Index("ix_events_start_date", "start_date"),
+        Index("ix_events_results_published", "results_published"),
     )
 
     def __repr__(self) -> str:

@@ -10,6 +10,7 @@ import enum
 
 class UserRole(str, enum.Enum):
     STUDENT = "STUDENT"
+    JUDGE = "JUDGE"
     ADMIN = "ADMIN"
     SUPER_ADMIN = "SUPER_ADMIN"
 

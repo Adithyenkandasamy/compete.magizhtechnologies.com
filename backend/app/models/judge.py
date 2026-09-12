@@ -2,6 +2,7 @@
 Judge and Evaluation models.
 
 Judge links a User to judging duties.
+EventJudge links a Judge to an Event.
 Evaluation stores per-judge scores for a Submission with validated
 score ceilings enforced at the database level via CHECK constraints.
 
@@ -22,11 +23,12 @@ from datetime import datetime
 from typing import TYPE_CHECKING, Optional
 
 from sqlalchemy import (
+    Boolean,
     CheckConstraint,
     DateTime,
     ForeignKey,
     Index,
-    Numeric,
+    Integer,
     String,
     Text,
     UniqueConstraint,
@@ -39,6 +41,7 @@ from sqlalchemy.sql import text
 from app.database.session import Base
 
 if TYPE_CHECKING:
+    from app.models.event import Event
     from app.models.project import Submission
     from app.models.user import User
 
@@ -61,6 +64,9 @@ class Judge(Base):
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     bio: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     expertise: Mapped[Optional[list[str]]] = mapped_column(ARRAY(String), nullable=True)
+    is_active: Mapped[bool] = mapped_column(
+        Boolean, default=True, server_default=text("true"), nullable=False
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
@@ -76,12 +82,56 @@ class Judge(Base):
     # ------------------------------------------------------------------ #
 
     user: Mapped["User"] = relationship("User", back_populates="judge")
+    event_judges: Mapped[list["EventJudge"]] = relationship(
+        "EventJudge", back_populates="judge", cascade="all, delete-orphan"
+    )
     evaluations: Mapped[list["Evaluation"]] = relationship(
         "Evaluation", back_populates="judge"
     )
 
     def __repr__(self) -> str:
-        return f"<Judge id={self.id} name={self.name}>"
+        return f"<Judge id={self.id} name={self.name} is_active={self.is_active}>"
+
+
+class EventJudge(Base):
+    __tablename__ = "event_judges"
+
+    event_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("events.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    judge_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("judges.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    assigned_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    assigned_by: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+
+    # ------------------------------------------------------------------ #
+    # Relationships
+    # ------------------------------------------------------------------ #
+
+    event: Mapped["Event"] = relationship("Event", back_populates="event_judges")
+    judge: Mapped["Judge"] = relationship("Judge", back_populates="event_judges")
+    assigner: Mapped[Optional["User"]] = relationship(
+        "User", foreign_keys=[assigned_by]
+    )
+
+    __table_args__ = (
+        Index("ix_event_judges_event_id", "event_id"),
+        Index("ix_event_judges_judge_id", "judge_id"),
+    )
+
+    def __repr__(self) -> str:
+        return f"<EventJudge event_id={self.event_id} judge_id={self.judge_id}>"
 
 
 class Evaluation(Base):
@@ -104,27 +154,15 @@ class Evaluation(Base):
         nullable=False,
     )
 
-    # Individual score components
-    innovation_score: Mapped[Optional[float]] = mapped_column(
-        Numeric(5, 2), nullable=True
-    )
-    technical_score: Mapped[Optional[float]] = mapped_column(
-        Numeric(5, 2), nullable=True
-    )
-    impact_score: Mapped[Optional[float]] = mapped_column(
-        Numeric(5, 2), nullable=True
-    )
-    uiux_score: Mapped[Optional[float]] = mapped_column(
-        Numeric(5, 2), nullable=True
-    )
-    presentation_score: Mapped[Optional[float]] = mapped_column(
-        Numeric(5, 2), nullable=True
-    )
+    # Individual score components (integers as per spec)
+    innovation_score: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    technical_score: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    impact_score: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    uiux_score: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    presentation_score: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
 
-    # Aggregate — computed and stored by service layer
-    total_score: Mapped[Optional[float]] = mapped_column(
-        Numeric(6, 2), nullable=True
-    )
+    # Aggregate — computed and stored strictly by server
+    total_score: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     feedback: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(
@@ -178,6 +216,7 @@ class Evaluation(Base):
         ),
         Index("ix_evaluations_submission_id", "submission_id"),
         Index("ix_evaluations_judge_id", "judge_id"),
+        Index("ix_evaluations_created_at", "created_at"),
     )
 
     def __repr__(self) -> str:

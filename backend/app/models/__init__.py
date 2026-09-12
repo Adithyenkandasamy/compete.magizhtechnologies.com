@@ -41,9 +41,10 @@ from app.models.team import Team, TeamMember  # noqa: F401
 
 # Projects & judging
 from app.models.project import Project, Submission  # noqa: F401
-from app.models.judge import Evaluation, Judge  # noqa: F401
+from app.models.judge import Evaluation, EventJudge, Judge  # noqa: F401
 
 # Outcomes
+from app.models.result import EventResult  # noqa: F401
 from app.models.certificate import Certificate  # noqa: F401
 
 # Communication

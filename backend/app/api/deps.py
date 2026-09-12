@@ -77,5 +77,38 @@ class RoleChecker:
 
 # Common role dependencies for easy reuse
 require_student = RoleChecker([UserRole.STUDENT])
+require_judge_role = RoleChecker([UserRole.JUDGE, UserRole.ADMIN, UserRole.SUPER_ADMIN])
 require_admin = RoleChecker([UserRole.ADMIN, UserRole.SUPER_ADMIN])
 require_super_admin = RoleChecker([UserRole.SUPER_ADMIN])
+
+
+from app.models.judge import Judge
+from app.repositories.judge_repo import JudgeRepository
+
+
+async def get_current_judge(
+    session: SessionDep,
+    current_user: CurrentUserDep,
+) -> Judge:
+    """
+    Dependency ensuring the authenticated user is an active judge (or admin)
+    and returning their associated Judge model.
+    """
+    if current_user.role not in [UserRole.JUDGE, UserRole.ADMIN, UserRole.SUPER_ADMIN]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Forbidden: Judge privileges required",
+        )
+
+    judge_repo = JudgeRepository(session)
+    judge = await judge_repo.get_by_user_id(current_user.id)
+    if not judge or not judge.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Forbidden: No active judge profile associated with this account",
+        )
+
+    return judge
+
+
+CurrentJudgeDep = Annotated[Judge, Depends(get_current_judge)]
