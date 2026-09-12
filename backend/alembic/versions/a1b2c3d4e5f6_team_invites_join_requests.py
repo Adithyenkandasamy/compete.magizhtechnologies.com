@@ -19,39 +19,45 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
+    bind = op.get_bind()
+    inspector = sa.inspect(bind)
+    tables = inspector.get_table_names()
+
     # Join request status enum
     joinrequeststatus = sa.Enum(
         'PENDING', 'ACCEPTED', 'REJECTED', 'CANCELLED',
         name='joinrequeststatus',
     )
-    joinrequeststatus.create(op.get_bind(), checkfirst=True)
+    joinrequeststatus.create(bind, checkfirst=True)
 
     # team_invites table
-    op.create_table(
-        'team_invites',
-        sa.Column('id', UUID(as_uuid=True), primary_key=True, server_default=sa.text('gen_random_uuid()')),
-        sa.Column('team_id', UUID(as_uuid=True), sa.ForeignKey('teams.id', ondelete='CASCADE'), nullable=False, unique=True),
-        sa.Column('token_hash', sa.String(64), nullable=False, unique=True),
-        sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
-    )
-    op.create_index('ix_team_invites_token_hash', 'team_invites', ['token_hash'])
+    if 'team_invites' not in tables:
+        op.create_table(
+            'team_invites',
+            sa.Column('id', UUID(as_uuid=True), primary_key=True, server_default=sa.text('gen_random_uuid()')),
+            sa.Column('team_id', UUID(as_uuid=True), sa.ForeignKey('teams.id', ondelete='CASCADE'), nullable=False, unique=True),
+            sa.Column('token_hash', sa.String(64), nullable=False, unique=True),
+            sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
+        )
+        op.create_index('ix_team_invites_token_hash', 'team_invites', ['token_hash'])
 
     # team_join_requests table
-    op.create_table(
-        'team_join_requests',
-        sa.Column('id', UUID(as_uuid=True), primary_key=True, server_default=sa.text('gen_random_uuid()')),
-        sa.Column('team_id', UUID(as_uuid=True), sa.ForeignKey('teams.id', ondelete='CASCADE'), nullable=False),
-        sa.Column('user_id', UUID(as_uuid=True), sa.ForeignKey('users.id', ondelete='CASCADE'), nullable=False),
-        sa.Column('status', joinrequeststatus, nullable=False, server_default='PENDING'),
-        sa.Column('requested_at', sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
-        sa.Column('reviewed_at', sa.DateTime(timezone=True), nullable=True),
-        sa.Column('reviewed_by', UUID(as_uuid=True), sa.ForeignKey('users.id', ondelete='SET NULL'), nullable=True),
-    )
-    op.create_index('uq_active_team_request', 'team_join_requests', ['team_id', 'user_id'], unique=True,
-                     postgresql_where=sa.text("status IN ('PENDING', 'ACCEPTED')"))
-    op.create_index('ix_join_requests_team_id', 'team_join_requests', ['team_id'])
-    op.create_index('ix_join_requests_user_id', 'team_join_requests', ['user_id'])
-    op.create_index('ix_join_requests_status', 'team_join_requests', ['status'])
+    if 'team_join_requests' not in tables:
+        op.create_table(
+            'team_join_requests',
+            sa.Column('id', UUID(as_uuid=True), primary_key=True, server_default=sa.text('gen_random_uuid()')),
+            sa.Column('team_id', UUID(as_uuid=True), sa.ForeignKey('teams.id', ondelete='CASCADE'), nullable=False),
+            sa.Column('user_id', UUID(as_uuid=True), sa.ForeignKey('users.id', ondelete='CASCADE'), nullable=False),
+            sa.Column('status', joinrequeststatus, nullable=False, server_default='PENDING'),
+            sa.Column('requested_at', sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
+            sa.Column('reviewed_at', sa.DateTime(timezone=True), nullable=True),
+            sa.Column('reviewed_by', UUID(as_uuid=True), sa.ForeignKey('users.id', ondelete='SET NULL'), nullable=True),
+        )
+        op.create_index('uq_active_team_request', 'team_join_requests', ['team_id', 'user_id'], unique=True,
+                         postgresql_where=sa.text("status IN ('PENDING', 'ACCEPTED')"))
+        op.create_index('ix_join_requests_team_id', 'team_join_requests', ['team_id'])
+        op.create_index('ix_join_requests_user_id', 'team_join_requests', ['user_id'])
+        op.create_index('ix_join_requests_status', 'team_join_requests', ['status'])
 
 
 def downgrade() -> None:

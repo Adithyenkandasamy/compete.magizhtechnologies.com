@@ -1,15 +1,14 @@
 import uuid
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
+from typing import Optional
 
-from app.api.deps import SessionDep, require_admin
+from fastapi import APIRouter, Depends, Query, Request, status
+
+from app.api.deps import SessionDep, get_current_user, require_admin
 from app.models.enums import SubmissionStatus
-from app.models.project import Submission
-from app.schemas.admin_submissions import (
-    AdminSubmissionResponse,
-    UpdateAdminSubmissionStatusRequest,
-)
+from app.models.user import User
+from app.schemas.event import PaginatedResponse
+from app.schemas.submission import AdminSubmissionResponse, SubmissionStatusUpdate
+from app.services.submission_service import SubmissionService
 
 router = APIRouter(
     prefix="/admin/submissions",
@@ -18,55 +17,102 @@ router = APIRouter(
 )
 
 
-def _to_response(s: Submission) -> AdminSubmissionResponse:
-    return AdminSubmissionResponse(
-        id=s.id,
-        project_id=s.project_id,
-        status=s.status.value if hasattr(s.status, 'value') else str(s.status),
-        submitted_at=s.submitted_at,
-        created_at=s.updated_at,  # Submission doesn't have created_at, use updated_at as fallback
-        updated_at=s.updated_at,
+@router.get(
+    "",
+    response_model=PaginatedResponse[AdminSubmissionResponse],
+    summary="List submissions for admin dashboard",
+    description=(
+        "Retrieve paginated submissions with eager-loaded project, team, and event information. "
+        "Supports filtering by event_id, status, and project title search without N+1 queries."
+    ),
+)
+async def list_submissions(
+    session: SessionDep,
+    page: int = Query(1, ge=1, description="Page number"),
+    size: int = Query(20, ge=1, le=100, description="Items per page"),
+    event_id: Optional[uuid.UUID] = Query(None, description="Filter by event ID"),
+    status: Optional[SubmissionStatus] = Query(None, description="Filter by submission status"),
+    search: Optional[str] = Query(None, description="Search in project title"),
+) -> PaginatedResponse[AdminSubmissionResponse]:
+    service = SubmissionService(session)
+    items, total = await service.admin_list_submissions(
+        page=page,
+        size=size,
+        event_id=event_id,
+        status_filter=status,
+        search=search,
+    )
+    pages = (total + size - 1) // size if total else 0
+
+    return PaginatedResponse[AdminSubmissionResponse](
+        items=items,
+        total=total,
+        page=page,
+        size=size,
+        pages=pages,
     )
 
 
-@router.get("", response_model=list[AdminSubmissionResponse], summary="List all submissions")
-async def list_submissions(session: SessionDep) -> list[AdminSubmissionResponse]:
-    stmt = select(Submission).order_by(Submission.updated_at.desc())
-    result = await session.execute(stmt)
-    return [_to_response(s) for s in result.scalars().all()]
-
-
-@router.get("/{submission_id}", response_model=AdminSubmissionResponse, summary="Get a submission")
-async def get_submission(submission_id: uuid.UUID, session: SessionDep) -> AdminSubmissionResponse:
-    stmt = select(Submission).where(Submission.id == submission_id)
-    result = await session.execute(stmt)
-    s = result.scalar_one_or_none()
-    if not s:
-        raise HTTPException(status_code=404, detail="Submission not found")
-    return _to_response(s)
-
-
-@router.put("/{submission_id}/status", response_model=AdminSubmissionResponse, summary="Update submission status")
-async def update_submission_status(
+@router.get(
+    "/{submission_id}",
+    response_model=AdminSubmissionResponse,
+    summary="View detailed submission information",
+    description=(
+        "Get comprehensive submission details including project fields, team members, "
+        "and event info. Sensitive security credentials and hashes are never exposed."
+    ),
+)
+async def get_submission(
     submission_id: uuid.UUID,
-    data: UpdateAdminSubmissionStatusRequest,
     session: SessionDep,
 ) -> AdminSubmissionResponse:
-    stmt = select(Submission).where(Submission.id == submission_id)
-    result = await session.execute(stmt)
-    s = result.scalar_one_or_none()
-    if not s:
-        raise HTTPException(status_code=404, detail="Submission not found")
+    service = SubmissionService(session)
+    return await service.admin_get_submission(submission_id)
 
-    try:
-        new_status = SubmissionStatus(data.status)
-    except ValueError:
-        raise HTTPException(status_code=400, detail=f"Invalid status: {data.status}")
 
-    s.status = new_status
-    if new_status == SubmissionStatus.SUBMITTED and s.submitted_at is None:
-        from datetime import datetime, timezone
-        s.submitted_at = datetime.now(timezone.utc)
-    await session.flush()
-    await session.refresh(s)
-    return _to_response(s)
+@router.post(
+    "/{submission_id}/status",
+    response_model=AdminSubmissionResponse,
+    summary="Update submission review status",
+    description=(
+        "Change submission status through the formal review lifecycle "
+        "(DRAFT -> SUBMITTED -> UNDER_REVIEW -> EVALUATED -> ACCEPTED / REJECTED). "
+        "Validates state transitions and records audit logs."
+    ),
+)
+async def update_submission_status_post(
+    submission_id: uuid.UUID,
+    data: SubmissionStatusUpdate,
+    request: Request,
+    session: SessionDep,
+    current_user: User = Depends(get_current_user),
+) -> AdminSubmissionResponse:
+    service = SubmissionService(session)
+    return await service.admin_update_status(
+        submission_id=submission_id,
+        admin_user_id=current_user.id,
+        new_status=data.status,
+        request=request,
+    )
+
+
+@router.put(
+    "/{submission_id}/status",
+    response_model=AdminSubmissionResponse,
+    summary="Update submission review status (PUT compatibility)",
+    description="PUT alias for updating submission status to maintain backward compatibility.",
+)
+async def update_submission_status_put(
+    submission_id: uuid.UUID,
+    data: SubmissionStatusUpdate,
+    request: Request,
+    session: SessionDep,
+    current_user: User = Depends(get_current_user),
+) -> AdminSubmissionResponse:
+    service = SubmissionService(session)
+    return await service.admin_update_status(
+        submission_id=submission_id,
+        admin_user_id=current_user.id,
+        new_status=data.status,
+        request=request,
+    )

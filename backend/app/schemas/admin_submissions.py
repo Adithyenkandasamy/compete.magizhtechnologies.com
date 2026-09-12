@@ -1,20 +1,21 @@
-import uuid
-from datetime import datetime
-from typing import Optional
-from pydantic import BaseModel
+from app.schemas.submission import (
+    AdminSubmissionResponse,
+    MinimalEventResponse,
+    MinimalProjectResponse,
+    MinimalTeamMemberResponse,
+    MinimalTeamResponse,
+    SubmissionStatusUpdate,
+)
 
+# Alias for backwards compatibility
+UpdateAdminSubmissionStatusRequest = SubmissionStatusUpdate
 
-class AdminSubmissionResponse(BaseModel):
-    id: uuid.UUID
-    project_id: uuid.UUID
-    status: str
-    submitted_at: Optional[datetime] = None
-    created_at: datetime
-    updated_at: datetime
-
-    class Config:
-        from_attributes = True
-
-
-class UpdateAdminSubmissionStatusRequest(BaseModel):
-    status: str
+__all__ = [
+    "AdminSubmissionResponse",
+    "MinimalEventResponse",
+    "MinimalProjectResponse",
+    "MinimalTeamMemberResponse",
+    "MinimalTeamResponse",
+    "SubmissionStatusUpdate",
+    "UpdateAdminSubmissionStatusRequest",
+]

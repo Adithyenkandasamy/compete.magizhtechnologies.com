@@ -66,9 +66,13 @@ class Project(Base):
 
     team: Mapped["Team"] = relationship("Team", back_populates="projects")
     event: Mapped["Event"] = relationship("Event", back_populates="projects")
-    submissions: Mapped[list["Submission"]] = relationship(
-        "Submission", back_populates="project", cascade="all, delete-orphan"
+    submission: Mapped[Optional["Submission"]] = relationship(
+        "Submission", back_populates="project", uselist=False, cascade="all, delete-orphan"
     )
+
+    @property
+    def submissions(self) -> list["Submission"]:
+        return [self.submission] if self.submission else []
 
     __table_args__ = (
         Index("ix_projects_team_id", "team_id"),
@@ -93,6 +97,7 @@ class Submission(Base):
         UUID(as_uuid=True),
         ForeignKey("projects.id", ondelete="CASCADE"),
         nullable=False,
+        unique=True,
     )
     event_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
@@ -107,6 +112,11 @@ class Submission(Base):
     submitted_at: Mapped[Optional[datetime]] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False,
+    )
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),
@@ -118,7 +128,7 @@ class Submission(Base):
     # Relationships
     # ------------------------------------------------------------------ #
 
-    project: Mapped["Project"] = relationship("Project", back_populates="submissions")
+    project: Mapped["Project"] = relationship("Project", back_populates="submission")
     event: Mapped["Event"] = relationship("Event", back_populates="submissions")
     evaluations: Mapped[list["Evaluation"]] = relationship(
         "Evaluation", back_populates="submission", cascade="all, delete-orphan"
@@ -128,6 +138,7 @@ class Submission(Base):
         Index("ix_submissions_project_id", "project_id"),
         Index("ix_submissions_event_id", "event_id"),
         Index("ix_submissions_status", "status"),
+        UniqueConstraint("project_id", name="uq_submissions_project_id"),
     )
 
     def __repr__(self) -> str:
