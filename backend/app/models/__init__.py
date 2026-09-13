@@ -20,6 +20,7 @@ from app.models.enums import (  # noqa: F401
     EventType,
     NotificationType,
     RegistrationStatus,
+    ResultStatus,
     RoundStatus,
     RoundType,
     SecurityAlertSeverity,

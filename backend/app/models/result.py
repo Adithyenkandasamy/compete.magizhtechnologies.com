@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Optional
 from sqlalchemy import (
     Boolean,
     DateTime,
+    Enum as SAEnum,
     ForeignKey,
     Index,
     Integer,
@@ -19,6 +20,7 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database.session import Base
+from app.models.enums import ResultStatus
 
 if TYPE_CHECKING:
     from app.models.event import Event
@@ -28,8 +30,9 @@ if TYPE_CHECKING:
 
 class EventResult(Base):
     """
-    Official calculated result and leaderboard placement for a submission in an event.
+    Official calculated result and leaderboard placement snapshot for a submission in an event.
     Stores aggregate scores averaged across all assigned judges' evaluations.
+    Supports versioning and explicit publication states to ensure immutability of published leaderboards.
     """
     __tablename__ = "event_results"
 
@@ -60,18 +63,31 @@ class EventResult(Base):
         nullable=False,
     )
 
+    # Snapshot versioning (Version 1, Version 2, etc.)
+    version: Mapped[int] = mapped_column(
+        Integer, default=1, server_default=text("1"), nullable=False
+    )
+
+    # Lifecycle state: DRAFT or PUBLISHED
+    status: Mapped[ResultStatus] = mapped_column(
+        SAEnum(ResultStatus, name="resultstatus", create_type=True),
+        default=ResultStatus.DRAFT,
+        nullable=False,
+    )
+
     # Official placement (1 = Winner, 2 = 1st Runner Up, etc.)
     rank: Mapped[int] = mapped_column(Integer, nullable=False)
 
     # Final overall score (average of total scores from assigned judges)
-    final_score: Mapped[float] = mapped_column(Numeric(5, 2), nullable=False)
+    # DECIMAL(6, 2) provides safe numeric precision without floating point inaccuracies
+    final_score: Mapped[float] = mapped_column(Numeric(6, 2), nullable=False)
 
     # Criterion score averages
-    innovation_score: Mapped[Optional[float]] = mapped_column(Numeric(5, 2), nullable=True)
-    technical_score: Mapped[Optional[float]] = mapped_column(Numeric(5, 2), nullable=True)
-    impact_score: Mapped[Optional[float]] = mapped_column(Numeric(5, 2), nullable=True)
-    uiux_score: Mapped[Optional[float]] = mapped_column(Numeric(5, 2), nullable=True)
-    presentation_score: Mapped[Optional[float]] = mapped_column(Numeric(5, 2), nullable=True)
+    innovation_score: Mapped[Optional[float]] = mapped_column(Numeric(6, 2), nullable=True)
+    technical_score: Mapped[Optional[float]] = mapped_column(Numeric(6, 2), nullable=True)
+    impact_score: Mapped[Optional[float]] = mapped_column(Numeric(6, 2), nullable=True)
+    uiux_score: Mapped[Optional[float]] = mapped_column(Numeric(6, 2), nullable=True)
+    presentation_score: Mapped[Optional[float]] = mapped_column(Numeric(6, 2), nullable=True)
 
     # Number of evaluations included in score calculation
     evaluations_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
@@ -83,6 +99,14 @@ class EventResult(Base):
     )
     is_published: Mapped[bool] = mapped_column(
         Boolean, default=False, server_default=text("false"), nullable=False
+    )
+
+    # Administrative timestamps
+    calculated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    published_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True), nullable=True
     )
 
     # Optional administrative comments/notes
@@ -108,9 +132,17 @@ class EventResult(Base):
     team: Mapped["Team"] = relationship("Team")
 
     __table_args__ = (
-        UniqueConstraint("event_id", "submission_id", name="uq_event_results_event_submission"),
-        UniqueConstraint("event_id", "rank", name="uq_event_results_event_rank"),
+        UniqueConstraint(
+            "event_id", "version", "submission_id",
+            name="uq_event_results_event_version_submission"
+        ),
+        UniqueConstraint(
+            "event_id", "version", "rank",
+            name="uq_event_results_event_version_rank"
+        ),
         Index("ix_event_results_event_id", "event_id"),
+        Index("ix_event_results_event_version", "event_id", "version"),
+        Index("ix_event_results_event_status", "event_id", "status"),
         Index("ix_event_results_submission_id", "submission_id"),
         Index("ix_event_results_project_id", "project_id"),
         Index("ix_event_results_team_id", "team_id"),
@@ -120,6 +152,6 @@ class EventResult(Base):
 
     def __repr__(self) -> str:
         return (
-            f"<EventResult id={self.id} event_id={self.event_id} "
-            f"rank={self.rank} final_score={self.final_score}>"
+            f"<EventResult id={self.id} event_id={self.event_id} version={self.version} "
+            f"rank={self.rank} final_score={self.final_score} status={self.status}>"
         )

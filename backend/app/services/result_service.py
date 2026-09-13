@@ -1,4 +1,5 @@
 import uuid
+from decimal import Decimal, ROUND_HALF_UP
 from datetime import datetime, timezone
 from typing import Optional
 
@@ -7,7 +8,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.models.enums import SubmissionStatus
+from app.models.enums import EventStatus, ResultStatus, SubmissionStatus
 from app.models.event import Event
 from app.models.judge import Evaluation
 from app.models.project import Project, Submission
@@ -19,15 +20,23 @@ from app.repositories.event_repo import EventRepository
 from app.repositories.result_repo import ResultRepository
 from app.repositories.submission_repo import SubmissionRepository
 from app.schemas.result import (
-    AdminEventResultResponse,
+    AdminResultEntryResponse,
+    AdminResultsResponse,
     AnonymousJudgeFeedback,
     CalculateResultsRequest,
     CriterionBreakdown,
-    EventResultResponse,
-    LeaderboardResponse,
+    ResultEntryResponse,
+    ResultPublishResponse,
+    ResultsResponse,
+    ResultStatusResponse,
     StudentTeamResultResponse,
     UpdateResultAwardRequest,
 )
+
+
+def _safe_round(value: float) -> float:
+    """Helper to cleanly round a score to 2 decimal places using standard financial rounding."""
+    return float(Decimal(str(value)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP))
 
 
 class ResultService:
@@ -58,8 +67,8 @@ class ResultService:
             http_method=request.method,
         )
 
-    def _format_event_result(self, r: EventResult) -> EventResultResponse:
-        """Format an EventResult into a clean public response."""
+    def _format_public_entry(self, r: EventResult) -> ResultEntryResponse:
+        """Format an EventResult into a safe public response stripping private judging data."""
         member_names = []
         team_name = None
         if r.team:
@@ -81,31 +90,34 @@ class ResultService:
             presentation_score=float(r.presentation_score) if r.presentation_score is not None else None,
         )
 
-        return EventResultResponse(
-            id=r.id,
-            event_id=r.event_id,
+        return ResultEntryResponse(
+            rank=r.rank,
             submission_id=r.submission_id,
             project_id=r.project_id,
             team_id=r.team_id,
-            rank=r.rank,
+            project_title=proj_title,
+            project_description=proj_desc,
+            team_name=team_name,
+            team_members=member_names,
             final_score=float(r.final_score),
             scores=scores,
             evaluations_count=r.evaluations_count,
             award=r.award,
             is_winner=r.is_winner,
-            project_title=proj_title,
-            project_description=proj_desc,
-            team_name=team_name,
-            team_members=member_names,
         )
 
-    def _format_admin_result(self, r: EventResult) -> AdminEventResultResponse:
-        """Format an EventResult into a detailed admin response."""
-        base = self._format_event_result(r)
-        return AdminEventResultResponse(
+    def _format_admin_entry(self, r: EventResult) -> AdminResultEntryResponse:
+        """Format an EventResult into a detailed admin response with versioning and notes."""
+        base = self._format_public_entry(r)
+        return AdminResultEntryResponse(
             **base.model_dump(),
+            id=r.id,
+            version=r.version,
+            status=r.status,
             is_published=r.is_published,
             notes=r.notes,
+            calculated_at=r.calculated_at,
+            published_at=r.published_at,
             created_at=r.created_at,
             updated_at=r.updated_at,
         )
@@ -116,19 +128,23 @@ class ResultService:
         config: CalculateResultsRequest,
         admin_user_id: uuid.UUID,
         request: Request,
-    ) -> list[AdminEventResultResponse]:
+    ) -> AdminResultsResponse:
         """
         Compute event rankings and scores based on assigned judges' evaluations.
+        - Verifies event eligibility.
         - Calculates average of judges' total scores (arithmetic mean).
         - Computes criterion score averages.
-        - Applies deterministic multi-tier tie breaking:
+        - Applies deterministic tie breaking:
             1. final_score DESC
             2. innovation_score DESC
             3. technical_score DESC
             4. impact_score DESC
-            5. submitted_at ASC (earlier submission date wins)
+            5. uiux_score DESC
+            6. presentation_score DESC
+            7. submitted_at ASC (earlier submission date wins)
+            8. submission.id ASC (UUID fallback)
         - Automatically assigns honors to top 3 (Winner, 1st Runner Up, 2nd Runner Up).
-        - Stores in event_results table atomically.
+        - Supports versioned snapshots to protect published results from silent changes.
         """
         event = await self.event_repo.get_by_id(event_id)
         if not event:
@@ -137,7 +153,35 @@ class ResultService:
                 detail="Event not found",
             )
 
-        # 1. Fetch all submissions for the event excluding DRAFT
+        if event.status == EventStatus.CANCELLED:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Cannot calculate results for a cancelled event",
+            )
+
+        # Determine snapshot versioning
+        latest_version = await self.result_repo.get_latest_version(event_id)
+        published_version = await self.result_repo.get_published_version(event_id)
+
+        target_version = latest_version
+        action_name = "result.calculated"
+
+        if published_version is not None:
+            if not config.force_recalculate:
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail=(
+                        "Results for this event are already published (Version "
+                        f"{published_version}). To calculate a new draft version without "
+                        "altering the published results, set force_recalculate=true."
+                    ),
+                )
+            target_version = published_version + 1
+            action_name = "result.version_created"
+        elif event.results_published:
+            action_name = "result.recalculated"
+
+        # 1. Fetch all submissions for the event with project, team, and evaluations
         stmt = (
             select(Submission)
             .options(
@@ -151,42 +195,34 @@ class ResultService:
             )
         )
         submissions = list((await self.session.execute(stmt)).scalars().all())
-        if not submissions:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="No eligible submissions found for this event to calculate results",
-            )
 
-        # 2. Compute aggregate scores for each submission
-        scored_items = []
+        # 2. Filter eligible submissions (must belong to event and have >= 1 valid evaluation)
+        eligible_items = []
         for s in submissions:
-            evals = s.evaluations or []
-            num_evals = len(evals)
+            # Cross-event check
+            if not s.project or s.project.event_id != event_id:
+                continue
+            if not s.project.team or s.project.team.event_id != event_id:
+                continue
 
-            if num_evals > 0:
-                final_score = round(sum(e.total_score or 0 for e in evals) / num_evals, 2)
-                avg_innov = round(
-                    sum(e.innovation_score or 0 for e in evals) / num_evals, 2
-                )
-                avg_tech = round(
-                    sum(e.technical_score or 0 for e in evals) / num_evals, 2
-                )
-                avg_impact = round(
-                    sum(e.impact_score or 0 for e in evals) / num_evals, 2
-                )
-                avg_uiux = round(
-                    sum(e.uiux_score or 0 for e in evals) / num_evals, 2
-                )
-                avg_pres = round(
-                    sum(e.presentation_score or 0 for e in evals) / num_evals, 2
-                )
-            else:
-                final_score = 0.0
-                avg_innov = avg_tech = avg_impact = avg_uiux = avg_pres = 0.0
+            evals = s.evaluations or []
+            if not evals:
+                # Unevaluated submissions are excluded as per Section 4
+                continue
+
+            num_evals = len(evals)
+            sum_total = sum(e.total_score or 0 for e in evals)
+            final_score = _safe_round(sum_total / num_evals)
+
+            avg_innov = _safe_round(sum(e.innovation_score or 0 for e in evals) / num_evals)
+            avg_tech = _safe_round(sum(e.technical_score or 0 for e in evals) / num_evals)
+            avg_impact = _safe_round(sum(e.impact_score or 0 for e in evals) / num_evals)
+            avg_uiux = _safe_round(sum(e.uiux_score or 0 for e in evals) / num_evals)
+            avg_pres = _safe_round(sum(e.presentation_score or 0 for e in evals) / num_evals)
 
             sub_time = s.submitted_at or s.created_at or datetime.min.replace(tzinfo=timezone.utc)
 
-            scored_items.append({
+            eligible_items.append({
                 "submission": s,
                 "project_id": s.project_id,
                 "team_id": s.project.team_id,
@@ -198,26 +234,38 @@ class ResultService:
                 "presentation_score": avg_pres,
                 "evaluations_count": num_evals,
                 "submitted_at": sub_time,
+                "sub_id_str": str(s.id),
             })
 
-        # 3. Deterministic multi-tier sort
-        # In Python sort: higher score is better, earlier time is better (-timestamp)
-        scored_items.sort(
+        if not eligible_items:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="No eligible evaluated submissions found for this event to calculate results",
+            )
+
+        # 3. Deterministic multi-tier sort as specified in Section 6
+        eligible_items.sort(
             key=lambda item: (
                 item["final_score"],
                 item["innovation_score"],
                 item["technical_score"],
                 item["impact_score"],
                 item["uiux_score"],
+                item["presentation_score"],
                 -item["submitted_at"].timestamp(),
+                item["sub_id_str"],
             ),
             reverse=True,
         )
 
-        # 4. Construct EventResult records
-        is_published = config.publish_immediately or event.results_published
+        # 4. Construct EventResult snapshot records
+        now = datetime.now(timezone.utc)
+        result_status = ResultStatus.PUBLISHED if config.publish_immediately else ResultStatus.DRAFT
+        is_published = config.publish_immediately
+        published_at = now if is_published else None
+
         results_to_save = []
-        for idx, item in enumerate(scored_items, start=1):
+        for idx, item in enumerate(eligible_items, start=1):
             rank = idx
             award = None
             is_winner = False
@@ -236,6 +284,8 @@ class ResultService:
                 submission_id=item["submission"].id,
                 project_id=item["project_id"],
                 team_id=item["team_id"],
+                version=target_version,
+                status=result_status,
                 rank=rank,
                 final_score=item["final_score"],
                 innovation_score=item["innovation_score"],
@@ -247,37 +297,51 @@ class ResultService:
                 award=award,
                 is_winner=is_winner,
                 is_published=is_published,
+                calculated_at=now,
+                published_at=published_at,
             )
             results_to_save.append(record)
 
-        # 5. Persist batch
-        await self.result_repo.save_results_batch(event_id, results_to_save)
+        # 5. Persist batch atomically
+        await self.result_repo.save_results_batch(event_id, target_version, results_to_save)
 
+        event.current_result_version = target_version
         if config.publish_immediately:
             event.results_published = True
-            event.results_published_at = datetime.now(timezone.utc)
+            event.results_published_at = now
 
         await self.session.commit()
 
         await self._log(
             request=request,
-            action="results.calculated",
-            resource_id=str(event_id),
+            action=action_name,
+            resource_id=f"{event_id}:v{target_version}",
             user_id=admin_user_id,
         )
 
-        # Fetch with eager loading for clean response
-        fresh_results = await self.result_repo.list_results_for_event(event_id)
-        return [self._format_admin_result(r) for r in fresh_results]
+        fresh_results = await self.result_repo.list_results_for_event(
+            event_id=event_id, version=target_version
+        )
+        return AdminResultsResponse(
+            event_id=event.id,
+            event_title=event.title,
+            status=result_status,
+            version=target_version,
+            calculated_at=now,
+            published_at=published_at,
+            total_ranked=len(fresh_results),
+            results=[self._format_admin_entry(r) for r in fresh_results],
+        )
 
     async def publish_results(
         self,
         event_id: uuid.UUID,
         admin_user_id: uuid.UUID,
         request: Request,
-    ) -> LeaderboardResponse:
+    ) -> ResultPublishResponse:
         """
-        Publish the event leaderboard making it accessible to participants and public.
+        Publish the calculated results for an event making them official and publicly visible.
+        Once published, the snapshot cannot silently change.
         """
         event = await self.event_repo.get_by_id(event_id)
         if not event:
@@ -286,43 +350,45 @@ class ResultService:
                 detail="Event not found",
             )
 
-        results = await self.result_repo.list_results_for_event(event_id)
-        if not results:
+        target_version = event.current_result_version or 1
+        draft_results = await self.result_repo.list_results_for_event(
+            event_id=event_id, version=target_version
+        )
+        if not draft_results:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Results have not been calculated yet for this event",
+                detail="Cannot publish an empty leaderboard. Please calculate results first.",
             )
 
+        now = datetime.now(timezone.utc)
         event.results_published = True
-        event.results_published_at = datetime.now(timezone.utc)
-        await self.result_repo.publish_all_for_event(event_id)
+        event.results_published_at = now
+        await self.result_repo.publish_version(event_id, target_version, now)
         await self.session.commit()
 
         await self._log(
             request=request,
-            action="results.published",
-            resource_id=str(event_id),
+            action="result.published",
+            resource_id=f"{event_id}:v{target_version}",
             user_id=admin_user_id,
         )
 
-        published_results = await self.result_repo.list_results_for_event(event_id, published_only=True)
-        return LeaderboardResponse(
+        return ResultPublishResponse(
             event_id=event.id,
-            event_title=event.title,
-            results_published=True,
-            results_published_at=event.results_published_at,
-            total_participants=len(published_results),
-            leaderboard=[self._format_event_result(r) for r in published_results],
+            message=f"Results for '{event.title}' have been successfully published.",
+            status=ResultStatus.PUBLISHED,
+            version=target_version,
+            published_at=now,
+            published_results_count=len(draft_results),
         )
 
-    async def unpublish_results(
+    async def get_public_results(
         self,
         event_id: uuid.UUID,
-        admin_user_id: uuid.UUID,
-        request: Request,
-    ) -> LeaderboardResponse:
+    ) -> ResultsResponse:
         """
-        Unpublish the event leaderboard reverting it to draft/admin-only mode.
+        Return published results for a public event.
+        If results are not published, returns 404 to avoid leaking draft administrative data.
         """
         event = await self.event_repo.get_by_id(event_id)
         if not event:
@@ -331,24 +397,84 @@ class ResultService:
                 detail="Event not found",
             )
 
-        event.results_published = False
-        await self.result_repo.unpublish_all_for_event(event_id)
-        await self.session.commit()
+        published_version = await self.result_repo.get_published_version(event_id)
+        if not event.results_published or published_version is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Results have not been published for this event",
+            )
 
-        await self._log(
-            request=request,
-            action="results.unpublished",
-            resource_id=str(event_id),
-            user_id=admin_user_id,
+        results = await self.result_repo.list_results_for_event(
+            event_id=event_id, version=published_version, status=ResultStatus.PUBLISHED
         )
-
-        return LeaderboardResponse(
+        return ResultsResponse(
             event_id=event.id,
             event_title=event.title,
-            results_published=False,
-            results_published_at=event.results_published_at,
-            total_participants=0,
-            leaderboard=[],
+            status=ResultStatus.PUBLISHED,
+            version=published_version,
+            published_at=event.results_published_at,
+            total_ranked=len(results),
+            results=[self._format_public_entry(r) for r in results],
+        )
+
+    async def get_admin_results(
+        self,
+        event_id: uuid.UUID,
+    ) -> AdminResultsResponse:
+        """
+        Inspect current calculated results for an event (DRAFT or PUBLISHED).
+        """
+        event = await self.event_repo.get_by_id(event_id)
+        if not event:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Event not found",
+            )
+
+        current_version = event.current_result_version or 1
+        results = await self.result_repo.list_results_for_event(
+            event_id=event_id, version=current_version
+        )
+        current_status = results[0].status if results else ResultStatus.DRAFT
+        calc_at = results[0].calculated_at if results else None
+        pub_at = results[0].published_at if results else None
+
+        return AdminResultsResponse(
+            event_id=event.id,
+            event_title=event.title,
+            status=current_status,
+            version=current_version,
+            calculated_at=calc_at,
+            published_at=pub_at,
+            total_ranked=len(results),
+            results=[self._format_admin_entry(r) for r in results],
+        )
+
+    async def get_result_status(
+        self,
+        event_id: uuid.UUID,
+    ) -> ResultStatusResponse:
+        """
+        Return the result status overview for an event.
+        """
+        event = await self.event_repo.get_by_id(event_id)
+        if not event:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Event not found",
+            )
+
+        metrics = await self.result_repo.get_status_metrics(event_id)
+        return ResultStatusResponse(
+            event_id=event.id,
+            has_results=metrics["has_results"],
+            status=metrics["status"],
+            version=metrics["version"],
+            calculated_at=metrics["calculated_at"],
+            published_at=metrics["published_at"],
+            ranked_submissions_count=metrics["ranked_submissions_count"],
+            total_eligible_submissions=metrics["total_eligible_submissions"],
+            total_evaluations=metrics["total_evaluations"],
         )
 
     async def update_result(
@@ -357,9 +483,9 @@ class ResultService:
         data: UpdateResultAwardRequest,
         admin_user_id: uuid.UUID,
         request: Request,
-    ) -> AdminEventResultResponse:
+    ) -> AdminResultEntryResponse:
         """
-        Customize awards or add admin notes to a calculated placement.
+        Customize award title or add administrative internal notes to an existing result.
         """
         result = await self.result_repo.get_by_id(result_id)
         if not result:
@@ -381,64 +507,12 @@ class ResultService:
 
         await self._log(
             request=request,
-            action="results.updated",
+            action="result.updated",
             resource_id=str(result_id),
             user_id=admin_user_id,
         )
 
-        return self._format_admin_result(updated)
-
-    async def get_public_leaderboard(
-        self,
-        event_id: uuid.UUID,
-    ) -> LeaderboardResponse:
-        """
-        Retrieve public leaderboard for an event.
-        If results have not been published, returns results_published=False with empty leaderboard.
-        """
-        event = await self.event_repo.get_by_id(event_id)
-        if not event:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Event not found",
-            )
-
-        if not event.results_published:
-            return LeaderboardResponse(
-                event_id=event.id,
-                event_title=event.title,
-                results_published=False,
-                results_published_at=None,
-                total_participants=0,
-                leaderboard=[],
-            )
-
-        results = await self.result_repo.list_results_for_event(event_id, published_only=True)
-        return LeaderboardResponse(
-            event_id=event.id,
-            event_title=event.title,
-            results_published=True,
-            results_published_at=event.results_published_at,
-            total_participants=len(results),
-            leaderboard=[self._format_event_result(r) for r in results],
-        )
-
-    async def get_admin_leaderboard(
-        self,
-        event_id: uuid.UUID,
-    ) -> list[AdminEventResultResponse]:
-        """
-        Inspect full event leaderboard including unreleased and private admin metadata.
-        """
-        event = await self.event_repo.get_by_id(event_id)
-        if not event:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Event not found",
-            )
-
-        results = await self.result_repo.list_results_for_event(event_id, published_only=False)
-        return [self._format_admin_result(r) for r in results]
+        return self._format_admin_entry(updated)
 
     async def get_student_team_result(
         self,
@@ -447,8 +521,8 @@ class ResultService:
         is_admin: bool = False,
     ) -> StudentTeamResultResponse:
         """
-        View a student team's official result, rank, and anonymous feedback.
-        Enforces team membership authorization unless user is admin.
+        Participant view of their team's performance, ranking, and feedback.
+        Enforces team membership authorization.
         """
         submission = await self.submission_repo.get_submission_with_details(submission_id)
         if not submission:
@@ -482,7 +556,9 @@ class ResultService:
                 message="Results have not been officially published yet.",
             )
 
-        result = await self.result_repo.get_by_submission_id(submission_id)
+        result = await self.result_repo.get_by_submission_and_event(
+            submission_id=submission_id, event_id=submission.event_id
+        )
         if not result:
             return StudentTeamResultResponse(
                 event_id=submission.event_id,

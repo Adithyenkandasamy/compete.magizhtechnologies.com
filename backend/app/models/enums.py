@@ -114,3 +114,8 @@ class SecurityAlertStatus(str, enum.Enum):
     INVESTIGATING = "INVESTIGATING"
     RESOLVED = "RESOLVED"
     DISMISSED = "DISMISSED"
+
+
+class ResultStatus(str, enum.Enum):
+    DRAFT = "DRAFT"
+    PUBLISHED = "PUBLISHED"

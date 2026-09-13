@@ -7,7 +7,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.audit import AuditLog
-from app.models.enums import EventStatus, SubmissionStatus, UserRole
+from app.models.enums import EventStatus, ResultStatus, SubmissionStatus, UserRole
 from app.models.event import Event
 from app.models.judge import EventJudge, Evaluation, Judge
 from app.models.project import Project, Submission
@@ -25,10 +25,9 @@ async def setup_results_env(client: AsyncClient, session: AsyncSession) -> dict:
     - 2 Student Team Leaders (Team Alpha, Team Beta)
     - 1 Event with both judges assigned
     - 2 Submitted Projects
-    - Completed evaluations for both submissions
     """
     # 1. Admin
-    admin_email = f"admin_results_{uuid.uuid4()}@example.com"
+    admin_email = f"admin_res_{uuid.uuid4()}@example.com"
     admin_user = await create_test_user(session, email=admin_email, role=UserRole.ADMIN)
     admin_login = await client.post("/api/auth/login", data={"username": admin_email, "password": "StrongPass123!"})
     admin_token = admin_login.json()["access_token"]
@@ -159,7 +158,7 @@ async def setup_results_env(client: AsyncClient, session: AsyncSession) -> dict:
 
 
 # ============================================================================ #
-# 1. RESULT CALCULATION & RANKING
+# 1. BASIC CALCULATION & DETERMINISTIC RANKING
 # ============================================================================ #
 
 @pytest.mark.asyncio
@@ -244,8 +243,9 @@ async def test_admin_calculates_results_from_judge_evaluations(
         json={"publish_immediately": False, "auto_assign_awards": True},
     )
     assert calc_res.status_code == 200
-    results = calc_res.json()
-    assert len(results) == 2
+    data = calc_res.json()
+    assert data["total_ranked"] == 2
+    results = data["results"]
 
     # Verify Rank 1 (Team Beta)
     rank1 = results[0]
@@ -310,7 +310,7 @@ async def test_deterministic_tie_breaking(client: AsyncClient, setup_results_env
         json={"publish_immediately": False, "auto_assign_awards": True},
     )
     assert calc_res.status_code == 200
-    results = calc_res.json()
+    results = calc_res.json()["results"]
     assert len(results) == 2
 
     # Sub 1 wins tie-breaker because innovation 25 > 20
@@ -320,82 +320,152 @@ async def test_deterministic_tie_breaking(client: AsyncClient, setup_results_env
     assert results[1]["rank"] == 2
 
 
+# ============================================================================ #
+# 2. ELIGIBILITY CRITERIA & VALIDATION
+# ============================================================================ #
+
 @pytest.mark.asyncio
-async def test_unauthorized_user_cannot_calculate_results(client: AsyncClient, setup_results_env: dict):
-    """Student cannot trigger result calculation."""
+async def test_eligibility_enforcement(client: AsyncClient, setup_results_env: dict):
+    """
+    Unevaluated submissions are excluded. If an event has no evaluated submissions,
+    calculation returns 400 Bad Request.
+    """
     env = setup_results_env
     event_id = str(env["event"].id)
 
-    res = await client.post(
+    # Neither sub1 nor sub2 has been evaluated yet
+    calc_res = await client.post(
         f"/api/admin/events/{event_id}/results/calculate",
-        headers={"Authorization": f"Bearer {env['student1_token']}"},
+        headers={"Authorization": f"Bearer {env['admin_token']}"},
         json={"publish_immediately": False},
     )
-    assert res.status_code == 403
+    assert calc_res.status_code == 400
+    assert "no eligible evaluated submissions" in calc_res.json()["detail"].lower()
 
 
 # ============================================================================ #
-# 2. LEADERBOARD ACCESS & PUBLISHING LIFECYCLE
+# 3. PUBLIC API & PUBLISHING LIFECYCLE
 # ============================================================================ #
 
 @pytest.mark.asyncio
-async def test_leaderboard_publication_lifecycle(client: AsyncClient, setup_results_env: dict):
+async def test_public_results_lifecycle(client: AsyncClient, setup_results_env: dict):
     """
-    1. Before publication, public leaderboard returns empty with results_published = False.
-    2. Admin publishes results -> public leaderboard shows full ranked entries.
-    3. Admin unpublishes results -> public leaderboard is hidden again.
+    1. Before publication, GET /api/events/{event_id}/results returns 404 (draft results hidden).
+    2. Admin publishes results -> GET /api/events/{event_id}/results returns 200 with ranked list.
+    3. Public view strips private judge feedback and judge identities.
     """
     env = setup_results_env
     sub1_id = env["sub1_id"]
     event_id = str(env["event"].id)
     admin_headers = {"Authorization": f"Bearer {env['admin_token']}"}
 
-    # Add 1 evaluation & calculate
+    # Evaluate Sub 1 with private judge feedback
     await client.post(
         f"/api/judge/submissions/{sub1_id}/evaluation",
         headers={"Authorization": f"Bearer {env['judge1_token']}"},
-        json={"innovation_score": 20, "technical_score": 20, "impact_score": 15, "uiux_score": 10, "presentation_score": 10},
+        json={
+            "innovation_score": 20,
+            "technical_score": 20,
+            "impact_score": 15,
+            "uiux_score": 10,
+            "presentation_score": 10,
+            "feedback": "Judge confidential notes - should NOT be in public results",
+        },
     )
+
+    # Calculate as DRAFT
     await client.post(
         f"/api/admin/events/{event_id}/results/calculate",
         headers=admin_headers,
         json={"publish_immediately": False},
     )
 
-    # 1. Check public leaderboard -> unpublished
-    res_pub = await client.get(f"/api/events/{event_id}/leaderboard")
-    assert res_pub.status_code == 200
-    data_pub = res_pub.json()
-    assert data_pub["results_published"] is False
-    assert len(data_pub["leaderboard"]) == 0
+    # 1. Public requests results before publication -> 404 Not Found
+    res_pub_draft = await client.get(f"/api/events/{event_id}/results")
+    assert res_pub_draft.status_code == 404
 
     # 2. Admin publishes results
     pub_res = await client.post(f"/api/admin/events/{event_id}/results/publish", headers=admin_headers)
     assert pub_res.status_code == 200
-    assert pub_res.json()["results_published"] is True
+    assert pub_res.json()["status"] == ResultStatus.PUBLISHED
 
-    # Check public leaderboard -> now available
-    res_pub_live = await client.get(f"/api/events/{event_id}/leaderboard")
+    # 3. Public requests results after publication -> 200 OK
+    res_pub_live = await client.get(f"/api/events/{event_id}/results")
     assert res_pub_live.status_code == 200
-    data_live = res_pub_live.json()
-    assert data_live["results_published"] is True
-    assert len(data_live["leaderboard"]) >= 1
-    assert data_live["leaderboard"][0]["rank"] == 1
-    assert data_live["leaderboard"][0]["final_score"] == 75.0
-
-    # 3. Admin unpublishes results
-    unpub_res = await client.post(f"/api/admin/events/{event_id}/results/unpublish", headers=admin_headers)
-    assert unpub_res.status_code == 200
-    assert unpub_res.json()["results_published"] is False
-
-    # Check public leaderboard -> hidden again
-    res_pub_hidden = await client.get(f"/api/events/{event_id}/leaderboard")
-    assert res_pub_hidden.json()["results_published"] is False
-    assert len(res_pub_hidden.json()["leaderboard"]) == 0
+    live_data = res_pub_live.json()
+    assert live_data["status"] == ResultStatus.PUBLISHED
+    assert len(live_data["results"]) == 1
+    entry = live_data["results"][0]
+    assert entry["rank"] == 1
+    assert entry["final_score"] == 75.0
+    # Ensure no judge private feedback or judge identities exist in public payload
+    assert "feedback" not in entry
+    assert "judge_id" not in entry
+    assert "notes" not in entry
 
 
 # ============================================================================ #
-# 3. AWARD CUSTOMIZATION & NOTES
+# 4. ADMIN RESULT STATUS & IMMUTABILITY
+# ============================================================================ #
+
+@pytest.mark.asyncio
+async def test_admin_status_and_immutability(client: AsyncClient, setup_results_env: dict):
+    """
+    - Admin can inspect result status: GET /api/admin/events/{event_id}/results/status
+    - Once published, recalculating without force_recalculate is rejected with 409 Conflict.
+    - Recalculating with force_recalculate creates Version 2 in DRAFT, keeping Version 1 published.
+    """
+    env = setup_results_env
+    sub1_id = env["sub1_id"]
+    event_id = str(env["event"].id)
+    admin_headers = {"Authorization": f"Bearer {env['admin_token']}"}
+
+    # Evaluate & calculate & publish
+    await client.post(
+        f"/api/judge/submissions/{sub1_id}/evaluation",
+        headers={"Authorization": f"Bearer {env['judge1_token']}"},
+        json={"innovation_score": 25, "technical_score": 25, "impact_score": 20, "uiux_score": 15, "presentation_score": 15},
+    )
+    await client.post(
+        f"/api/admin/events/{event_id}/results/calculate",
+        headers=admin_headers,
+        json={"publish_immediately": True},
+    )
+
+    # Inspect status
+    status_res = await client.get(f"/api/admin/events/{event_id}/results/status", headers=admin_headers)
+    assert status_res.status_code == 200
+    status_data = status_res.json()
+    assert status_data["has_results"] is True
+    assert status_data["status"] == ResultStatus.PUBLISHED
+    assert status_data["ranked_submissions_count"] == 1
+
+    # Attempt recalculation without force_recalculate -> 409 Conflict
+    recalc_conflict = await client.post(
+        f"/api/admin/events/{event_id}/results/calculate",
+        headers=admin_headers,
+        json={"force_recalculate": False},
+    )
+    assert recalc_conflict.status_code == 409
+
+    # Recalculate with force_recalculate -> creates Version 2 in DRAFT
+    recalc_ok = await client.post(
+        f"/api/admin/events/{event_id}/results/calculate",
+        headers=admin_headers,
+        json={"force_recalculate": True},
+    )
+    assert recalc_ok.status_code == 200
+    assert recalc_ok.json()["version"] == 2
+    assert recalc_ok.json()["status"] == ResultStatus.DRAFT
+
+    # Verify public results still serve Version 1 (immutability preserved)
+    pub_view = await client.get(f"/api/events/{event_id}/results")
+    assert pub_view.status_code == 200
+    assert pub_view.json()["version"] == 1
+
+
+# ============================================================================ #
+# 5. AWARD CUSTOMIZATION & NOTES
 # ============================================================================ #
 
 @pytest.mark.asyncio
@@ -416,7 +486,7 @@ async def test_admin_updates_result_award_and_notes(client: AsyncClient, setup_r
         headers=admin_headers,
         json={"publish_immediately": True},
     )
-    result_id = calc_res.json()[0]["id"]
+    result_id = calc_res.json()["results"][0]["id"]
 
     # Admin updates award
     up_res = await client.put(
@@ -434,11 +504,11 @@ async def test_admin_updates_result_award_and_notes(client: AsyncClient, setup_r
 
 
 # ============================================================================ #
-# 4. STUDENT TEAM RESULT & FEEDBACK ACCESS
+# 6. STUDENT TEAM RESULT & IDOR PROTECTION
 # ============================================================================ #
 
 @pytest.mark.asyncio
-async def test_student_team_views_own_result_and_anonymous_feedback(
+async def test_student_team_views_own_result_and_idor_protection(
     client: AsyncClient, setup_results_env: dict
 ):
     """
@@ -492,7 +562,7 @@ async def test_student_team_views_own_result_and_anonymous_feedback(
 
 
 # ============================================================================ #
-# 5. AUDIT LOGGING VERIFICATION
+# 7. AUDIT LOGGING VERIFICATION
 # ============================================================================ #
 
 @pytest.mark.asyncio
@@ -526,10 +596,10 @@ async def test_results_audit_logs_recorded(
 
     # Query audit logs
     stmt = select(AuditLog.action).where(
-        AuditLog.action.in_(["results.calculated", "results.published"])
+        AuditLog.action.in_(["result.calculated", "result.published"])
     )
     result = await session.execute(stmt)
     actions = set(result.scalars().all())
 
-    assert "results.calculated" in actions
-    assert "results.published" in actions
+    assert "result.calculated" in actions
+    assert "result.published" in actions

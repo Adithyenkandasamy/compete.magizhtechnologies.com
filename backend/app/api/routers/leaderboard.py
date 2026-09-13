@@ -4,38 +4,52 @@ from fastapi import APIRouter, Depends, status
 
 from app.api.deps import CurrentUserDep, SessionDep
 from app.models.enums import UserRole
-from app.schemas.result import LeaderboardResponse, StudentTeamResultResponse
+from app.schemas.result import ResultsResponse, StudentTeamResultResponse
 from app.services.result_service import ResultService
 
 router = APIRouter(
-    tags=["Leaderboard & Results"],
+    tags=["Results & Leaderboard"],
 )
 
 
 @router.get(
-    "/events/{event_id}/leaderboard",
-    response_model=LeaderboardResponse,
-    summary="Get public event leaderboard",
+    "/events/{event_id}/results",
+    response_model=ResultsResponse,
+    summary="Get official published event results",
     description=(
-        "Retrieve the official ranked leaderboard for an event. "
-        "If results are not yet published by organizers, an unreleased status with an empty list is returned."
+        "Return published results for an event in ranked order. "
+        "Draft results are strictly hidden. Returns 404 if results are not yet published."
     ),
 )
-async def get_event_leaderboard(
+async def get_event_results(
     event_id: uuid.UUID,
     session: SessionDep,
-) -> LeaderboardResponse:
+) -> ResultsResponse:
     service = ResultService(session)
-    return await service.get_public_leaderboard(event_id=event_id)
+    return await service.get_public_results(event_id=event_id)
+
+
+@router.get(
+    "/events/{event_id}/leaderboard",
+    response_model=ResultsResponse,
+    summary="Get official published event leaderboard (alias for results)",
+    description="Convenience alias endpoint returning official published results.",
+)
+async def get_event_leaderboard_alias(
+    event_id: uuid.UUID,
+    session: SessionDep,
+) -> ResultsResponse:
+    service = ResultService(session)
+    return await service.get_public_results(event_id=event_id)
 
 
 @router.get(
     "/submissions/{submission_id}/result",
     response_model=StudentTeamResultResponse,
-    summary="Get student team result and feedback",
+    summary="Get student team result and anonymous feedback",
     description=(
         "Allows an authenticated participant to view their team's rank, score, award, "
-        "and anonymized judge feedback once results are published."
+        "and anonymized judge feedback once results are officially published."
     ),
 )
 async def get_student_submission_result(
