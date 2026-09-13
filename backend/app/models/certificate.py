@@ -1,15 +1,23 @@
 """
 Certificate model.
 
-Issued to users upon event completion.
-certificate_code is a unique human-readable identifier (e.g. CERT-2024-HACK-0001).
+Issued to users upon event completion and achievement recognition.
+certificate_code is a unique, cryptographically unpredictable identifier.
 """
 
 import uuid
 from datetime import datetime
 from typing import TYPE_CHECKING, Optional
 
-from sqlalchemy import DateTime, Enum as SAEnum, ForeignKey, Index, String, func
+from sqlalchemy import (
+    DateTime,
+    Enum as SAEnum,
+    ForeignKey,
+    Index,
+    String,
+    UniqueConstraint,
+    func,
+)
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import text
@@ -48,12 +56,22 @@ class Certificate(Base):
     certificate_code: Mapped[str] = mapped_column(
         String(100), unique=True, nullable=False, index=True
     )
-    issued_at: Mapped[datetime] = mapped_column(
+    # When generated, issued_at is None until officially issued by organizers
+    issued_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    # Flexible JSON blob for extras: rank, score, team_name, project_title, download_url
+    extra_data: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
+
+    created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
-    # Flexible JSON blob for extras: rank, score, download_url, etc.
-    # NOTE: cannot use 'metadata' — it is reserved by SQLAlchemy's DeclarativeBase.
-    extra_data: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=False,
+    )
 
     # ------------------------------------------------------------------ #
     # Relationships
@@ -63,12 +81,18 @@ class Certificate(Base):
     event: Mapped["Event"] = relationship("Event", back_populates="certificates")
 
     __table_args__ = (
+        UniqueConstraint(
+            "user_id", "event_id", "certificate_type",
+            name="uq_certificates_user_event_type",
+        ),
         Index("ix_certificates_user_id", "user_id"),
         Index("ix_certificates_event_id", "event_id"),
+        Index("ix_certificates_certificate_type", "certificate_type"),
+        Index("ix_certificates_issued_at", "issued_at"),
     )
 
     def __repr__(self) -> str:
         return (
             f"<Certificate id={self.id} code={self.certificate_code} "
-            f"type={self.certificate_type}>"
+            f"type={self.certificate_type} issued_at={self.issued_at}>"
         )
