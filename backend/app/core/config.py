@@ -12,6 +12,16 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = 15
     refresh_token_expire_days: int = 7
 
+    # Security & Abuse Thresholds
+    login_failure_threshold: int = 5
+    login_failure_window_minutes: int = 15
+
+    # Data Retention Configuration (in days)
+    audit_log_retention_days: int = 365
+    login_attempt_retention_days: int = 90
+    session_retention_days: int = 30
+    security_alert_retention_days: int = 730
+
     # CORS
     frontend_url: str = "http://localhost:3000"
     cors_origins: list[str] = Field(

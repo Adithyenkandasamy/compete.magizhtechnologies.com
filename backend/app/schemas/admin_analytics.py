@@ -48,10 +48,20 @@ class CertificatesAnalyticsSummary(BaseModel):
     by_type: dict[str, int]
 
 
+class SecurityAnalyticsSummary(BaseModel):
+    failed_logins: int
+    successful_logins: int
+    open_alerts: int
+    high_critical_alerts: int
+    revoked_sessions: int
+    active_sessions: int
+
+
 class AdminAnalyticsResponse(BaseModel):
     events: EventsAnalyticsSummary
     users: UsersAnalyticsSummary
     participation: ParticipationAnalyticsSummary
     judging: JudgingAnalyticsSummary
     certificates: CertificatesAnalyticsSummary
+    security: SecurityAnalyticsSummary
     generated_at: datetime

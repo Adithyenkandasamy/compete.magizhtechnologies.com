@@ -2,11 +2,12 @@ import uuid
 from datetime import datetime, timezone
 from typing import Optional
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.models.audit import UserSession
+from app.models.user import Profile, User
 
 
 class SessionRepository:
@@ -28,7 +29,7 @@ class SessionRepository:
             user_id=user_id,
             session_hash=session_hash,
             ip_address=ip_address,
-            user_agent=user_agent,
+            user_agent=user_agent[:500] if user_agent else None,
             expires_at=expires_at,
         )
         self.session.add(user_session)
@@ -41,7 +42,7 @@ class SessionRepository:
         stmt = (
             select(UserSession)
             .where(UserSession.id == session_id)
-            .options(selectinload(UserSession.user))
+            .options(selectinload(UserSession.user).selectinload(User.profile))
         )
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
@@ -55,6 +56,51 @@ class SessionRepository:
         )
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
+
+    async def list_user_sessions(self, user_id: uuid.UUID) -> list[UserSession]:
+        """Fetch all sessions belonging to a specific user ordered by created_at desc."""
+        stmt = (
+            select(UserSession)
+            .where(UserSession.user_id == user_id)
+            .order_by(UserSession.created_at.desc())
+        )
+        result = await self.session.execute(stmt)
+        return list(result.scalars().all())
+
+    async def list_admin_sessions(
+        self,
+        page: int = 1,
+        size: int = 20,
+        user_id: Optional[uuid.UUID] = None,
+        is_active: Optional[bool] = None,
+    ) -> tuple[list[UserSession], int]:
+        """Admin query to list sessions with user details and active/revoked filter."""
+        stmt = (
+            select(UserSession)
+            .join(UserSession.user)
+            .outerjoin(User.profile)
+            .options(selectinload(UserSession.user).selectinload(User.profile))
+        )
+
+        now = datetime.now(timezone.utc)
+        if user_id:
+            stmt = stmt.where(UserSession.user_id == user_id)
+        if is_active is True:
+            stmt = stmt.where(UserSession.revoked_at.is_(None), UserSession.expires_at > now)
+        elif is_active is False:
+            stmt = stmt.where((UserSession.revoked_at.isnot(None)) | (UserSession.expires_at <= now))
+
+        count_stmt = select(func.count(func.distinct(UserSession.id))).select_from(
+            stmt.with_only_columns(UserSession.id).subquery()
+        )
+        total = (await self.session.execute(count_stmt)).scalar_one()
+
+        stmt = stmt.order_by(UserSession.created_at.desc())
+        offset = (page - 1) * size
+        stmt = stmt.offset(offset).limit(size)
+
+        result = await self.session.execute(stmt)
+        return list(result.scalars().all()), total
 
     async def update_session(
         self,

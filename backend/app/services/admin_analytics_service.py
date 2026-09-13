@@ -3,12 +3,15 @@ from datetime import datetime, timezone
 from sqlalchemy import case, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.models.audit import LoginAttempt, UserSession
 from app.models.certificate import Certificate
 from app.models.enums import (
     AccountStatus,
     CertificateType,
     EventStatus,
     RegistrationStatus,
+    SecurityAlertSeverity,
+    SecurityAlertStatus,
     SubmissionStatus,
     UserRole,
 )
@@ -16,6 +19,7 @@ from app.models.event import Event
 from app.models.judge import Evaluation
 from app.models.project import Project, Submission
 from app.models.registration import Registration
+from app.models.security import SecurityAlert
 from app.models.team import Team
 from app.models.user import User
 from app.schemas.admin_analytics import (
@@ -25,6 +29,7 @@ from app.schemas.admin_analytics import (
     EventsAnalyticsSummary,
     JudgingAnalyticsSummary,
     ParticipationAnalyticsSummary,
+    SecurityAnalyticsSummary,
     UsersAnalyticsSummary,
 )
 
@@ -62,7 +67,6 @@ class AdminAnalyticsService:
 
         top_events = []
         for r in top_event_rows:
-            # count submissions for this event
             sub_count_stmt = (
                 select(func.count(Submission.id))
                 .join(Submission.project)
@@ -174,11 +178,60 @@ class AdminAnalyticsService:
             by_type=by_cert_type,
         )
 
+        # 6. Security Metrics
+        now = datetime.now(timezone.utc)
+        failed_logins = (
+            await self.session.execute(
+                select(func.count()).select_from(LoginAttempt).where(LoginAttempt.success.is_(False))
+            )
+        ).scalar_one()
+        successful_logins = (
+            await self.session.execute(
+                select(func.count()).select_from(LoginAttempt).where(LoginAttempt.success.is_(True))
+            )
+        ).scalar_one()
+        open_alerts = (
+            await self.session.execute(
+                select(func.count()).select_from(SecurityAlert).where(
+                    SecurityAlert.status.in_([SecurityAlertStatus.OPEN, SecurityAlertStatus.INVESTIGATING])
+                )
+            )
+        ).scalar_one()
+        high_crit_alerts = (
+            await self.session.execute(
+                select(func.count()).select_from(SecurityAlert).where(
+                    SecurityAlert.severity.in_([SecurityAlertSeverity.HIGH, SecurityAlertSeverity.CRITICAL])
+                )
+            )
+        ).scalar_one()
+        revoked_sessions = (
+            await self.session.execute(
+                select(func.count()).select_from(UserSession).where(UserSession.revoked_at.isnot(None))
+            )
+        ).scalar_one()
+        active_sessions = (
+            await self.session.execute(
+                select(func.count()).select_from(UserSession).where(
+                    UserSession.revoked_at.is_(None), UserSession.expires_at > now
+                )
+            )
+        ).scalar_one()
+
+        security_summary = SecurityAnalyticsSummary(
+            failed_logins=failed_logins,
+            successful_logins=successful_logins,
+            open_alerts=open_alerts,
+            high_critical_alerts=high_crit_alerts,
+            revoked_sessions=revoked_sessions,
+            active_sessions=active_sessions,
+        )
+
         return AdminAnalyticsResponse(
             events=events_summary,
             users=users_summary,
             participation=participation_summary,
             judging=judging_summary,
             certificates=certificates_summary,
-            generated_at=datetime.now(timezone.utc),
+            security=security_summary,
+            generated_at=now,
         )

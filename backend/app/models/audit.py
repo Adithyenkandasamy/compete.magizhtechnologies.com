@@ -72,6 +72,7 @@ class AuditLog(Base):
         Index("ix_audit_logs_created_at", "created_at"),
         Index("ix_audit_logs_resource", "resource_type", "resource_id"),
         Index("ix_audit_logs_event_type", "event_type"),
+        Index("ix_audit_logs_action", "action"),
     )
 
     def __repr__(self) -> str:
@@ -121,6 +122,7 @@ class LoginAttempt(Base):
         Index("ix_login_attempts_ip_address", "ip_address"),
         Index("ix_login_attempts_created_at", "created_at"),
         Index("ix_login_attempts_user_id", "user_id"),
+        Index("ix_login_attempts_success", "success"),
     )
 
     def __repr__(self) -> str:
@@ -174,6 +176,7 @@ class UserSession(Base):
         Index("ix_user_sessions_user_id", "user_id"),
         Index("ix_user_sessions_expires_at", "expires_at"),
         Index("ix_user_sessions_session_hash", "session_hash"),
+        Index("ix_user_sessions_revoked_at", "revoked_at"),
     )
 
     def __repr__(self) -> str:

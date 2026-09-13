@@ -68,6 +68,7 @@ class SecurityAlert(Base):
         Index("ix_security_alerts_created_at", "created_at"),
         Index("ix_security_alerts_severity", "severity"),
         Index("ix_security_alerts_user_id", "user_id"),
+        Index("ix_security_alerts_type", "type"),
     )
 
     def __repr__(self) -> str:

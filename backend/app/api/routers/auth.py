@@ -24,7 +24,7 @@ async def register(
     Automatically assigns the STUDENT role and creates an empty profile.
     """
     auth_service = AuthService(session)
-    user = await auth_service.register_user(data)
+    user = await auth_service.register_user(data, request)
     # The Pydantic UserResponse schema automatically strips the password hash
     return user  # type: ignore
 

@@ -7,6 +7,7 @@ from app.api.health import router as health_router
 from app.api.routers import (
     admin_activity,
     admin_analytics,
+    admin_audit_logs,
     admin_badges,
     admin_certificates,
     admin_dashboard,
@@ -34,10 +35,12 @@ from app.api.routers import (
     submissions,
     team_invites,
     teams,
+    user_sessions,
 )
 from app.core.config import settings
 from app.core.logging import configure_logging
 from app.middleware.error_handler import GlobalErrorMiddleware
+from app.middleware.security import SecurityHeadersMiddleware
 
 # ---------------------------------------------------------------------------
 # Configure logging before anything else
@@ -64,6 +67,9 @@ app = FastAPI(
 # Global error handler – catches any unhandled exception
 app.add_middleware(GlobalErrorMiddleware)
 
+# Security headers, request ID tracking, and timing
+app.add_middleware(SecurityHeadersMiddleware)
+
 # CORS – restrict to the configured frontend origin(s)
 app.add_middleware(
     CORSMiddleware,
@@ -78,6 +84,7 @@ app.add_middleware(
 # ---------------------------------------------------------------------------
 app.include_router(health_router)
 app.include_router(auth.router, prefix="/api")
+app.include_router(user_sessions.router, prefix="/api")
 app.include_router(events.router, prefix="/api")
 app.include_router(admin_events.router, prefix="/api")
 app.include_router(admin_dashboard.router, prefix="/api")
@@ -96,6 +103,7 @@ app.include_router(certificates.router, prefix="/api")
 app.include_router(admin_teams.router, prefix="/api")
 app.include_router(admin_projects.router, prefix="/api")
 app.include_router(admin_activity.router, prefix="/api")
+app.include_router(admin_audit_logs.router, prefix="/api")
 app.include_router(admin_security.router, prefix="/api")
 app.include_router(admin_analytics.router, prefix="/api")
 app.include_router(admin_badges.router, prefix="/api")

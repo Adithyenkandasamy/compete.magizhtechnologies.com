@@ -11,13 +11,16 @@ from app.models.enums import SecurityAlertSeverity, SecurityAlertStatus
 from app.models.security import SecurityAlert
 from app.models.user import User
 from app.repositories.audit_repo import AuditRepository
+from app.repositories.session_repo import SessionRepository
 from app.schemas.admin_security import SecurityAlertResponse, SecurityAlertUpdate
+from app.schemas.session import AdminSessionResponse
 
 
 class AdminSecurityService:
     def __init__(self, session: AsyncSession):
         self.session = session
         self.audit_repo = AuditRepository(session)
+        self.session_repo = SessionRepository(session)
 
     def _format_alert(self, a: SecurityAlert) -> SecurityAlertResponse:
         return SecurityAlertResponse(
@@ -40,6 +43,10 @@ class AdminSecurityService:
         alert_status: Optional[SecurityAlertStatus] = None,
         severity: Optional[SecurityAlertSeverity] = None,
         alert_type: Optional[str] = None,
+        user_id: Optional[uuid.UUID] = None,
+        ip_address: Optional[str] = None,
+        from_date: Optional[datetime] = None,
+        to_date: Optional[datetime] = None,
     ) -> tuple[list[SecurityAlertResponse], int]:
         stmt = select(SecurityAlert).options(selectinload(SecurityAlert.user))
 
@@ -49,6 +56,14 @@ class AdminSecurityService:
             stmt = stmt.where(SecurityAlert.severity == severity)
         if alert_type:
             stmt = stmt.where(SecurityAlert.type.ilike(f"%{alert_type.strip()}%"))
+        if user_id:
+            stmt = stmt.where(SecurityAlert.user_id == user_id)
+        if ip_address:
+            stmt = stmt.where(SecurityAlert.ip_address == ip_address)
+        if from_date:
+            stmt = stmt.where(SecurityAlert.created_at >= from_date)
+        if to_date:
+            stmt = stmt.where(SecurityAlert.created_at <= to_date)
 
         count_stmt = select(func.count(func.distinct(SecurityAlert.id))).select_from(
             stmt.with_only_columns(SecurityAlert.id).subquery()
@@ -98,6 +113,10 @@ class AdminSecurityService:
         await self.session.commit()
         await self.session.refresh(alert)
 
+        request_id = getattr(request.state, "request_id", None) if hasattr(request, "state") else None
+        ip = request.client.host if request.client else None
+        user_agent = request.headers.get("user-agent")
+
         await self.audit_repo.create_audit_log(
             action="admin.security_alert.updated",
             event_type="security_management",
@@ -105,10 +124,49 @@ class AdminSecurityService:
             resource_type="SecurityAlert",
             resource_id=str(alert.id),
             details=f"Alert {alert.type} status changed from {old_status.value} to {data.status.value}. Notes: {data.notes or 'None'}",
-            ip_address=request.client.host if request.client else None,
-            user_agent=request.headers.get("user-agent"),
+            ip_address=ip,
+            user_agent=user_agent,
             endpoint=request.url.path,
             http_method=request.method,
+            status_code=status.HTTP_200_OK,
+            request_id=request_id,
         )
+        await self.session.commit()
 
         return self._format_alert(alert)
+
+    async def list_sessions(
+        self,
+        page: int = 1,
+        size: int = 20,
+        user_id: Optional[uuid.UUID] = None,
+        is_active: Optional[bool] = None,
+    ) -> tuple[list[AdminSessionResponse], int]:
+        sessions, total = await self.session_repo.list_admin_sessions(
+            page=page, size=size, user_id=user_id, is_active=is_active
+        )
+        now = datetime.now(timezone.utc)
+        items = []
+        for s in sessions:
+            user_email = s.user.email if s.user else None
+            user_name = (
+                s.user.profile.full_name
+                if (s.user and s.user.profile and s.user.profile.full_name)
+                else user_email
+            )
+            items.append(
+                AdminSessionResponse(
+                    id=s.id,
+                    user_id=s.user_id,
+                    user_email=user_email,
+                    user_name=user_name,
+                    ip_address=s.ip_address,
+                    user_agent=s.user_agent,
+                    created_at=s.created_at,
+                    last_seen=s.last_seen,
+                    expires_at=s.expires_at,
+                    revoked_at=s.revoked_at,
+                    is_active=(s.revoked_at is None and s.expires_at > now),
+                )
+            )
+        return items, total
