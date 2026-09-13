@@ -1,15 +1,16 @@
 import uuid
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
+from typing import Optional
 
-from app.api.deps import SessionDep, require_admin
+from fastapi import APIRouter, Depends, Query, Request, status
+
+from app.api.deps import CurrentUserDep, SessionDep, require_admin
 from app.models.enums import RegistrationStatus
-from app.models.registration import Registration
 from app.schemas.admin_registrations import (
     AdminRegistrationResponse,
     UpdateAdminRegistrationRequest,
 )
+from app.schemas.event import PaginatedResponse
+from app.services.admin_registration_service import AdminRegistrationService
 
 router = APIRouter(
     prefix="/admin/registrations",
@@ -18,66 +19,93 @@ router = APIRouter(
 )
 
 
-@router.get("", response_model=list[AdminRegistrationResponse], summary="List all registrations")
-async def list_registrations(session: SessionDep) -> list[AdminRegistrationResponse]:
-    stmt = select(Registration).order_by(Registration.registered_at.desc())
-    result = await session.execute(stmt)
-    registrations = result.scalars().all()
-    return [
-        AdminRegistrationResponse(
-            id=r.id,
-            event_id=r.event_id,
-            user_id=r.user_id,
-            status=r.status.value if hasattr(r.status, 'value') else str(r.status),
-            created_at=r.registered_at,
-            updated_at=r.registered_at,
-        )
-        for r in registrations
-    ]
-
-
-@router.get("/{registration_id}", response_model=AdminRegistrationResponse, summary="Get a registration")
-async def get_registration(registration_id: uuid.UUID, session: SessionDep) -> AdminRegistrationResponse:
-    stmt = select(Registration).where(Registration.id == registration_id)
-    result = await session.execute(stmt)
-    r = result.scalar_one_or_none()
-    if not r:
-        raise HTTPException(status_code=404, detail="Registration not found")
-    return AdminRegistrationResponse(
-        id=r.id,
-        event_id=r.event_id,
-        user_id=r.user_id,
-        status=r.status.value if hasattr(r.status, 'value') else str(r.status),
-        created_at=r.registered_at,
+@router.get(
+    "",
+    response_model=PaginatedResponse[AdminRegistrationResponse],
+    summary="List all registrations with filters and pagination",
+    description="Retrieve registrations with eager-loaded user profiles and event summaries. Filter by event, user, status, or search.",
+)
+async def list_registrations(
+    session: SessionDep,
+    page: int = Query(1, ge=1, description="Page number"),
+    size: int = Query(20, ge=1, le=100, description="Items per page"),
+    event_id: Optional[uuid.UUID] = Query(None, description="Filter by event ID"),
+    user_id: Optional[uuid.UUID] = Query(None, description="Filter by user ID"),
+    status: Optional[RegistrationStatus] = Query(None, description="Filter by registration status"),
+    search: Optional[str] = Query(None, description="Search by student email, name, or event title"),
+) -> PaginatedResponse[AdminRegistrationResponse]:
+    service = AdminRegistrationService(session)
+    items, total = await service.list_registrations(
+        page=page,
+        size=size,
+        event_id=event_id,
+        user_id=user_id,
+        reg_status=status,
+        search=search,
+    )
+    pages = (total + size - 1) // size if total else 0
+    return PaginatedResponse[AdminRegistrationResponse](
+        items=items,
+        total=total,
+        page=page,
+        size=size,
+        pages=pages,
     )
 
 
-@router.put("/{registration_id}", response_model=AdminRegistrationResponse, summary="Update registration status")
-async def update_registration(
+@router.get(
+    "/{registration_id}",
+    response_model=AdminRegistrationResponse,
+    summary="Get registration details",
+    description="Fetch a single registration with user profile and event details.",
+)
+async def get_registration(
     registration_id: uuid.UUID,
-    data: UpdateAdminRegistrationRequest,
     session: SessionDep,
 ) -> AdminRegistrationResponse:
-    stmt = select(Registration).where(Registration.id == registration_id)
-    result = await session.execute(stmt)
-    r = result.scalar_one_or_none()
-    if not r:
-        raise HTTPException(status_code=404, detail="Registration not found")
+    service = AdminRegistrationService(session)
+    return await service.get_registration(registration_id)
 
-    try:
-        new_status = RegistrationStatus(data.status)
-    except ValueError:
-        raise HTTPException(status_code=400, detail=f"Invalid status: {data.status}")
 
-    r.status = new_status
-    await session.flush()
-    await session.refresh(r)
+@router.post(
+    "/{registration_id}/status",
+    response_model=AdminRegistrationResponse,
+    summary="Update registration status (POST)",
+    description="Update registration status (CONFIRMED, WAITLISTED, CANCELLED) and record an audit log.",
+)
+async def update_registration_status_post(
+    registration_id: uuid.UUID,
+    data: UpdateAdminRegistrationRequest,
+    request: Request,
+    session: SessionDep,
+    current_user: CurrentUserDep,
+) -> AdminRegistrationResponse:
+    service = AdminRegistrationService(session)
+    return await service.update_registration_status(
+        registration_id=registration_id,
+        data=data,
+        admin_user_id=current_user.id,
+        request=request,
+    )
 
-    return AdminRegistrationResponse(
-        id=r.id,
-        event_id=r.event_id,
-        user_id=r.user_id,
-        status=r.status.value,
-        created_at=r.registered_at,
-        updated_at=r.registered_at,
+
+@router.put(
+    "/{registration_id}/status",
+    response_model=AdminRegistrationResponse,
+    summary="Update registration status (PUT)",
+    description="PUT compatibility for updating registration status.",
+)
+async def update_registration_status_put(
+    registration_id: uuid.UUID,
+    data: UpdateAdminRegistrationRequest,
+    request: Request,
+    session: SessionDep,
+    current_user: CurrentUserDep,
+) -> AdminRegistrationResponse:
+    service = AdminRegistrationService(session)
+    return await service.update_registration_status(
+        registration_id=registration_id,
+        data=data,
+        admin_user_id=current_user.id,
+        request=request,
     )

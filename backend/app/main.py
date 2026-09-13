@@ -5,15 +5,21 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.health import router as health_router
 from app.api.routers import (
+    admin_activity,
+    admin_analytics,
+    admin_badges,
     admin_certificates,
     admin_dashboard,
     admin_evaluations,
     admin_event_judges,
     admin_events,
     admin_judges,
+    admin_projects,
     admin_registrations,
     admin_results,
+    admin_security,
     admin_submissions,
+    admin_teams,
     admin_users,
     auth,
     certificates,
@@ -87,6 +93,13 @@ app.include_router(admin_results.router, prefix="/api")
 app.include_router(leaderboard.router, prefix="/api")
 app.include_router(admin_certificates.router, prefix="/api")
 app.include_router(certificates.router, prefix="/api")
+app.include_router(admin_teams.router, prefix="/api")
+app.include_router(admin_projects.router, prefix="/api")
+app.include_router(admin_activity.router, prefix="/api")
+app.include_router(admin_security.router, prefix="/api")
+app.include_router(admin_analytics.router, prefix="/api")
+app.include_router(admin_badges.router, prefix="/api")
+app.include_router(sponsors.router, prefix="/api")
 app.include_router(registrations.router)
 app.include_router(profile_router.router)
 app.include_router(teams.router)
@@ -94,7 +107,6 @@ app.include_router(team_invites.router)
 app.include_router(projects.router)
 app.include_router(projects.public_router)
 app.include_router(submissions.router)
-app.include_router(sponsors.router)
 app.include_router(sponsors.public_router)
 
 # ---------------------------------------------------------------------------

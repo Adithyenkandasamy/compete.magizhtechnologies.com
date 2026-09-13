@@ -11,8 +11,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.repositories.admin_dashboard_repo import AdminDashboardRepository
 from app.schemas.admin import (
     AdminActivity,
+    AdminDashboardCertificatesStats,
+    AdminDashboardEventsStats,
+    AdminDashboardOverviewStats,
+    AdminDashboardRegistrationsStats,
     AdminDashboardResponse,
     AdminDashboardStats,
+    AdminDashboardSubmissionsStats,
+    AdminDashboardUsersStats,
     EventOverviewResponse,
 )
 
@@ -29,15 +35,23 @@ class AdminDashboardService:
         self.repo = AdminDashboardRepository(session)
 
     async def get_dashboard(self) -> AdminDashboardResponse:
+        raw_stats = await self.repo.get_comprehensive_stats()
+
         stats = AdminDashboardStats(
-            total_users=await self.repo.count_users(),
-            total_students=await self.repo.count_students(),
-            total_events=await self.repo.count_events(),
-            total_hackathons=await self.repo.count_hackathons(),
-            total_registrations=await self.repo.count_registrations(),
-            total_teams=await self.repo.count_teams(),
-            total_projects=await self.repo.count_projects(),
-            total_submissions=await self.repo.count_submissions(),
+            users=AdminDashboardUsersStats(**raw_stats["users"]),
+            events=AdminDashboardEventsStats(**raw_stats["events"]),
+            registrations=AdminDashboardRegistrationsStats(**raw_stats["registrations"]),
+            submissions=AdminDashboardSubmissionsStats(**raw_stats["submissions"]),
+            certificates=AdminDashboardCertificatesStats(**raw_stats["certificates"]),
+            overview=AdminDashboardOverviewStats(**raw_stats["overview"]),
+            total_users=raw_stats["total_users"],
+            total_students=raw_stats["total_students"],
+            total_events=raw_stats["total_events"],
+            total_hackathons=raw_stats["total_hackathons"],
+            total_registrations=raw_stats["total_registrations"],
+            total_teams=raw_stats["total_teams"],
+            total_projects=raw_stats["total_projects"],
+            total_submissions=raw_stats["total_submissions"],
         )
         hackathons = await self.repo.get_hackathon_overview(limit=10)
         return AdminDashboardResponse(stats=stats, hackathons=hackathons)

@@ -1,19 +1,17 @@
 import uuid
+from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
+from fastapi import APIRouter, Depends, Query, Request, status
 
-from app.api.deps import SessionDep, require_admin
+from app.api.deps import CurrentUserDep, SessionDep, require_admin
 from app.models.enums import AccountStatus, UserRole
-from app.models.user import User
-from app.repositories.user_repo import UserRepository
+from app.schemas.event import PaginatedResponse
 from app.schemas.user_admin import (
     AdminUserResponse,
     UpdateUserRoleRequest,
     UpdateUserStatusRequest,
 )
+from app.services.admin_user_service import AdminUserService
 
 router = APIRouter(
     prefix="/admin/users",
@@ -24,80 +22,91 @@ router = APIRouter(
 
 @router.get(
     "",
-    response_model=list[AdminUserResponse],
-    summary="List all platform users",
+    response_model=PaginatedResponse[AdminUserResponse],
+    summary="List all platform users with filtering and search",
+    description="Retrieve paginated list of users with profile data. Supports filtering by role and status, and text search across email and name.",
 )
 async def list_users(
     session: SessionDep,
-) -> list[AdminUserResponse]:
-    """Return every user with their profile loaded."""
-    stmt = select(User).options(selectinload(User.profile))
-    result = await session.execute(stmt)
-    users = result.scalars().all()
-    return [AdminUserResponse.model_validate(u) for u in users]
+    page: int = Query(1, ge=1, description="Page number"),
+    size: int = Query(20, ge=1, le=100, description="Items per page"),
+    role: Optional[UserRole] = Query(None, description="Filter by user role"),
+    account_status: Optional[AccountStatus] = Query(None, alias="status", description="Filter by account status"),
+    search: Optional[str] = Query(None, description="Search by email, name, or college"),
+    sort_desc: bool = Query(True, description="Sort descending by registration date"),
+) -> PaginatedResponse[AdminUserResponse]:
+    service = AdminUserService(session)
+    items, total = await service.list_users(
+        page=page,
+        size=size,
+        role=role,
+        account_status=account_status,
+        search=search,
+        sort_desc=sort_desc,
+    )
+    pages = (total + size - 1) // size if total else 0
+    return PaginatedResponse[AdminUserResponse](
+        items=items,
+        total=total,
+        page=page,
+        size=size,
+        pages=pages,
+    )
 
 
 @router.get(
     "/{user_id}",
     response_model=AdminUserResponse,
-    summary="Get a single user",
+    summary="Get user details and participation statistics",
+    description="Return a user by ID with profile data and aggregate participation statistics (registrations, teams, submissions, certificates).",
 )
 async def get_user(
     user_id: uuid.UUID,
     session: SessionDep,
 ) -> AdminUserResponse:
-    """Return a user by ID with their profile loaded."""
-    repo = UserRepository(session)
-    user = await repo.get_by_id(user_id)
-    if user is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found",
-        )
-    return AdminUserResponse.model_validate(user)
+    service = AdminUserService(session)
+    return await service.get_user_with_stats(user_id)
 
 
 @router.put(
     "/{user_id}/status",
     response_model=AdminUserResponse,
-    summary="Update a user's account status",
+    summary="Update user account status",
+    description="Change user status (ACTIVE, SUSPENDED, DELETED). Prevents self-lockout and protects SUPER_ADMIN accounts.",
 )
 async def update_user_status(
     user_id: uuid.UUID,
     data: UpdateUserStatusRequest,
+    request: Request,
     session: SessionDep,
+    current_admin: CurrentUserDep,
 ) -> AdminUserResponse:
-    """Set a user's status to ACTIVE, SUSPENDED, or DELETED."""
-    repo = UserRepository(session)
-    user = await repo.get_by_id(user_id)
-    if user is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found",
-        )
-    user.status = AccountStatus(data.status)
-    await session.flush()
-    return AdminUserResponse.model_validate(user)
+    service = AdminUserService(session)
+    return await service.update_user_status(
+        user_id=user_id,
+        data=data,
+        current_admin=current_admin,
+        request=request,
+    )
 
 
 @router.put(
     "/{user_id}/role",
     response_model=AdminUserResponse,
-    summary="Update a user's role",
+    summary="Update user role with privilege escalation protection",
+    description="Change user role (STUDENT, JUDGE, ADMIN, SUPER_ADMIN). Enforces strict privilege rules: only SUPER_ADMIN may assign or modify ADMIN/SUPER_ADMIN roles.",
 )
 async def update_user_role(
     user_id: uuid.UUID,
     data: UpdateUserRoleRequest,
+    request: Request,
     session: SessionDep,
+    current_admin: CurrentUserDep,
 ) -> AdminUserResponse:
-    """Set a user's role to STUDENT, ADMIN, or SUPER_ADMIN."""
-    repo = UserRepository(session)
-    user = await repo.get_by_id(user_id)
-    if user is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found",
-        )
-    user.role = UserRole(data.role)
-    await session.flush()
-    return AdminUserResponse.model_validate(user)
+    service = AdminUserService(session)
+    return await service.update_user_role(
+        user_id=user_id,
+        data=data,
+        current_admin=current_admin,
+        request=request,
+    )

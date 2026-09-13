@@ -71,6 +71,10 @@ class SponsorService:
 
         return await self.sponsor_repo.list_by_event(event_id)
 
+    async def list_admin_event_sponsors(self, event_id: uuid.UUID) -> list[EventSponsor]:
+        await self._get_event_or_404(event_id)
+        return await self.sponsor_repo.list_by_event(event_id)
+
     async def create_sponsor(
         self,
         event_id: uuid.UUID,
@@ -91,7 +95,7 @@ class SponsorService:
 
         await self._log(
             request,
-            action="sponsor.created",
+            action="admin.sponsor.created",
             resource_id=str(created.id),
             event_id=event_id,
             user_id=user_id,
@@ -122,7 +126,7 @@ class SponsorService:
 
         await self._log(
             request,
-            action="sponsor.updated",
+            action="admin.sponsor.updated",
             resource_id=str(sponsor.id),
             event_id=event_id,
             user_id=user_id,
@@ -144,10 +148,50 @@ class SponsorService:
 
         await self._log(
             request,
-            action="sponsor.deleted",
+            action="admin.sponsor.deleted",
             resource_id=str(sponsor_id),
             event_id=event_id,
             user_id=user_id,
         )
 
         return {"status": "success", "message": "Sponsor removed"}
+
+    async def update_sponsor_direct(
+        self,
+        sponsor_id: uuid.UUID,
+        data: SponsorUpdate,
+        request: Request,
+        user_id: uuid.UUID,
+    ) -> EventSponsor:
+        sponsor = await self.sponsor_repo.get_by_id(sponsor_id)
+        if not sponsor:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Sponsor not found",
+            )
+        return await self.update_sponsor(
+            event_id=sponsor.event_id,
+            sponsor_id=sponsor.id,
+            data=data,
+            request=request,
+            user_id=user_id,
+        )
+
+    async def delete_sponsor_direct(
+        self,
+        sponsor_id: uuid.UUID,
+        request: Request,
+        user_id: uuid.UUID,
+    ) -> dict:
+        sponsor = await self.sponsor_repo.get_by_id(sponsor_id)
+        if not sponsor:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Sponsor not found",
+            )
+        return await self.delete_sponsor(
+            event_id=sponsor.event_id,
+            sponsor_id=sponsor.id,
+            request=request,
+            user_id=user_id,
+        )
