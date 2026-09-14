@@ -18,7 +18,7 @@ import { useQuery } from "@tanstack/react-query";
 import {
   getMyCertificates,
   type Certificate,
-  downloadMyCertificate,
+  downloadCertificate,
 } from "@/lib/certificates-api";
 import { useAuth } from "@/providers/auth-provider";
 import { Navbar } from "@/components/ui/navbar";
@@ -52,10 +52,13 @@ export default function CertificatesPage() {
   async function handleDownload(certId: string) {
     setDownloadingId(certId);
     try {
-      const data = await downloadMyCertificate(certId);
-      if (data.download_url) {
-        window.open(data.download_url, "_blank");
-      }
+      const blob = await downloadCertificate(certId);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `certificate-${certId}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
     } catch {
       // Best-effort
     } finally {

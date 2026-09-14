@@ -1,9 +1,10 @@
 "use client";
 
 import { useMemo } from "react";
-import { CheckCircle2, QrCode, ShieldCheck, Sparkles, Building2, GraduationCap, Calendar } from "lucide-react";
+import { CheckCircle2, ShieldCheck, Sparkles, Building2, GraduationCap, Calendar } from "lucide-react";
 import type { User } from "@/types/auth";
 import type { Profile } from "@/types/auth";
+import { QRCode } from "./qr-code";
 
 export function formatStudentId(userId: string | undefined): string {
   if (!userId) return "MZ-STU-000000";
@@ -143,9 +144,11 @@ export function StudentIdCard({ user, profile, compact = false }: StudentIdCardP
 
         {/* QR Code Graphic */}
         <div className="flex flex-col items-center">
-          <div className="flex h-12 w-12 items-center justify-center rounded border border-[#D4AF37]/50 bg-white p-1 shadow-[0_0_10px_rgba(212,175,55,0.15)]">
-            <QrCode size={40} className="text-black" />
-          </div>
+          <QRCode
+            value={verifyUrl}
+            size={48}
+            className="border border-[#D4AF37]/50 shadow-[0_0_10px_rgba(212,175,55,0.15)]"
+          />
           <span className="mt-1 text-[8px] tracking-widest text-[#D4AF37]">
             VERIFY
           </span>

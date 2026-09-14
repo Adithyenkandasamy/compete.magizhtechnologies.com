@@ -167,3 +167,13 @@ class RegistrationService:
         )
 
         return {"message": "Registration successfully cancelled"}
+
+    async def get_user_event_registration(
+        self, event_id: uuid.UUID, user_id: uuid.UUID
+    ) -> Registration:
+        """Return the user's registration for a specific event, or raise 404."""
+        from fastapi import HTTPException
+        registration = await self.repo.get_registration_by_event_and_user(event_id, user_id)
+        if not registration:
+            raise HTTPException(status_code=404, detail="Not registered for this event")
+        return registration

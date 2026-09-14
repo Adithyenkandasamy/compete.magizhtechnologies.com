@@ -85,6 +85,7 @@ export default function TeamDashboardPage({ params }: PageProps) {
   // MUTATIONS
   const generateInviteMutation = useMutation({
     mutationFn: () => generateInvite(teamId),
+    onMutate: () => setActionError(""),
     onSuccess: (data) => {
       setInviteToken(data.token);
     },
@@ -95,6 +96,7 @@ export default function TeamDashboardPage({ params }: PageProps) {
 
   const revokeInviteMutation = useMutation({
     mutationFn: () => revokeInvite(teamId),
+    onMutate: () => setActionError(""),
     onSuccess: () => {
       setInviteToken(null);
     },
@@ -105,6 +107,7 @@ export default function TeamDashboardPage({ params }: PageProps) {
 
   const removeMemberMutation = useMutation({
     mutationFn: (targetUserId: string) => removeTeamMember(teamId, targetUserId),
+    onMutate: () => setActionError(""),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["team", teamId] });
     },
@@ -115,6 +118,7 @@ export default function TeamDashboardPage({ params }: PageProps) {
 
   const transferLeaderMutation = useMutation({
     mutationFn: (targetUserId: string) => transferTeamLeadership(teamId, targetUserId),
+    onMutate: () => setActionError(""),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["team", teamId] });
     },
@@ -125,6 +129,7 @@ export default function TeamDashboardPage({ params }: PageProps) {
 
   const leaveTeamMutation = useMutation({
     mutationFn: () => leaveTeam(teamId),
+    onMutate: () => setActionError(""),
     onSuccess: () => {
       router.push(`/events/${eventId}/teams`);
     },
@@ -135,6 +140,7 @@ export default function TeamDashboardPage({ params }: PageProps) {
 
   const acceptRequestMutation = useMutation({
     mutationFn: (requestId: string) => acceptJoinRequest(teamId, requestId),
+    onMutate: () => setActionError(""),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["team", teamId] });
       refetchRequests();
@@ -146,6 +152,7 @@ export default function TeamDashboardPage({ params }: PageProps) {
 
   const rejectRequestMutation = useMutation({
     mutationFn: (requestId: string) => rejectJoinRequest(teamId, requestId),
+    onMutate: () => setActionError(""),
     onSuccess: () => {
       refetchRequests();
     },
@@ -246,8 +253,15 @@ export default function TeamDashboardPage({ params }: PageProps) {
         </div>
 
         {actionError && (
-          <div className="mb-8 rounded border border-[#C75C5C]/40 bg-[#C75C5C]/10 p-4 text-xs text-[#C75C5C]">
-            {actionError}
+          <div className="mb-8 flex items-center justify-between rounded-lg border border-[#C75C5C]/40 bg-[#C75C5C]/10 p-4 text-xs text-[#C75C5C]">
+            <span>{actionError}</span>
+            <button
+              type="button"
+              onClick={() => setActionError("")}
+              className="ml-4 text-[#C75C5C] hover:text-white"
+            >
+              ✕
+            </button>
           </div>
         )}
 

@@ -32,3 +32,18 @@ class ProfileResponse(BaseModel):
     phone: Optional[str] = None
     created_at: datetime
     updated_at: datetime
+
+
+class ProfilePublicResponse(BaseModel):
+    """Safe public schema for QR code scanning & student verification."""
+    model_config = ConfigDict(from_attributes=True)
+
+    user_id: uuid.UUID
+    full_name: Optional[str] = None
+    avatar_url: Optional[str] = None
+    college: Optional[str] = None
+    department: Optional[str] = None
+    year: Optional[int] = None
+    skills: Optional[list[str]] = None
+    bio: Optional[str] = None
+    created_at: datetime

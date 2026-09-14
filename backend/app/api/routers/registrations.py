@@ -92,3 +92,20 @@ async def cancel_my_registration(
     """
     service = RegistrationService(session)
     return await service.cancel_registration(event_id, current_user.id, request)
+
+
+@router.get(
+    "/api/events/{event_id}/my-registration",
+    response_model=RegistrationResponse,
+    summary="Get my registration for a specific event",
+)
+async def get_my_event_registration(
+    event_id: uuid.UUID,
+    session: SessionDep,
+    current_user: User = Depends(get_current_user),
+) -> RegistrationResponse:
+    """Check if the authenticated user is registered for a specific event.
+    Returns the registration object if found, or 404 if not registered.
+    """
+    service = RegistrationService(session)
+    return await service.get_user_event_registration(event_id, current_user.id)  # type: ignore

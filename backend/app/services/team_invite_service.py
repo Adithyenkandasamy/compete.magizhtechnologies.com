@@ -70,6 +70,7 @@ class TeamInviteService:
         
         action = "team.invite_regenerated" if existing_invite else "team.invite_created"
         await self._log(request, action, str(team.id), user_id)
+        await self.session.commit()
         
         return invite, raw_token
 
@@ -88,6 +89,7 @@ class TeamInviteService:
 
         await self.invite_repo.delete_invite(existing_invite)
         await self._log(request, "team.invite_revoked", str(team.id), user_id)
+        await self.session.commit()
         return {"message": "Invite link revoked"}
 
     async def get_invite_info(self, raw_token: str) -> dict:

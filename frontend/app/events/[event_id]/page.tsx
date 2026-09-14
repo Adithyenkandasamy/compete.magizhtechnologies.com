@@ -27,6 +27,10 @@ import { getEventSponsors, type Sponsor } from "@/lib/sponsors-api";
 import { getPublicRounds, type EventRound } from "@/lib/admin-rounds-api";
 import { getRealtimeEventType, getRealtimeMessage } from "@/lib/realtime";
 import type { WebSocketMessage } from "@/hooks/use-websocket";
+import {
+  getMyEventRegistration,
+  type Registration,
+} from "@/lib/registrations-api";
 import { Navbar } from "@/components/ui/navbar";
 import { Footer } from "@/components/ui/footer";
 import { EventRegistrationModal } from "@/components/events/event-registration-modal";
@@ -51,6 +55,7 @@ export default function EventDetailsPage() {
   const [rounds, setRounds] = useState<EventRound[]>([]);
   const [regModalOpen, setRegModalOpen] = useState(false);
   const [realtimeMessage, setRealtimeMessage] = useState("");
+  const [myRegistration, setMyRegistration] = useState<Registration | null | undefined>(undefined);
 
   const handleRealtimeMessage = useCallback(
     (message: WebSocketMessage) => {
@@ -86,6 +91,17 @@ export default function EventDetailsPage() {
       getPublicRounds(eventId).then(setRounds).catch(() => {});
     }
   }, [eventId]);
+
+  // Check if user is already registered for this event
+  useEffect(() => {
+    if (eventId && status === "authenticated") {
+      getMyEventRegistration(eventId)
+        .then(setMyRegistration)
+        .catch(() => setMyRegistration(null));
+    } else if (status === "unauthenticated") {
+      setMyRegistration(null);
+    }
+  }, [eventId, status]);
 
   if (isLoading) {
     return (
@@ -215,17 +231,27 @@ export default function EventDetailsPage() {
                   MAGIZH OFFICIAL CHALLENGE
                 </p>
                 <p className="text-xs text-[#A1A1A1]">
-                  Register using your permanent Magizh Student ID.
+                  {myRegistration
+                    ? "You are officially registered for this challenge."
+                    : "Register using your permanent Magizh Student ID."}
                 </p>
               </div>
 
-              <button
-                type="button"
-                onClick={handleRegisterClick}
-                className="rounded bg-[#D4AF37] px-8 py-3 text-xs font-bold uppercase tracking-[0.18em] text-black transition hover:bg-[#E5C04A]"
-              >
-                Register for Challenge
-              </button>
+              {myRegistration ? (
+                <div className="flex items-center gap-2 rounded border border-[#6FAF7B]/50 bg-[#6FAF7B]/10 px-6 py-3 text-xs font-bold uppercase tracking-[0.18em] text-[#6FAF7B]">
+                  <CheckCircle2 size={16} />
+                  {myRegistration.status === "WAITLISTED" ? "On Waitlist" : "Registered"}
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleRegisterClick}
+                  disabled={myRegistration === undefined}
+                  className="rounded bg-[#D4AF37] px-8 py-3 text-xs font-bold uppercase tracking-[0.18em] text-black transition hover:bg-[#E5C04A] disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {myRegistration === undefined ? "Checking..." : "Register for Challenge"}
+                </button>
+              )}
             </div>
           </div>
         </section>
@@ -459,6 +485,10 @@ export default function EventDetailsPage() {
         onClose={() => setRegModalOpen(false)}
         onSuccess={() => {
           queryClient.invalidateQueries({ queryKey: ["my-registrations"] });
+          // Refresh local registration status so CTA updates immediately
+          getMyEventRegistration(eventId)
+            .then(setMyRegistration)
+            .catch(() => setMyRegistration(null));
         }}
       />
     </div>
