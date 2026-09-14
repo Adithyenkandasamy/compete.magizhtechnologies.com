@@ -18,7 +18,7 @@ const API_BASE_URL =
 // recurse into the 401 handler while refreshing.
 const refreshClient = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 10000,
+  timeout: 15000, // slightly longer for refresh — don't drop valid sessions on slow networks
 });
 
 type RetryableConfig = InternalAxiosRequestConfig & { _retry?: boolean };
@@ -57,8 +57,16 @@ async function performRefresh(): Promise<boolean> {
 
     setTokens(data.access_token, data.refresh_token);
     return true;
-  } catch {
-    clearTokens();
+  } catch (err) {
+    const axiosErr = err as AxiosError;
+    const status = axiosErr?.response?.status;
+
+    // Only wipe tokens when the server explicitly says the refresh token is invalid.
+    // Do NOT wipe on network errors (ECONNABORTED, timeout, 5xx) — those are transient.
+    if (status === 401 || status === 403) {
+      clearTokens();
+    }
+
     return false;
   } finally {
     refreshPromise = null;
@@ -75,9 +83,11 @@ function refreshTokens(): Promise<boolean> {
 
 function redirectToLogin(): void {
   if (typeof window !== "undefined") {
-    const redirect = encodeURIComponent(
-      window.location.pathname + window.location.search,
-    );
+    const currentPath = window.location.pathname + window.location.search;
+    // Don't redirect if already on login page
+    if (currentPath.startsWith("/login")) return;
+
+    const redirect = encodeURIComponent(currentPath);
     const loginUrl = new URL(
       `/login?redirect=${redirect}`,
       window.location.origin,
@@ -88,6 +98,7 @@ function redirectToLogin(): void {
 }
 
 export function setupInterceptors(client: AxiosInstance): void {
+  // Attach access token to every outgoing request
   client.interceptors.request.use(
     (config) => {
       const token = getAccessToken();
@@ -107,34 +118,44 @@ export function setupInterceptors(client: AxiosInstance): void {
       const status = error?.response?.status;
       const config = error?.config as RetryableConfig | undefined;
 
+      // Only handle 401 Unauthorized
       if (status !== 401) {
         return Promise.reject(error);
       }
 
-      // Never try to refresh in response to an auth endpoint itself.
+      // Never try to refresh in response to an auth endpoint 401.
       if (!config || shouldSkipRefresh(config.url)) {
-        clearTokens();
-        // Logout and login endpoints handle their own redirect/error flow.
-        // Only redirect for refresh failures (truly expired session).
+        // Refresh token itself is rejected → session truly expired
         if (config?.url?.includes("/auth/refresh")) {
+          clearTokens();
           redirectToLogin();
         }
+        // Login/logout 401 are handled by the calling code (show error message, etc.)
         return Promise.reject(error);
       }
 
-      // Try a silent refresh and retry the failed request once.
-      if (!config._retry) {
-        const refreshed = await refreshTokens();
-
-        if (refreshed) {
-          config._retry = true;
-          config.headers.Authorization = `Bearer ${getAccessToken()}`;
-          return client(config);
-        }
+      // Don't retry the same request twice
+      if (config._retry) {
+        clearTokens();
+        redirectToLogin();
+        return Promise.reject(error);
       }
 
-      clearTokens();
-      redirectToLogin();
+      // Try a silent refresh and retry the failed request once
+      const refreshed = await refreshTokens();
+
+      if (refreshed) {
+        config._retry = true;
+        config.headers.Authorization = `Bearer ${getAccessToken()}`;
+        return client(config);
+      }
+
+      // Refresh failed with a real 401/403 (tokens are already cleared in performRefresh).
+      // Only redirect if tokens are actually gone.
+      if (!getRefreshToken() && !getAccessToken()) {
+        redirectToLogin();
+      }
+
       return Promise.reject(error);
     },
   );

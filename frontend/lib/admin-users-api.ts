@@ -9,10 +9,29 @@ export type UpdateUserRoleRequest = {
   role: string;
 };
 
-export async function getAdminUsers(): Promise<User[]> {
-  const response = await apiClient.get<User[]>("/admin/users");
+export type AdminUsersResponse = {
+  items: User[];
+  total: number;
+  page: number;
+  size: number;
+  pages: number;
+};
 
-  return response.data;
+export async function getAdminUsers(
+  page = 1,
+  size = 20,
+): Promise<AdminUsersResponse> {
+  const response = await apiClient.get<AdminUsersResponse>(
+    `/admin/users?page=${page}&size=${size}`,
+  );
+
+  // Handle both paginated { items, total, ... } and legacy plain array
+  const data = response.data;
+  if (Array.isArray(data)) {
+    return { items: data, total: (data as User[]).length, page: 1, size: (data as User[]).length, pages: 1 };
+  }
+
+  return data;
 }
 
 export async function getAdminUser(

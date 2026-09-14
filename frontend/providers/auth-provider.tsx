@@ -23,35 +23,87 @@ type AuthContextValue = {
   login: (email: string, password: string) => Promise<User>;
   register: (data: RegisterRequest) => Promise<User>;
   logout: () => Promise<void>;
+  refreshUser: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
+// ---------------------------------------------------------------------------
+// JWT helpers (client-side, no library needed)
+// ---------------------------------------------------------------------------
+
+/**
+ * Decode the exp claim from a JWT without verifying signature.
+ * Returns the expiry as a Unix timestamp (seconds), or 0 if parsing fails.
+ */
+function getJwtExpiry(token: string): number {
+  try {
+    const payload = token.split(".")[1];
+    if (!payload) return 0;
+    const decoded = JSON.parse(atob(payload.replace(/-/g, "+").replace(/_/g, "/")));
+    return typeof decoded.exp === "number" ? decoded.exp : 0;
+  } catch {
+    return 0;
+  }
+}
+
+/**
+ * Returns true if the access token exists AND has > 60 seconds remaining.
+ * We use a 60-second buffer so we don't race against the server's clock.
+ */
+function isAccessTokenFresh(): boolean {
+  const token = getAccessToken();
+  if (!token) return false;
+  const exp = getJwtExpiry(token);
+  if (!exp) return true; // If no exp claim, assume fresh (unusual)
+  return Date.now() / 1000 < exp - 60;
+}
+
+// Cache the resolved user in memory so fast page navigations don't re-fetch.
+let cachedUser: User | null = null;
+
+// ---------------------------------------------------------------------------
+
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [status, setStatus] = useState<AuthStatus>("loading");
+  const [user, setUser] = useState<User | null>(cachedUser);
+  const [status, setStatus] = useState<AuthStatus>(
+    // If we already have a cached user, skip the loading state entirely.
+    cachedUser ? "authenticated" : "loading"
+  );
 
   useEffect(() => {
     let cancelled = false;
 
     async function restoreSession() {
-      // A stored access OR refresh token means we may have a live session.
-      // If the access token is expired, the API layer will silently refresh
-      // (and redirect to /login if that fails).
-      if (!getRefreshToken() && !getAccessToken()) {
+      const hasRefresh = Boolean(getRefreshToken());
+      const hasAccess = Boolean(getAccessToken());
+
+      // No tokens at all — unauthenticated, done immediately.
+      if (!hasRefresh && !hasAccess) {
+        if (!cancelled) setStatus("unauthenticated");
+        return;
+      }
+
+      // Access token is still fresh — skip the /auth/me network call entirely.
+      if (isAccessTokenFresh() && cachedUser) {
         if (!cancelled) {
-          setStatus("unauthenticated");
+          setUser(cachedUser);
+          setStatus("authenticated");
         }
         return;
       }
 
+      // Access token is stale / absent but we have a refresh token.
+      // The interceptor will auto-refresh on the /auth/me call below.
       try {
         const currentUser = await getCurrentUser();
+        cachedUser = currentUser;
         if (!cancelled) {
           setUser(currentUser);
           setStatus("authenticated");
         }
       } catch {
+        cachedUser = null;
         clearTokens();
         if (!cancelled) {
           setUser(null);
@@ -69,10 +121,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback(async (email: string, password: string) => {
     const { access_token, refresh_token } = await loginUser({ email, password });
-
     setTokens(access_token, refresh_token);
 
     const currentUser = await getCurrentUser();
+    cachedUser = currentUser;
     setUser(currentUser);
     setStatus("authenticated");
 
@@ -86,10 +138,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       email: data.email,
       password: data.password,
     });
-
     setTokens(access_token, refresh_token);
 
     const currentUser = await getCurrentUser();
+    cachedUser = currentUser;
     setUser(currentUser);
     setStatus("authenticated");
 
@@ -103,13 +155,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         await logoutUser(refreshToken);
       } catch {
-        // Revocation is best-effort; always clear local state.
+        // Best-effort: always clear local state.
       }
     }
 
+    cachedUser = null;
     clearTokens();
     setUser(null);
     setStatus("unauthenticated");
+  }, []);
+
+  const refreshUser = useCallback(async () => {
+    try {
+      const currentUser = await getCurrentUser();
+      cachedUser = currentUser;
+      setUser(currentUser);
+    } catch {
+      // Ignore refresh errors
+    }
   }, []);
 
   const value = useMemo(
@@ -120,8 +183,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       login,
       register,
       logout,
+      refreshUser,
     }),
-    [user, status, login, register, logout],
+    [user, status, login, register, logout, refreshUser],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

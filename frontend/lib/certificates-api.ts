@@ -57,3 +57,6 @@ export async function verifyCertificate(
 
   return response.data;
 }
+
+/** Alias — some pages import downloadMyCertificate */
+export const downloadMyCertificate = downloadCertificate;

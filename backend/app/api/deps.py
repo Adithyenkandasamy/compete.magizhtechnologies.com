@@ -1,7 +1,7 @@
 import uuid
 from typing import Annotated
 
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordBearer
 from jwt.exceptions import InvalidTokenError, ExpiredSignatureError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -21,9 +21,14 @@ TokenDep = Annotated[str, Depends(oauth2_scheme)]
 
 
 async def get_current_user(
-    session: SessionDep, token: TokenDep
+    request: Request, session: SessionDep, token: TokenDep
 ) -> User:
-    """Validate JWT token, fetch user, and ensure they are active."""
+    """Validate JWT token, fetch user (cached per-request), and ensure they are active."""
+    # Return cached user if we already resolved it earlier in this request cycle.
+    # This eliminates duplicate DB queries when multiple dependencies call get_current_user.
+    if hasattr(request.state, "_current_user"):
+        return request.state._current_user  # type: ignore
+
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
@@ -49,7 +54,9 @@ async def get_current_user(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Your account has been suspended or deleted.",
         )
-        
+
+    # Cache for the rest of this request
+    request.state._current_user = user
     return user
 
 

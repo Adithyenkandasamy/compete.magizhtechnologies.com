@@ -7,7 +7,7 @@ const apiClient = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
-  timeout: 30000,
+  timeout: 10000, // 10s — fail fast, don't hang for 30s
 });
 
 setupInterceptors(apiClient);
