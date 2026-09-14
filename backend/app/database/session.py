@@ -55,3 +55,16 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
             raise
         finally:
             await session.close()
+
+
+async def get_db_raw() -> AsyncGenerator[AsyncSession, None]:
+    """
+    Yield a database session without automatic commit/rollback.
+    Intended for WebSocket handlers that only need the session for
+    authentication / authorization checks and do NOT mutate state.
+    """
+    async with AsyncSessionLocal() as session:
+        try:
+            yield session
+        finally:
+            await session.close()

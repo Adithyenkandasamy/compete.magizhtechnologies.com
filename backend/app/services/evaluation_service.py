@@ -31,6 +31,7 @@ from app.schemas.submission import (
     MinimalTeamResponse,
     SubmissionResponse,
 )
+import app.websocket.publisher as realtime
 
 
 class EvaluationService:
@@ -271,6 +272,22 @@ class EvaluationService:
             user_id=user_id,
         )
 
+        # Fetch project.team_id for realtime routing (best-effort)
+        team_id_for_rt = None
+        from app.repositories.project_repo import ProjectRepository
+        project_repo = ProjectRepository(self.session)
+        project = await project_repo.get_project_by_id(submission.project_id)
+        if project:
+            team_id_for_rt = project.team_id
+
+        if team_id_for_rt:
+            await realtime.publish_evaluation_created(
+                evaluation_id=created.id,
+                submission_id=submission_id,
+                platform_event_id=submission.event_id,
+                team_id=team_id_for_rt,
+            )
+
         return EvaluationResponse(
             id=created.id,
             submission_id=created.submission_id,
@@ -360,6 +377,21 @@ class EvaluationService:
             resource_id=str(evaluation.id),
             user_id=user_id,
         )
+
+        # Emit realtime notification after commit
+        from app.repositories.project_repo import ProjectRepository
+        project_repo = ProjectRepository(self.session)
+        # Fetch the submission to get its event_id and project_id
+        submission_for_rt = await self.submission_repo.get_submission_by_id(evaluation.submission_id)
+        if submission_for_rt:
+            project_rt = await project_repo.get_project_by_id(submission_for_rt.project_id)
+            if project_rt:
+                await realtime.publish_evaluation_updated(
+                    evaluation_id=evaluation.id,
+                    submission_id=evaluation.submission_id,
+                    platform_event_id=submission_for_rt.event_id,
+                    team_id=project_rt.team_id,
+                )
 
         return EvaluationResponse(
             id=evaluation.id,

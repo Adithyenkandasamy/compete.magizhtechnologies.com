@@ -23,6 +23,7 @@ from app.repositories.security_alert_repo import SecurityAlertRepository
 from app.repositories.session_repo import SessionRepository
 from app.repositories.user_repo import UserRepository
 from app.schemas.auth import LoginRequest, RefreshRequest, RegisterRequest, TokenResponse
+import app.websocket.publisher as realtime
 
 
 def _client_context(request: Optional[Request]) -> tuple[Optional[str], Optional[str], Optional[str]]:
@@ -51,10 +52,13 @@ class AuthService:
         email: str,
         ip_address: Optional[str],
         user_id: Optional[uuid.UUID] = None,
-    ) -> None:
+    ) -> Optional[dict]:
         """
         Detect repeated login failures and trigger a SecurityAlert when threshold is exceeded.
+        Returns minimal alert metadata if a NEW alert was created, else None.
+        The caller is responsible for emitting realtime AFTER the session is committed.
         """
+        from app.models.security import SecurityAlert
         email_failures = await self.login_repo.count_recent_failures(
             email=email, window_minutes=settings.login_failure_window_minutes
         )
@@ -77,13 +81,20 @@ class AuthService:
                     f"Repeated failed login attempts ({max_failures}) detected for '{email}' "
                     f"from IP {ip_address or 'unknown'} within {settings.login_failure_window_minutes} minutes"
                 )
-                await self.alert_repo.create_alert(
+                alert: SecurityAlert = await self.alert_repo.create_alert(
                     alert_type="brute_force_detected",
                     severity=SecurityAlertSeverity.HIGH,
                     description=desc,
                     user_id=user_id,
                     ip_address=ip_address,
                 )
+                # Return metadata for post-commit realtime emit
+                return {
+                    "alert_id": alert.id,
+                    "alert_type": "brute_force_detected",
+                    "severity": SecurityAlertSeverity.HIGH.value,
+                }
+        return None
 
     async def register_user(
         self, data: RegisterRequest, request: Optional[Request] = None
@@ -165,7 +176,7 @@ class AuthService:
                 failure_reason="invalid_credentials",
                 user_id=None,
             )
-            await self._check_login_abuse(email=email, ip_address=ip)
+            alert_meta = await self._check_login_abuse(email=email, ip_address=ip)
             await self.audit_repo.create_audit_log(
                 action="auth.login.failure",
                 event_type="authentication",
@@ -180,6 +191,12 @@ class AuthService:
                 request_id=request_id,
             )
             await self.session.commit()
+            if alert_meta:
+                await realtime.publish_security_alert_created(
+                    alert_id=alert_meta["alert_id"],
+                    alert_type=alert_meta["alert_type"],
+                    severity=alert_meta["severity"],
+                )
             raise invalid_creds_exc
 
         if not verify_password(data.password, user.password_hash):
@@ -191,7 +208,7 @@ class AuthService:
                 failure_reason="invalid_credentials",
                 user_id=user.id,
             )
-            await self._check_login_abuse(email=email, ip_address=ip, user_id=user.id)
+            alert_meta = await self._check_login_abuse(email=email, ip_address=ip, user_id=user.id)
             await self.audit_repo.create_audit_log(
                 action="auth.login.failure",
                 event_type="authentication",
@@ -206,6 +223,12 @@ class AuthService:
                 request_id=request_id,
             )
             await self.session.commit()
+            if alert_meta:
+                await realtime.publish_security_alert_created(
+                    alert_id=alert_meta["alert_id"],
+                    alert_type=alert_meta["alert_type"],
+                    severity=alert_meta["severity"],
+                )
             raise invalid_creds_exc
 
         if user.status != AccountStatus.ACTIVE:

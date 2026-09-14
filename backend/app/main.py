@@ -41,6 +41,7 @@ from app.core.config import settings
 from app.core.logging import configure_logging
 from app.middleware.error_handler import GlobalErrorMiddleware
 from app.middleware.security import SecurityHeadersMiddleware
+from app.websocket.routers import router as ws_router
 
 # ---------------------------------------------------------------------------
 # Configure logging before anything else
@@ -118,6 +119,13 @@ app.include_router(submissions.router)
 app.include_router(sponsors.public_router)
 
 # ---------------------------------------------------------------------------
+# WebSocket channels
+# ---------------------------------------------------------------------------
+# WebSocket endpoints do NOT use /api prefix as they are connection-oriented
+# and browsers already need to use ws:// or wss:// schemes.
+app.include_router(ws_router)
+
+# ---------------------------------------------------------------------------
 # Root endpoint
 # ---------------------------------------------------------------------------
 
@@ -125,6 +133,17 @@ app.include_router(sponsors.public_router)
 @app.get("/", tags=["root"])
 async def root() -> dict[str, str]:
     return {"name": "Magizh Innovation API", "status": "running"}
+
+
+@app.get("/ws/stats", tags=["WebSockets"])
+async def ws_stats() -> dict:
+    """
+    WebSocket connection diagnostics endpoint.
+    Returns the current count of connections per channel type.
+    Does NOT require authentication — counts only, no sensitive data exposed.
+    """
+    from app.websocket.manager import manager
+    return manager.stats()
 
 
 # ---------------------------------------------------------------------------

@@ -32,6 +32,7 @@ from app.schemas.result import (
     StudentTeamResultResponse,
     UpdateResultAwardRequest,
 )
+import app.websocket.publisher as realtime
 
 
 def _safe_round(value: float) -> float:
@@ -371,6 +372,11 @@ class ResultService:
             action="result.published",
             resource_id=f"{event_id}:v{target_version}",
             user_id=admin_user_id,
+        )
+        # Broadcast after committed changes
+        await realtime.publish_result_published(
+            platform_event_id=event_id,
+            published_by_user_id=admin_user_id,
         )
 
         return ResultPublishResponse(

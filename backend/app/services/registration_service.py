@@ -11,6 +11,7 @@ from app.models.registration import Registration
 from app.repositories.audit_repo import AuditRepository
 from app.repositories.registration_repo import RegistrationRepository
 from app.schemas.event import PaginatedResponse
+import app.websocket.publisher as realtime
 
 
 class RegistrationService:
@@ -88,7 +89,15 @@ class RegistrationService:
         
         # 5. Audit log
         await self._log_action(request, "registration.created", str(registration.id), user_id)
-        
+
+        # 6. Commit then broadcast (broadcast must never be inside the transaction)
+        await self.session.commit()
+        await realtime.publish_registration_created(
+            registration_id=registration.id,
+            platform_event_id=event_id,
+            user_id=user_id,
+        )
+
         return registration
 
     async def get_user_registrations(
@@ -145,8 +154,16 @@ class RegistrationService:
 
         # Cancel
         await self.repo.update_registration_status(registration, RegistrationStatus.CANCELLED)
-        
+
         # Log
         await self._log_action(request, "registration.cancelled", str(registration.id), user_id)
-        
+
+        # Commit then broadcast
+        await self.session.commit()
+        await realtime.publish_registration_cancelled(
+            registration_id=registration.id,
+            platform_event_id=event_id,
+            user_id=user_id,
+        )
+
         return {"message": "Registration successfully cancelled"}

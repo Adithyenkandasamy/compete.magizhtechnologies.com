@@ -31,6 +31,7 @@ from app.schemas.certificate import (
     CertificateVerificationResponse,
 )
 from app.services.certificate_document_service import CertificateDocumentService
+import app.websocket.publisher as realtime
 
 
 def generate_cryptographic_certificate_code(year: Optional[int] = None) -> str:
@@ -313,6 +314,15 @@ class CertificateService:
             resource_id=str(cert.id),
             user_id=admin_user_id,
         )
+
+        # Notify recipient via their personal channel after commit
+        if cert.user_id:
+            await realtime.publish_certificate_issued(
+                certificate_id=cert.id,
+                platform_event_id=cert.event_id,
+                recipient_user_id=cert.user_id,
+                certificate_type=cert.certificate_type.value if cert.certificate_type else "PARTICIPATION",
+            )
 
         recipient = (
             cert.user.profile.full_name

@@ -11,6 +11,7 @@ from app.repositories.registration_repo import RegistrationRepository
 from app.repositories.team_repo import TeamRepository
 from app.repositories.team_request_repo import TeamRequestRepository
 from app.services.team_invite_service import TeamInviteService
+import app.websocket.publisher as realtime
 
 
 class TeamRequestService:
@@ -67,7 +68,13 @@ class TeamRequestService:
 
         join_request = await self.request_repo.create_request(team.id, user_id)
         await self._log(request, "team.join_request.created", str(team.id), user_id)
-        
+        await self.session.commit()
+        await realtime.publish_team_join_request_created(
+            team_id=team.id,
+            platform_event_id=event.id,
+            requester_user_id=user_id,
+            team_leader_id=team.leader_id,
+        )
         return join_request
 
     async def accept_request(
@@ -108,13 +115,25 @@ class TeamRequestService:
 
         # 5. Add to Team
         await self.team_repo.add_member(team_id, join_request.user_id)
-        
+
         # 6. Update Request Status
         await self.request_repo.update_request_status(
             join_request, JoinRequestStatus.ACCEPTED, leader_id, self._get_utc_now()
         )
-        
+
         await self._log(request, "team.join_request.accepted", str(team_id), leader_id)
+        await self.session.commit()
+        await realtime.publish_team_join_request_accepted(
+            team_id=team_id,
+            platform_event_id=full_team.event_id,
+            accepted_user_id=join_request.user_id,
+        )
+        # Also emit member_joined since user physically joins the team at accept time
+        await realtime.publish_team_member_joined(
+            team_id=team_id,
+            platform_event_id=full_team.event_id,
+            joined_user_id=join_request.user_id,
+        )
         return {"message": "Request accepted successfully"}
 
     async def reject_request(
@@ -136,6 +155,12 @@ class TeamRequestService:
             join_request, JoinRequestStatus.REJECTED, leader_id, self._get_utc_now()
         )
         await self._log(request, "team.join_request.rejected", str(team_id), leader_id)
+        await self.session.commit()
+        await realtime.publish_team_join_request_rejected(
+            team_id=team_id,
+            platform_event_id=team.event_id,
+            rejected_user_id=join_request.user_id,
+        )
         return {"message": "Request rejected successfully"}
 
     async def cancel_request(

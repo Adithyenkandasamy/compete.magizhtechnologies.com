@@ -11,6 +11,7 @@ from app.repositories.audit_repo import AuditRepository
 from app.repositories.event_repo import EventRepository
 from app.repositories.registration_repo import RegistrationRepository
 from app.repositories.team_repo import TeamRepository
+import app.websocket.publisher as realtime
 
 
 class TeamService:
@@ -61,6 +62,12 @@ class TeamService:
         try:
             team = await self.team_repo.create_team(event_id, user_id, name)
             await self._log(request, "team.created", str(team.id), user_id)
+            await self.session.commit()
+            await realtime.publish_team_created(
+                team_id=team.id,
+                platform_event_id=event_id,
+                leader_id=user_id,
+            )
             return team
         except IntegrityError:
             await self.session.rollback()
@@ -90,6 +97,12 @@ class TeamService:
 
         team = await self.team_repo.update_team_name(team, name)
         await self._log(request, "team.updated", str(team.id), user_id)
+        await self.session.commit()
+        await realtime.publish_team_updated(
+            team_id=team.id,
+            platform_event_id=team.event_id,
+            user_id=user_id,
+        )
         return team
 
     async def remove_member(
@@ -107,6 +120,12 @@ class TeamService:
 
         await self.team_repo.remove_member(team_id, target_id)
         await self._log(request, "team.member_removed", str(team.id), leader_id)
+        await self.session.commit()
+        await realtime.publish_team_member_removed(
+            team_id=team_id,
+            platform_event_id=team.event_id,
+            removed_user_id=target_id,
+        )
         return {"message": "Member removed successfully"}
 
     async def leave_team(self, team_id: uuid.UUID, user_id: uuid.UUID, request: Request) -> dict:
@@ -125,10 +144,17 @@ class TeamService:
                 # Option B: Safe delete empty team
                 await self.team_repo.delete_team(team)
                 await self._log(request, "team.deleted", str(team.id), user_id)
+                await self.session.commit()
                 return {"message": "Team deleted as the last member left"}
         else:
             await self.team_repo.remove_member(team_id, user_id)
             await self._log(request, "team.member_left", str(team.id), user_id)
+            await self.session.commit()
+            await realtime.publish_team_member_removed(
+                team_id=team_id,
+                platform_event_id=team.event_id,
+                removed_user_id=user_id,
+            )
             return {"message": "Left team successfully"}
 
     async def transfer_leadership(
@@ -149,4 +175,10 @@ class TeamService:
 
         await self.team_repo.change_leader(team, old_leader, new_leader)
         await self._log(request, "team.leader_changed", str(team.id), leader_id)
+        await self.session.commit()
+        await realtime.publish_team_leadership_transferred(
+            team_id=team_id,
+            platform_event_id=team.event_id,
+            new_leader_id=target_id,
+        )
         return {"message": "Leadership transferred successfully"}

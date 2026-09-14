@@ -23,6 +23,7 @@ from app.schemas.submission import (
     SubmissionResponse,
     SubmissionUpdate,
 )
+import app.websocket.publisher as realtime
 
 # Formal submission lifecycle state transition rules
 ALLOWED_TRANSITIONS: dict[SubmissionStatus, set[SubmissionStatus]] = {
@@ -242,6 +243,13 @@ class SubmissionService:
             request=request,
             action="submission.created",
             resource_id=str(created.id),
+            user_id=user_id,
+        )
+        await self.session.commit()
+        await realtime.publish_submission_created(
+            submission_id=created.id,
+            platform_event_id=project.event_id,
+            team_id=project.team_id,
             user_id=user_id,
         )
 
@@ -506,6 +514,12 @@ class SubmissionService:
             resource_id=str(submission.id),
             user_id=user_id,
         )
+        await realtime.publish_submission_submitted(
+            submission_id=submission.id,
+            platform_event_id=submission.event_id,
+            team_id=project.team_id,
+            user_id=user_id,
+        )
 
         return submission
 
@@ -587,6 +601,15 @@ class SubmissionService:
                 resource_id=str(submission.id),
                 user_id=admin_user_id,
             )
+            # Fetch team_id for realtime routing (best-effort)
+            _proj = await self.project_repo.get_project_by_id(submission.project_id)
+            if _proj:
+                await realtime.publish_submission_status_changed(
+                    submission_id=submission.id,
+                    platform_event_id=submission.event_id,
+                    team_id=_proj.team_id,
+                    new_status=new_status.value,
+                )
 
         # Return full detailed view
         return await self.admin_get_submission(submission.id)

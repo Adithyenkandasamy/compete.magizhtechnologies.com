@@ -9,6 +9,7 @@ from app.models.event import Event
 from app.repositories.audit_repo import AuditRepository
 from app.repositories.event_repo import EventRepository
 from app.schemas.event import EventCreate, EventUpdate, PaginatedResponse
+import app.websocket.publisher as realtime
 
 
 class EventService:
@@ -102,6 +103,11 @@ class EventService:
         if update_data:
             event = await self.repo.update_event(event, update_data)
             await self._log_action(request, "event.updated", str(event.id))
+            await self.session.commit()
+            await realtime.publish_event_updated(
+                platform_event_id=event.id,
+                updated_by_user_id=getattr(getattr(request.state, "user", None), "id", event_id),
+            )
 
         return event
 
@@ -119,9 +125,15 @@ class EventService:
             # Soft delete / Cancel
             if event.status == EventStatus.CANCELLED:
                 raise HTTPException(status_code=400, detail="Event is already cancelled")
-            
+
             await self.repo.update_event(event, {"status": EventStatus.CANCELLED})
             await self._log_action(request, "event.cancelled", str(event.id))
+            await self.session.commit()
+            _user_id = getattr(getattr(request.state, "user", None), "id", event_id)
+            await realtime.publish_event_cancelled(
+                platform_event_id=event_id,
+                cancelled_by_user_id=_user_id,
+            )
             return {"message": "Event has been cancelled due to existing dependencies or non-draft status."}
         else:
             # Hard delete
@@ -149,6 +161,12 @@ class EventService:
 
         event = await self.repo.update_event(event, {"status": EventStatus.PUBLISHED})
         await self._log_action(request, "event.published", str(event.id))
+        await self.session.commit()
+        _user_id = getattr(getattr(request.state, "user", None), "id", event_id)
+        await realtime.publish_event_published(
+            platform_event_id=event.id,
+            published_by_user_id=_user_id,
+        )
         return event
 
     async def unpublish_event(self, event_id: uuid.UUID, request: Request) -> Event:
