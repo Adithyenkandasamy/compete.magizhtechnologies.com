@@ -12,18 +12,17 @@ from app.core.config import settings
 
 # Use the real Supabase URL from .env for tests, because we use PostgreSQL-specific 
 # types (ARRAY, JSONB, UUID) which SQLite doesn't understand.
-engine = create_async_engine(settings.database_url, echo=False)
+engine = create_async_engine(settings.database_url, echo=False, pool_pre_ping=True)
 TestingSessionLocal = async_sessionmaker(
     engine, class_=AsyncSession, expire_on_commit=False
 )
 
 
-@pytest.fixture(scope="session")
-def event_loop() -> Generator[asyncio.AbstractEventLoop, None, None]:
-    """Create an instance of the default event loop for each test case."""
-    loop = asyncio.get_event_loop_policy().new_event_loop()
-    yield loop
-    loop.close()
+@pytest_asyncio.fixture(scope="session", autouse=True)
+async def init_db() -> None:
+    """Ensure tables exist once per test session."""
+    # Tables are already created in Supabase database
+    pass
 
 
 @pytest_asyncio.fixture(scope="function")
@@ -33,10 +32,6 @@ async def session() -> AsyncGenerator[AsyncSession, None]:
     Uses a nested transaction (savepoint) that rolls back after the test completes,
     ensuring test data is never actually saved to your Supabase database.
     """
-    async with engine.begin() as conn:
-        # Create all tables if they don't exist
-        await conn.run_sync(Base.metadata.create_all)
-
     async with engine.connect() as conn:
         # Start a transaction for the test
         transaction = await conn.begin()
@@ -62,3 +57,4 @@ async def client(session: AsyncSession) -> AsyncGenerator[AsyncClient, None]:
         yield ac
         
     app.dependency_overrides.clear()
+
