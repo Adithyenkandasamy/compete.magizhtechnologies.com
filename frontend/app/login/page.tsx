@@ -6,26 +6,10 @@ import { useRouter } from "next/navigation";
 import { useMutation } from "@tanstack/react-query";
 
 import { useAuth } from "@/providers/auth-provider";
+import { getMyProfile, isProfileComplete } from "@/lib/profile-api";
 import { getErrorMessage } from "@/lib/error-message";
-import { CircularHudLoader, LoadingButton } from "@/components/loading";
-
-function getRedirectTarget(
-  user: { role?: string } | null | undefined,
-): string {
-  if (typeof window !== "undefined") {
-    const redirect = new URLSearchParams(window.location.search).get(
-      "redirect",
-    );
-
-    // Only allow same-site paths (no open redirect).
-    if (redirect && redirect.startsWith("/") && !redirect.startsWith("//")) {
-      return redirect;
-    }
-  }
-
-  const isAdmin = user?.role === "ADMIN" || user?.role === "SUPER_ADMIN";
-  return isAdmin ? "/admin" : "/dashboard";
-}
+import { LoadingButton } from "@/components/loading";
+import type { User } from "@/types/auth";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -33,19 +17,46 @@ export default function LoginPage() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    if (status === "authenticated") {
-      router.replace(getRedirectTarget(user));
+  async function checkAndRedirect(loggedUser: User) {
+    const isAdmin = loggedUser.role === "ADMIN" || loggedUser.role === "SUPER_ADMIN";
+    if (isAdmin) {
+      router.replace("/admin");
+      return;
     }
-  }, [status, user, router]);
+
+    try {
+      const profile = await getMyProfile();
+      if (!isProfileComplete(profile)) {
+        const redirectParam = new URLSearchParams(window.location.search).get("redirect");
+        router.replace(
+          `/onboarding/profile${redirectParam ? `?redirect=${encodeURIComponent(redirectParam)}` : ""}`,
+        );
+        return;
+      }
+    } catch {
+      // If fetching fails, let user proceed to dashboard
+    }
+
+    const redirectParam = new URLSearchParams(window.location.search).get("redirect");
+    if (redirectParam && redirectParam.startsWith("/") && !redirectParam.startsWith("//")) {
+      router.replace(redirectParam);
+    } else {
+      router.replace("/dashboard");
+    }
+  }
+
+  useEffect(() => {
+    if (status === "authenticated" && user) {
+      checkAndRedirect(user);
+    }
+  }, [status, user]);
 
   const loginMutation = useMutation({
     mutationFn: () => login(email, password),
     onSuccess: (loggedUser) => {
-      router.replace(getRedirectTarget(loggedUser));
+      checkAndRedirect(loggedUser);
     },
     onError: (err) => {
       setError(
@@ -59,20 +70,15 @@ export default function LoginPage() {
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-
     setError("");
     loginMutation.mutate();
   }
 
   return (
-    <main className="min-h-screen flex items-center justify-center px-5 py-16">
-      {loginMutation.isPending && (
-        <CircularHudLoader fullScreen mode="login" />
-      )}
-
+    <main className="min-h-screen flex items-center justify-center px-5 py-16 bg-black text-[#F5F3ED]">
       <div className="w-full max-w-md">
         <div className="mb-8 text-center">
-          <p className="magizh-gold text-xs font-semibold uppercase tracking-[0.3em]">
+          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#D4AF37]">
             MAGIZH TECHNOLOGIES
           </p>
 
@@ -80,17 +86,17 @@ export default function LoginPage() {
             Welcome Back
           </h1>
 
-          <p className="magizh-muted mt-3">
+          <p className="mt-3 text-sm text-[#A1A1A1]">
             Sign in to continue your innovation journey.
           </p>
         </div>
 
-        <div className="magizh-card p-7 md:p-8">
+        <div className="rounded-xl border border-[#252525] bg-[#0A0A0A] p-7 md:p-8 shadow-xl">
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
               <label
                 htmlFor="email"
-                className="mb-2 block text-sm font-medium"
+                className="mb-2 block text-xs font-semibold uppercase tracking-wider text-[#A1A1A1]"
               >
                 Email
               </label>
@@ -103,14 +109,14 @@ export default function LoginPage() {
                 placeholder="you@example.com"
                 required
                 disabled={loginMutation.isPending}
-                className="w-full rounded border border-[#252525] bg-[#0A0A0A] px-4 py-3 text-[#F5F3ED] outline-none transition focus:border-[#D4AF37]"
+                className="w-full rounded border border-[#252525] bg-[#000000] px-4 py-3 text-sm text-[#F5F3ED] outline-none transition focus:border-[#D4AF37]"
               />
             </div>
 
             <div>
               <label
                 htmlFor="password"
-                className="mb-2 block text-sm font-medium"
+                className="mb-2 block text-xs font-semibold uppercase tracking-wider text-[#A1A1A1]"
               >
                 Password
               </label>
@@ -123,33 +129,34 @@ export default function LoginPage() {
                 placeholder="Enter your password"
                 required
                 disabled={loginMutation.isPending}
-                className="w-full rounded border border-[#252525] bg-[#0A0A0A] px-4 py-3 text-[#F5F3ED] outline-none transition focus:border-[#D4AF37]"
+                className="w-full rounded border border-[#252525] bg-[#000000] px-4 py-3 text-sm text-[#F5F3ED] outline-none transition focus:border-[#D4AF37]"
               />
             </div>
 
             {error && (
               <div className="rounded border border-[#C75C5C]/40 bg-[#C75C5C]/10 px-4 py-3">
-                <p className="text-sm text-[#C75C5C]">{error}</p>
+                <p className="text-xs text-[#C75C5C]">{error}</p>
               </div>
             )}
 
-<LoadingButton
+            <LoadingButton
               type="submit"
-              disabled={loginMutation.isPending}
-              className="w-full"
+              loading={loginMutation.isPending}
+              loadingText="Signing in..."
+              className="w-full py-3.5 text-xs font-bold uppercase tracking-[0.18em]"
             >
               Sign In
             </LoadingButton>
           </form>
 
           <div className="mt-7 border-t border-[#252525] pt-6 text-center">
-            <p className="magizh-muted text-sm">
+            <p className="text-xs text-[#A1A1A1]">
               Don&apos;t have an account?
             </p>
 
             <Link
               href="/register"
-              className="mt-2 inline-block text-sm font-semibold text-[#D4AF37] transition-colors hover:text-[#E5C04A]"
+              className="mt-2 inline-block text-xs font-semibold uppercase tracking-wider text-[#D4AF37] transition hover:text-[#E5C04A]"
             >
               Create an account →
             </Link>

@@ -2,34 +2,36 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { IdCard, Loader2, ShieldCheck, User } from "lucide-react";
 
-import {
-  getMyProfile,
-  updateMyProfile,
-} from "@/lib/profile-api";
+import { getMyProfile, updateMyProfile } from "@/lib/profile-api";
 import { useAuth } from "@/providers/auth-provider";
 import type { Profile } from "@/types/auth";
 import { getErrorMessage } from "@/lib/error-message";
-import {
-  CircularHudLoader,
-  LoadingButton,
-  PageLoader,
-} from "@/components/loading";
-import { BackButton } from "@/components/ui/BackButton";
+import { formatMagizhStudentId, formatDateOfBirth } from "@/lib/student-id";
+import { Navbar } from "@/components/ui/navbar";
+import { Footer } from "@/components/ui/footer";
+import { MagizhIdModal } from "@/components/student/MagizhIdModal";
 
 export default function ProfilePage() {
   const router = useRouter();
   const { user, status } = useAuth();
 
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [isIdModalOpen, setIsIdModalOpen] = useState(false);
 
+  // Form state
   const [fullName, setFullName] = useState("");
+  const [dateOfBirth, setDateOfBirth] = useState("");
   const [college, setCollege] = useState("");
   const [department, setDepartment] = useState("");
   const [year, setYear] = useState("");
   const [bio, setBio] = useState("");
   const [skills, setSkills] = useState("");
   const [phone, setPhone] = useState("");
+  const [linkedinUrl, setLinkedinUrl] = useState("");
+  const [githubUrl, setGithubUrl] = useState("");
+  const [portfolioUrl, setPortfolioUrl] = useState("");
 
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -38,7 +40,7 @@ export default function ProfilePage() {
 
   useEffect(() => {
     if (status === "unauthenticated") {
-      router.replace("/login");
+      router.replace("/login?redirect=/profile");
     }
   }, [status, router]);
 
@@ -46,15 +48,18 @@ export default function ProfilePage() {
     async function loadProfile() {
       try {
         const data = await getMyProfile();
-
         setProfile(data);
         setFullName(data.full_name || "");
+        setDateOfBirth(data.date_of_birth || "");
         setCollege(data.college || "");
         setDepartment(data.department || "");
         setYear(data.year ? String(data.year) : "");
         setBio(data.bio || "");
         setSkills(data.skills?.join(", ") || "");
         setPhone(data.phone || "");
+        setLinkedinUrl(data.linkedin_url || "");
+        setGithubUrl(data.github_url || "");
+        setPortfolioUrl(data.portfolio_url || "");
       } catch {
         setError("Unable to load your profile.");
       } finally {
@@ -62,8 +67,10 @@ export default function ProfilePage() {
       }
     }
 
-    loadProfile();
-  }, []);
+    if (status === "authenticated") {
+      loadProfile();
+    }
+  }, [status]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -74,267 +81,318 @@ export default function ProfilePage() {
 
     try {
       const updatedProfile = await updateMyProfile({
-        full_name: fullName,
-        college: college || null,
-        department: department || null,
+        full_name: fullName.trim(),
+        date_of_birth: dateOfBirth.trim() || null,
+        college: college.trim() || null,
+        department: department.trim() || null,
         year: year ? Number(year) : null,
-        bio: bio || null,
+        bio: bio.trim() || null,
         skills: skills
           ? skills
               .split(",")
-              .map((skill) => skill.trim())
+              .map((s) => s.trim())
               .filter(Boolean)
           : [],
-        phone: phone || null,
+        phone: phone.trim() || null,
+        linkedin_url: linkedinUrl.trim() || null,
+        github_url: githubUrl.trim() || null,
+        portfolio_url: portfolioUrl.trim() || null,
       });
 
       setProfile(updatedProfile);
-
       setSuccess("Profile updated successfully.");
     } catch (err: unknown) {
-      setError(
-        getErrorMessage(err, "Unable to update your profile."),
-      );
+      setError(getErrorMessage(err, "Unable to update your profile."));
     } finally {
       setIsSaving(false);
     }
   }
 
-  if (status === "loading") {
+  if (status === "loading" || isLoading) {
     return (
-      <main className="magizh-container py-20">
-        <CircularHudLoader mode="session" />
-      </main>
+      <div className="min-h-screen bg-black text-[#F5F3ED] flex flex-col">
+        <Navbar />
+        <main className="flex-1 flex items-center justify-center py-20">
+          <div className="flex items-center gap-3 text-xs uppercase tracking-widest text-[#A1A1A1]">
+            <Loader2 className="h-5 w-5 animate-spin text-[#D4AF37]" />
+            Loading profile...
+          </div>
+        </main>
+        <Footer />
+      </div>
     );
   }
 
-  if (isLoading) {
-    return (
-      <main className="magizh-container py-20">
-        <PageLoader label="loading profile" />
-      </main>
-    );
-  }
+  if (!user) return null;
 
-  if (!user) {
-    return null;
-  }
+  const studentId = formatMagizhStudentId(profile?.magizh_student_id, user.id);
 
   return (
-    <main className="magizh-container py-12 md:py-16">
-      <div className="mb-10">
-        <BackButton label="Back" href="/" className="mb-8" />
+    <div className="min-h-screen bg-black text-[#F5F3ED] flex flex-col">
+      <Navbar />
 
-        <p className="magizh-gold mt-8 text-xs font-semibold uppercase tracking-[0.25em]">
-          STUDENT PROFILE
-        </p>
+      <main className="flex-1 magizh-container py-12 md:py-16">
+        {/* HEADER */}
+        <div className="mb-10 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6 border-b border-[#252525] pb-8">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.25em] text-[#D4AF37]">
+              STUDENT PROFILE
+            </p>
+            <h1 className="magizh-heading mt-2 text-3xl font-bold md:text-4xl">
+              Your Student Identity
+            </h1>
+            <p className="mt-2 text-sm text-[#A1A1A1]">
+              Manage your personal, academic, and credential details.
+            </p>
+          </div>
 
-        <h1 className="magizh-heading mt-3 text-4xl font-bold md:text-5xl">
-          Your Profile
-        </h1>
+          <button
+            type="button"
+            onClick={() => setIsIdModalOpen(true)}
+            className="inline-flex items-center justify-center gap-2 rounded border border-[#D4AF37]/40 bg-[#D4AF37]/10 px-5 py-3 text-xs font-bold uppercase tracking-[0.16em] text-[#D4AF37] transition hover:bg-[#D4AF37] hover:text-black"
+          >
+            <IdCard size={15} />
+            VIEW MY MAGIZH ID
+          </button>
+        </div>
 
-        <p className="magizh-muted mt-4 max-w-2xl">
-          Keep your information updated for events, teams, projects, and
-          certificates.
-        </p>
-      </div>
-
-      <div className="grid gap-8 lg:grid-cols-[1fr_320px]">
-        <section className="magizh-card p-6 md:p-8">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <label
-                htmlFor="fullName"
-                className="mb-2 block text-sm font-medium"
-              >
-                Full Name
-              </label>
-
-              <input
-                id="fullName"
-                type="text"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                required
-                className="w-full rounded border border-[#252525] bg-[#0A0A0A] px-4 py-3 outline-none focus:border-[#D4AF37]"
-              />
-            </div>
-
-            <div>
-              <label
-                htmlFor="college"
-                className="mb-2 block text-sm font-medium"
-              >
-                College
-              </label>
-
-              <input
-                id="college"
-                type="text"
-                value={college}
-                onChange={(e) => setCollege(e.target.value)}
-                placeholder="Your college name"
-                className="w-full rounded border border-[#252525] bg-[#0A0A0A] px-4 py-3 outline-none focus:border-[#D4AF37]"
-              />
-            </div>
-
-            <div className="grid gap-6 md:grid-cols-2">
+        <div className="grid gap-10 lg:grid-cols-[1fr_340px]">
+          {/* LEFT: EDITABLE FORM */}
+          <section className="rounded-xl border border-[#252525] bg-[#0A0A0A] p-6 md:p-8">
+            <form onSubmit={handleSubmit} className="space-y-6">
               <div>
-                <label
-                  htmlFor="department"
-                  className="mb-2 block text-sm font-medium"
-                >
-                  Department
+                <label htmlFor="fullName" className="mb-2 block text-xs font-semibold uppercase tracking-wider text-[#A1A1A1]">
+                  Full Name
                 </label>
-
                 <input
-                  id="department"
+                  id="fullName"
                   type="text"
-                  value={department}
-                  onChange={(e) => setDepartment(e.target.value)}
-                  placeholder="e.g. CSE"
-                  className="w-full rounded border border-[#252525] bg-[#0A0A0A] px-4 py-3 outline-none focus:border-[#D4AF37]"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  required
+                  className="w-full rounded border border-[#252525] bg-[#000000] px-4 py-3 text-sm text-[#F5F3ED] outline-none transition focus:border-[#D4AF37]"
+                />
+              </div>
+
+              <div className="grid gap-5 sm:grid-cols-2">
+                <div>
+                  <label htmlFor="dateOfBirth" className="mb-2 block text-xs font-semibold uppercase tracking-wider text-[#A1A1A1]">
+                    Date of Birth
+                  </label>
+                  <input
+                    id="dateOfBirth"
+                    type="date"
+                    value={dateOfBirth}
+                    onChange={(e) => setDateOfBirth(e.target.value)}
+                    className="w-full rounded border border-[#252525] bg-[#000000] px-4 py-3 text-sm text-[#F5F3ED] outline-none transition focus:border-[#D4AF37]"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="phone" className="mb-2 block text-xs font-semibold uppercase tracking-wider text-[#A1A1A1]">
+                    Phone Number
+                  </label>
+                  <input
+                    id="phone"
+                    type="tel"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    className="w-full rounded border border-[#252525] bg-[#000000] px-4 py-3 text-sm text-[#F5F3ED] outline-none transition focus:border-[#D4AF37]"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label htmlFor="college" className="mb-2 block text-xs font-semibold uppercase tracking-wider text-[#A1A1A1]">
+                  College
+                </label>
+                <input
+                  id="college"
+                  type="text"
+                  value={college}
+                  onChange={(e) => setCollege(e.target.value)}
+                  className="w-full rounded border border-[#252525] bg-[#000000] px-4 py-3 text-sm text-[#F5F3ED] outline-none transition focus:border-[#D4AF37]"
+                />
+              </div>
+
+              <div className="grid gap-5 sm:grid-cols-2">
+                <div>
+                  <label htmlFor="department" className="mb-2 block text-xs font-semibold uppercase tracking-wider text-[#A1A1A1]">
+                    Department
+                  </label>
+                  <input
+                    id="department"
+                    type="text"
+                    value={department}
+                    onChange={(e) => setDepartment(e.target.value)}
+                    className="w-full rounded border border-[#252525] bg-[#000000] px-4 py-3 text-sm text-[#F5F3ED] outline-none transition focus:border-[#D4AF37]"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="year" className="mb-2 block text-xs font-semibold uppercase tracking-wider text-[#A1A1A1]">
+                    Year of Study
+                  </label>
+                  <input
+                    id="year"
+                    type="number"
+                    min="1"
+                    max="6"
+                    value={year}
+                    onChange={(e) => setYear(e.target.value)}
+                    className="w-full rounded border border-[#252525] bg-[#000000] px-4 py-3 text-sm text-[#F5F3ED] outline-none transition focus:border-[#D4AF37]"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label htmlFor="bio" className="mb-2 block text-xs font-semibold uppercase tracking-wider text-[#A1A1A1]">
+                  Bio
+                </label>
+                <textarea
+                  id="bio"
+                  value={bio}
+                  onChange={(e) => setBio(e.target.value)}
+                  rows={3}
+                  className="w-full resize-none rounded border border-[#252525] bg-[#000000] px-4 py-3 text-sm text-[#F5F3ED] outline-none transition focus:border-[#D4AF37]"
                 />
               </div>
 
               <div>
-                <label
-                  htmlFor="year"
-                  className="mb-2 block text-sm font-medium"
-                >
-                  Year
+                <label htmlFor="skills" className="mb-2 block text-xs font-semibold uppercase tracking-wider text-[#A1A1A1]">
+                  Skills (comma separated)
                 </label>
-
                 <input
-                  id="year"
-                  type="number"
-                  min="1"
-                  max="6"
-                  value={year}
-                  onChange={(e) => setYear(e.target.value)}
-                  placeholder="e.g. 2"
-                  className="w-full rounded border border-[#252525] bg-[#0A0A0A] px-4 py-3 outline-none focus:border-[#D4AF37]"
+                  id="skills"
+                  type="text"
+                  value={skills}
+                  onChange={(e) => setSkills(e.target.value)}
+                  className="w-full rounded border border-[#252525] bg-[#000000] px-4 py-3 text-sm text-[#F5F3ED] outline-none transition focus:border-[#D4AF37]"
                 />
               </div>
-            </div>
 
-            <div>
-              <label
-                htmlFor="phone"
-                className="mb-2 block text-sm font-medium"
-              >
-                Phone
-              </label>
+              <div className="grid gap-5 sm:grid-cols-3 border-t border-[#252525] pt-6">
+                <div>
+                  <label htmlFor="linkedinUrl" className="mb-2 block text-xs font-semibold uppercase tracking-wider text-[#A1A1A1]">
+                    LinkedIn
+                  </label>
+                  <input
+                    id="linkedinUrl"
+                    type="url"
+                    value={linkedinUrl}
+                    onChange={(e) => setLinkedinUrl(e.target.value)}
+                    className="w-full rounded border border-[#252525] bg-[#000000] px-4 py-3 text-sm text-[#F5F3ED] outline-none transition focus:border-[#D4AF37]"
+                  />
+                </div>
 
-              <input
-                id="phone"
-                type="tel"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="Your phone number"
-                className="w-full rounded border border-[#252525] bg-[#0A0A0A] px-4 py-3 outline-none focus:border-[#D4AF37]"
-              />
-            </div>
+                <div>
+                  <label htmlFor="githubUrl" className="mb-2 block text-xs font-semibold uppercase tracking-wider text-[#A1A1A1]">
+                    GitHub
+                  </label>
+                  <input
+                    id="githubUrl"
+                    type="url"
+                    value={githubUrl}
+                    onChange={(e) => setGithubUrl(e.target.value)}
+                    className="w-full rounded border border-[#252525] bg-[#000000] px-4 py-3 text-sm text-[#F5F3ED] outline-none transition focus:border-[#D4AF37]"
+                  />
+                </div>
 
-            <div>
-              <label
-                htmlFor="skills"
-                className="mb-2 block text-sm font-medium"
-              >
-                Skills
-              </label>
-
-              <input
-                id="skills"
-                type="text"
-                value={skills}
-                onChange={(e) => setSkills(e.target.value)}
-                placeholder="Python, Java, React, SQL"
-                className="w-full rounded border border-[#252525] bg-[#0A0A0A] px-4 py-3 outline-none focus:border-[#D4AF37]"
-              />
-
-              <p className="magizh-muted mt-2 text-xs">
-                Separate skills with commas.
-              </p>
-            </div>
-
-            <div>
-              <label
-                htmlFor="bio"
-                className="mb-2 block text-sm font-medium"
-              >
-                Bio
-              </label>
-
-              <textarea
-                id="bio"
-                value={bio}
-                onChange={(e) => setBio(e.target.value)}
-                rows={5}
-                placeholder="Tell us a little about yourself..."
-                className="w-full resize-none rounded border border-[#252525] bg-[#0A0A0A] px-4 py-3 outline-none focus:border-[#D4AF37]"
-              />
-            </div>
-
-            {error && (
-              <div className="rounded border border-[#C75C5C]/40 bg-[#C75C5C]/10 px-4 py-3">
-                <p className="text-sm text-[#C75C5C]">{error}</p>
+                <div>
+                  <label htmlFor="portfolioUrl" className="mb-2 block text-xs font-semibold uppercase tracking-wider text-[#A1A1A1]">
+                    Portfolio
+                  </label>
+                  <input
+                    id="portfolioUrl"
+                    type="url"
+                    value={portfolioUrl}
+                    onChange={(e) => setPortfolioUrl(e.target.value)}
+                    className="w-full rounded border border-[#252525] bg-[#000000] px-4 py-3 text-sm text-[#F5F3ED] outline-none transition focus:border-[#D4AF37]"
+                  />
+                </div>
               </div>
-            )}
 
-            {success && (
-              <div className="rounded border border-[#6FAF7B]/40 bg-[#6FAF7B]/10 px-4 py-3">
-                <p className="text-sm text-[#6FAF7B]">{success}</p>
+              {error && (
+                <div className="rounded border border-[#C75C5C]/40 bg-[#C75C5C]/10 px-4 py-3 text-xs text-[#C75C5C]">
+                  {error}
+                </div>
+              )}
+
+              {success && (
+                <div className="rounded border border-[#6FAF7B]/40 bg-[#6FAF7B]/10 px-4 py-3 text-xs text-[#6FAF7B]">
+                  {success}
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={isSaving}
+                className="flex items-center justify-center gap-2 rounded bg-[#D4AF37] px-6 py-3 text-xs font-bold uppercase tracking-wider text-black transition hover:bg-[#E5C04A] disabled:opacity-50"
+              >
+                {isSaving ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    SAVING...
+                  </>
+                ) : (
+                  "SAVE CHANGES"
+                )}
+              </button>
+            </form>
+          </section>
+
+          {/* RIGHT: IDENTITY SIDEBAR */}
+          <aside className="space-y-6">
+            <div className="rounded-xl border border-[#252525] bg-[#0A0A0A] p-6 space-y-4">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-[#D4AF37]">
+                  OFFICIAL IDENTITY
+                </span>
+                <span className="flex items-center gap-1 text-[10px] font-semibold text-[#6FAF7B]">
+                  <ShieldCheck size={12} />
+                  ACTIVE
+                </span>
               </div>
-            )}
 
-            <LoadingButton
-              type="submit"
-              loading={isSaving}
-              loadingText="Saving..."
-            >
-              Save Profile
-            </LoadingButton>
-          </form>
-        </section>
-
-        <aside className="magizh-card h-fit p-6">
-          <p className="magizh-gold text-xs font-semibold uppercase tracking-[0.2em]">
-            Account
-          </p>
-
-          <h2 className="magizh-heading mt-3 text-2xl font-bold">
-            {profile?.full_name || "Student"}
-          </h2>
-
-          <p className="magizh-muted mt-2 break-all text-sm">
-            {user.email}
-          </p>
-
-          <p className="magizh-muted mt-1 break-all text-xs">
-            Profile ID: {profile?.user_id}
-          </p>
-
-          {profile?.skills && profile.skills.length > 0 && (
-            <div className="mt-6">
-              <p className="magizh-muted text-xs uppercase tracking-wider">
-                Skills
-              </p>
-
-              <div className="mt-3 flex flex-wrap gap-2">
-                {profile.skills.map((skill) => (
-                  <span
-                    key={skill}
-                    className="rounded border border-[#252525] px-3 py-1 text-xs"
-                  >
-                    {skill}
-                  </span>
-                ))}
+              <div>
+                <p className="text-[10px] uppercase tracking-wider text-[#A1A1A1]">
+                  MAGIZH STUDENT ID
+                </p>
+                <p className="mt-1 font-mono text-base font-bold text-[#D4AF37]">
+                  {studentId}
+                </p>
               </div>
+
+              <div className="border-t border-[#252525] pt-3 text-xs space-y-1">
+                <p className="text-[#A1A1A1]">Account Email</p>
+                <p className="font-mono text-[#F5F3ED] break-all">{user.email}</p>
+              </div>
+
+              <div className="border-t border-[#252525] pt-3 text-xs space-y-1">
+                <p className="text-[#A1A1A1]">Date of Birth</p>
+                <p className="font-mono text-[#F5F3ED]">{formatDateOfBirth(dateOfBirth)}</p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setIsIdModalOpen(true)}
+                className="mt-2 flex w-full items-center justify-center gap-2 rounded border border-[#252525] bg-[#000000] py-2.5 text-xs font-semibold uppercase tracking-wider text-[#F5F3ED] transition hover:border-[#D4AF37] hover:text-[#D4AF37]"
+              >
+                <IdCard size={14} className="text-[#D4AF37]" />
+                VIEW MY MAGIZH ID
+              </button>
             </div>
-          )}
-        </aside>
-      </div>
-    </main>
+          </aside>
+        </div>
+      </main>
+
+      <Footer />
+
+      {/* REUSABLE ID CARD MODAL */}
+      <MagizhIdModal
+        isOpen={isIdModalOpen}
+        onClose={() => setIsIdModalOpen(false)}
+      />
+    </div>
   );
 }

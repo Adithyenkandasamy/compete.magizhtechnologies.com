@@ -28,9 +28,9 @@ import { getMyRegistrations } from "@/lib/registrations-api";
 import { getMyCertificates } from "@/lib/certificates-api";
 import { Navbar } from "@/components/ui/navbar";
 import { Footer } from "@/components/ui/footer";
-import { StudentIdModal } from "@/components/ui/student-id-modal";
-import { formatStudentId } from "@/components/ui/student-id-card";
-import { HackerSnakeLoader } from "@/components/loading";
+import { MagizhIdModal } from "@/components/student/MagizhIdModal";
+import { formatMagizhStudentId } from "@/lib/student-id";
+import { Loader2 } from "lucide-react";
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -58,16 +58,19 @@ export default function DashboardPage() {
 
   const { data: certificatesData } = useQuery({
     queryKey: ["my-certificates"],
-    queryFn: () => getMyCertificates(1, 10),
+    queryFn: () => getMyCertificates(),
     enabled: status === "authenticated",
   });
 
   if (status === "loading" || !user) {
     return (
-      <div className="min-h-screen bg-black flex flex-col">
+      <div className="min-h-screen bg-black flex flex-col text-[#F5F3ED]">
         <Navbar />
-        <main className="flex-1 flex items-center justify-center">
-          <HackerSnakeLoader size="lg" message="LOADING MAGIZH HOME..." />
+        <main className="flex-1 flex items-center justify-center py-20">
+          <div className="flex items-center gap-3 text-xs uppercase tracking-widest text-[#A1A1A1]">
+            <Loader2 className="h-5 w-5 animate-spin text-[#D4AF37]" />
+            Loading dashboard...
+          </div>
         </main>
         <Footer />
       </div>
@@ -75,8 +78,8 @@ export default function DashboardPage() {
   }
 
   const displayName = profile?.full_name || user.profile?.full_name || user.email.split("@")[0];
-  const studentId = formatStudentId(user.id);
-  const certificates = certificatesData?.items || [];
+  const studentId = formatMagizhStudentId(profile?.magizh_student_id, user.id);
+  const certificates = Array.isArray(certificatesData) ? certificatesData : [];
 
   // Greeting time
   const hour = new Date().getHours();
@@ -384,7 +387,7 @@ export default function DashboardPage() {
       <Footer />
 
       {/* ID MODAL POPUP */}
-      <StudentIdModal isOpen={idModalOpen} onClose={() => setIdModalOpen(false)} />
+      <MagizhIdModal isOpen={idModalOpen} onClose={() => setIdModalOpen(false)} />
     </div>
   );
 }

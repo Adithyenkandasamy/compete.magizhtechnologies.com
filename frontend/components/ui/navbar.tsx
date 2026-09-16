@@ -19,8 +19,14 @@ import {
 } from "lucide-react";
 
 import { useAuth } from "@/providers/auth-provider";
-import { StudentIdModal } from "./student-id-modal";
-import { CircularHudLoader } from "@/components/loading";
+import { MagizhIdModal } from "@/components/student/MagizhIdModal";
+import { Loader2 } from "lucide-react";
+
+type NavLink = {
+  href: string;
+  label: string;
+  live?: boolean;
+};
 
 export function Navbar() {
   const pathname = usePathname();
@@ -43,14 +49,14 @@ export function Navbar() {
   }
 
   // Public Links
-  const publicNavLinks = [
+  const publicNavLinks: NavLink[] = [
     { href: "/events", label: "Events" },
     { href: "/events?status=LIVE", label: "Live", live: true },
     { href: "/projects", label: "Projects" },
   ];
 
   // Student Links
-  const studentNavLinks = [
+  const studentNavLinks: NavLink[] = [
     { href: "/dashboard", label: "Home" },
     { href: "/events", label: "Events" },
     { href: "/dashboard/events", label: "My Events" },
@@ -63,7 +69,14 @@ export function Navbar() {
 
   return (
     <>
-      {isLoggingOut && <CircularHudLoader fullScreen mode="logout" />}
+      {isLoggingOut && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
+          <div className="flex items-center gap-3 text-xs uppercase tracking-widest text-[#A1A1A1]">
+            <Loader2 className="h-5 w-5 animate-spin text-[#D4AF37]" />
+            Signing out...
+          </div>
+        </div>
+      )}
 
       <header className="sticky top-0 z-40 w-full border-b border-[#252525] bg-[#000000]/90 backdrop-blur-md">
         <div className="magizh-container flex h-20 items-center justify-between">

@@ -3,7 +3,12 @@ from fastapi import APIRouter, Depends
 
 from app.api.deps import SessionDep, get_current_user
 from app.models.user import User
-from app.schemas.profile import ProfilePublicResponse, ProfileResponse, ProfileUpdate
+from app.schemas.profile import (
+    ProfilePublicResponse,
+    ProfileResponse,
+    ProfileUpdate,
+    StudentIdentityResponse,
+)
 from app.services.profile_service import ProfileService
 
 router = APIRouter(
@@ -44,6 +49,20 @@ async def update_my_profile(
     return profile  # type: ignore
 
 
+@router.get(
+    "/identity",
+    response_model=StudentIdentityResponse,
+    summary="Get the current user's official Magizh Student Identity",
+)
+async def get_my_identity(
+    session: SessionDep,
+    current_user: User = Depends(get_current_user),
+) -> StudentIdentityResponse:
+    """Return the permanent Magizh Student Identity credential."""
+    service = ProfileService(session)
+    return await service.get_identity(current_user.id)
+
+
 # ---------------------------------------------------------------------------
 # Public QR verification router (no authentication required)
 # ---------------------------------------------------------------------------
@@ -55,16 +74,15 @@ public_router = APIRouter(
 
 
 @public_router.get(
-    "/students/{user_id}/verify",
+    "/students/{identifier}/verify",
     response_model=ProfilePublicResponse,
     summary="Public student QR verification",
-    description="Verify student credential authenticity via QR scan without authentication.",
+    description="Verify student credential authenticity via QR scan by Magizh Student ID or UUID without authentication.",
 )
 async def verify_student_public(
-    user_id: uuid.UUID,
+    identifier: str,
     session: SessionDep,
 ) -> ProfilePublicResponse:
     """Return public non-sensitive student profile details for QR verification."""
     service = ProfileService(session)
-    profile = await service.get_profile(user_id)
-    return profile  # type: ignore
+    return await service.verify_public_student(identifier)

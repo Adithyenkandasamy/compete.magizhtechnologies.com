@@ -7,7 +7,7 @@ import { useMutation } from "@tanstack/react-query";
 
 import { useAuth } from "@/providers/auth-provider";
 import { getErrorMessage } from "@/lib/error-message";
-import { CircularHudLoader, LoadingButton } from "@/components/loading";
+import { LoadingButton } from "@/components/loading";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -21,7 +21,7 @@ export default function RegisterPage() {
 
   useEffect(() => {
     if (status === "authenticated") {
-      router.replace("/dashboard");
+      router.replace("/onboarding/profile");
     }
   }, [status, router]);
 
@@ -33,7 +33,7 @@ export default function RegisterPage() {
         password,
       }),
     onSuccess: () => {
-      router.replace("/dashboard");
+      router.replace("/onboarding/profile");
     },
     onError: (err) => {
       setError(
@@ -54,9 +54,6 @@ export default function RegisterPage() {
 
   return (
     <main className="min-h-screen flex items-center justify-center px-5 py-16">
-      {registerMutation.isPending && (
-        <CircularHudLoader fullScreen mode="login" message="ESTABLISHING IDENTITY..." />
-      )}
 
       <div className="w-full max-w-md">
         <div className="mb-8 text-center">
