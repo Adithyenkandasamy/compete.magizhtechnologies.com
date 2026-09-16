@@ -62,18 +62,10 @@ export function Navbar() {
             (pathname.startsWith("/events/") && !pathname.includes("/dashboard")),
         },
         {
-          title: "Competitions",
+          title: "Registered Events",
           href: "/dashboard/events",
           icon: <Trophy size={18} />,
           active: pathname === "/dashboard/events",
-        },
-        {
-          title: "Projects",
-          href: "/dashboard/projects",
-          icon: <FolderGit2 size={18} />,
-          active:
-            pathname.startsWith("/dashboard/projects") ||
-            pathname.startsWith("/projects"),
         },
         {
           title: "Certificates",

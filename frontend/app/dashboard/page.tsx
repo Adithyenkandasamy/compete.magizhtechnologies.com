@@ -134,7 +134,7 @@ export default function DashboardPage() {
         {/* ===================================================================== */}
         {/* 2. PERSONAL METRICS TILES                                             */}
         {/* ===================================================================== */}
-        <section className="mb-12 grid grid-cols-2 gap-4 sm:grid-cols-4">
+        <section className="mb-12 grid grid-cols-2 gap-4 max-w-md">
           <div className="magizh-card p-5">
             <div className="flex items-center justify-between">
               <span className="text-[10px] uppercase tracking-wider text-[#A1A1A1]">
@@ -144,30 +144,6 @@ export default function DashboardPage() {
             </div>
             <p className="font-mono mt-3 text-2xl font-bold text-[#F5F3ED] md:text-3xl">
               {registrations.length}
-            </p>
-          </div>
-
-          <div className="magizh-card p-5">
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] uppercase tracking-wider text-[#A1A1A1]">
-                MY TEAMS
-              </span>
-              <Users size={14} className="text-[#D4AF37]" />
-            </div>
-            <p className="font-mono mt-3 text-2xl font-bold text-[#F5F3ED] md:text-3xl">
-              {registrations.length > 0 ? registrations.length : 0}
-            </p>
-          </div>
-
-          <div className="magizh-card p-5">
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] uppercase tracking-wider text-[#A1A1A1]">
-                PROJECTS
-              </span>
-              <FolderGit2 size={14} className="text-[#D4AF37]" />
-            </div>
-            <p className="font-mono mt-3 text-2xl font-bold text-[#F5F3ED] md:text-3xl">
-              {registrations.length > 0 ? 1 : 0}
             </p>
           </div>
 
@@ -264,44 +240,25 @@ export default function DashboardPage() {
             </div>
 
             {/* Quick Navigation Cards */}
-            <div className="grid gap-4 sm:grid-cols-3">
-              <Link
-                href="/dashboard/events"
-                className="magizh-card group p-5 transition-colors hover:border-[#D4AF37]"
-              >
-                <Users size={18} className="text-[#D4AF37]" />
-                <h4 className="mt-3 font-bold text-[#F5F3ED] group-hover:text-[#D4AF37]">
-                  Event Teams
-                </h4>
-                <p className="magizh-muted mt-1 text-xs">
-                  Manage your teams inside each registered event.
-                </p>
-              </Link>
-
-              <Link
-                href="/dashboard/projects"
-                className="magizh-card group p-5 transition-colors hover:border-[#D4AF37]"
-              >
-                <FolderGit2 size={18} className="text-[#D4AF37]" />
-                <h4 className="mt-3 font-bold text-[#F5F3ED] group-hover:text-[#D4AF37]">
-                  My Projects
-                </h4>
-                <p className="magizh-muted mt-1 text-xs">
-                  Working repositories & demos.
-                </p>
-              </Link>
-
+            <div>
               <Link
                 href="/certificates"
-                className="magizh-card group p-5 transition-colors hover:border-[#D4AF37]"
+                className="magizh-card group p-5 transition-colors hover:border-[#D4AF37] flex items-center justify-between"
               >
-                <Trophy size={18} className="text-[#D4AF37]" />
-                <h4 className="mt-3 font-bold text-[#F5F3ED] group-hover:text-[#D4AF37]">
-                  Certificates
-                </h4>
-                <p className="magizh-muted mt-1 text-xs">
-                  Verifiable cryptographic awards.
-                </p>
+                <div className="flex items-center gap-4">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-[#D4AF37]/10 text-[#D4AF37]">
+                    <Trophy size={20} />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-[#F5F3ED] group-hover:text-[#D4AF37]">
+                      Certificates & Credentials
+                    </h4>
+                    <p className="magizh-muted mt-0.5 text-xs">
+                      View and verify your cryptographic event participation & winner certificates.
+                    </p>
+                  </div>
+                </div>
+                <ArrowRight size={16} className="text-[#A1A1A1] group-hover:text-[#D4AF37] transition" />
               </Link>
             </div>
           </div>
@@ -344,41 +301,6 @@ export default function DashboardPage() {
                   Dedicated Passport Page →
                 </Link>
               </div>
-            </div>
-
-            {/* Recent Notifications / Activity */}
-            <div className="magizh-card p-6">
-              <div className="flex items-center justify-between border-b border-[#252525] pb-3">
-                <span className="text-[10px] uppercase tracking-wider text-[#A1A1A1]">
-                  PLATFORM ACTIVITY
-                </span>
-                <Activity size={13} className="text-[#D4AF37]" />
-              </div>
-
-              <ul className="mt-4 space-y-3 text-xs">
-                <li className="flex items-start gap-2.5">
-                  <CheckCircle2 size={13} className="mt-0.5 text-[#6FAF7B]" />
-                  <div>
-                    <p className="font-medium text-[#F5F3ED]">
-                      Identity authenticated
-                    </p>
-                    <span className="text-[10px] text-[#A1A1A1]">
-                      Permanent student ID active
-                    </span>
-                  </div>
-                </li>
-                <li className="flex items-start gap-2.5">
-                  <Sparkles size={13} className="mt-0.5 text-[#D4AF37]" />
-                  <div>
-                    <p className="font-medium text-[#F5F3ED]">
-                      Connected to Magizh Ecosystem
-                    </p>
-                    <span className="text-[10px] text-[#A1A1A1]">
-                      Real-time updates enabled
-                    </span>
-                  </div>
-                </li>
-              </ul>
             </div>
           </div>
         </section>

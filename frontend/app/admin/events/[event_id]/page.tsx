@@ -713,7 +713,8 @@ export default function AdminEventEditPage() {
                         Select a judge
                       </option>
 
-                      {judges.map((judge) => (
+                      {Array.isArray(judges) &&
+                        judges.map((judge) => (
                         <option
                           key={judge.id}
                           value={judge.id}

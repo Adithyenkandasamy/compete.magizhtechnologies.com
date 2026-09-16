@@ -21,9 +21,14 @@ export type UpdateAdminJudgeRequest = {
 };
 
 export async function getAdminJudges(): Promise<AdminJudge[]> {
-  const response = await apiClient.get<AdminJudge[]>("/admin/judges");
+  const response = await apiClient.get<
+    AdminJudge[] | { items: AdminJudge[] }
+  >("/admin/judges");
 
-  return response.data;
+  if (Array.isArray(response.data)) {
+    return response.data;
+  }
+  return response.data?.items ?? [];
 }
 
 export async function getAdminJudge(
