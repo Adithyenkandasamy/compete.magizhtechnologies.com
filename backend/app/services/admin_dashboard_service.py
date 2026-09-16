@@ -3,7 +3,9 @@ Admin dashboard service: aggregates platform stats, activity, and
 per-event drill-down data for the admin UI.
 """
 
+import time
 import uuid
+from typing import Optional
 
 from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -22,6 +24,13 @@ from app.schemas.admin import (
     EventOverviewResponse,
 )
 
+# ---------------------------------------------------------------------------
+# In-memory TTL cache for admin dashboard stats
+# ---------------------------------------------------------------------------
+_DASHBOARD_CACHE: Optional[AdminDashboardResponse] = None
+_DASHBOARD_CACHE_TIMESTAMP: float = 0.0
+_DASHBOARD_CACHE_TTL_SECONDS: float = 60.0  # 1-minute TTL
+
 
 def _humanize_action(action: str) -> str:
     """Convert 'registration.created' into 'Registration created'."""
@@ -34,7 +43,18 @@ class AdminDashboardService:
         self.session = session
         self.repo = AdminDashboardRepository(session)
 
-    async def get_dashboard(self) -> AdminDashboardResponse:
+    async def get_dashboard(self, force_refresh: bool = False) -> AdminDashboardResponse:
+        global _DASHBOARD_CACHE, _DASHBOARD_CACHE_TIMESTAMP
+        now = time.monotonic()
+
+        # Return cached response if still fresh
+        if (
+            not force_refresh
+            and _DASHBOARD_CACHE is not None
+            and (now - _DASHBOARD_CACHE_TIMESTAMP) < _DASHBOARD_CACHE_TTL_SECONDS
+        ):
+            return _DASHBOARD_CACHE
+
         raw_stats = await self.repo.get_comprehensive_stats()
 
         stats = AdminDashboardStats(
@@ -54,7 +74,20 @@ class AdminDashboardService:
             total_submissions=raw_stats["total_submissions"],
         )
         hackathons = await self.repo.get_hackathon_overview(limit=10)
-        return AdminDashboardResponse(stats=stats, hackathons=hackathons)
+        response = AdminDashboardResponse(stats=stats, hackathons=hackathons)
+
+        # Store in cache
+        _DASHBOARD_CACHE = response
+        _DASHBOARD_CACHE_TIMESTAMP = now
+
+        return response
+
+    @staticmethod
+    def invalidate_cache() -> None:
+        """Clear the dashboard cache so the next request fetches fresh data."""
+        global _DASHBOARD_CACHE, _DASHBOARD_CACHE_TIMESTAMP
+        _DASHBOARD_CACHE = None
+        _DASHBOARD_CACHE_TIMESTAMP = 0.0
 
     async def get_activity(self, limit: int = 15) -> list[AdminActivity]:
         logs = await self.repo.get_recent_activity(limit=limit)

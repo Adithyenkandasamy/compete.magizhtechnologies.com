@@ -260,6 +260,8 @@ export default function AdminDashboardPage() {
   const dashboardQuery = useQuery({
     queryKey: ["admin-dashboard"],
     queryFn: getAdminDashboard,
+    staleTime: 60 * 1000,      // 60s – matches backend TTL cache
+    gcTime: 5 * 60 * 1000,     // 5min garbage collection
   });
 
   const activityQuery = useQuery({

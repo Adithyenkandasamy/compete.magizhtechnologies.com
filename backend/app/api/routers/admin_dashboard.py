@@ -22,10 +22,13 @@ router = APIRouter(
     response_model=AdminDashboardResponse,
     summary="Admin dashboard statistics",
 )
-async def get_dashboard(session: SessionDep) -> AdminDashboardResponse:
+async def get_dashboard(
+    session: SessionDep,
+    force_refresh: bool = Query(False, description="Bypass cache and fetch fresh data"),
+) -> AdminDashboardResponse:
     """Aggregate platform stats plus a per-hackathon overview."""
     service = AdminDashboardService(session)
-    return await service.get_dashboard()
+    return await service.get_dashboard(force_refresh=force_refresh)
 
 
 @router.get(
