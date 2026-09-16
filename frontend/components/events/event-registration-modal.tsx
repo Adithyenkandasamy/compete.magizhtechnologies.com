@@ -284,7 +284,7 @@ export function EventRegistrationModal({
                   {event.title.toUpperCase()}
                 </h4>
                 <p className="mt-1 font-mono text-[11px] text-[#A1A1A1]">
-                  {event.event_type} · {event.is_team_event ? `TEAMS (${event.min_team_size}-${event.max_team_size})` : "SOLO / TEAM"}
+                  {event.event_type} · {event.team_size_max > 1 ? `TEAMS (${event.team_size_min}-${event.team_size_max})` : "INDIVIDUAL"}
                 </p>
               </div>
 

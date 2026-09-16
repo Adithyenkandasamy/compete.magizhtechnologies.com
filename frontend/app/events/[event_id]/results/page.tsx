@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 
-import { getEventResults, type ResultsResponse } from "@/lib/results-api";
+import { getEventResults, type ResultsResponse, type EventResult } from "@/lib/results-api";
 import { useEvent } from "@/hooks/use-events";
 import { Navbar } from "@/components/ui/navbar";
 import { Footer } from "@/components/ui/footer";
@@ -178,8 +178,9 @@ export default function EventResultsPage({ params }: PageProps) {
           <div className="magizh-card p-6 md:p-8">
             <h3 className="magizh-heading text-xl font-bold mb-6">Finalist Standings</h3>
             <div className="divide-y divide-[#252525]">
-              {remainingFinalists.map((team, idx) => (
+              {remainingFinalists.map((team: EventResult, idx: number) => (
                 <div key={team.team_id || idx} className="py-4 flex items-center justify-between text-xs">
+
                   <div className="flex items-center gap-4">
                     <span className="font-mono text-sm font-bold text-[#A1A1A1] w-8">
                       #{idx + 4}

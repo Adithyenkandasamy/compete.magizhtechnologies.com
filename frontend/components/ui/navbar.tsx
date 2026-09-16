@@ -275,7 +275,8 @@ export function Navbar() {
       </header>
 
       {/* STUDENT ID POPUP MODAL */}
-      <StudentIdModal isOpen={idModalOpen} onClose={() => setIdModalOpen(false)} />
+      <MagizhIdModal isOpen={idModalOpen} onClose={() => setIdModalOpen(false)} />
     </>
   );
 }
+

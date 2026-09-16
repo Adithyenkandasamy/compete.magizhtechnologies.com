@@ -43,11 +43,12 @@ export default function CertificatesPage() {
     refetch,
   } = useQuery({
     queryKey: ["my-certificates"],
-    queryFn: () => getMyCertificates(1, 50),
+    queryFn: () => getMyCertificates(),
     enabled: status === "authenticated",
   });
 
-  const certificates = certsResponse?.items || [];
+  const certificates = certsResponse || [];
+
 
   async function handleDownload(certId: string) {
     setDownloadingId(certId);
@@ -118,8 +119,9 @@ export default function CertificatesPage() {
           </div>
         ) : (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {certificates.map((cert) => (
+            {certificates.map((cert: Certificate) => (
               <div
+
                 key={cert.id}
                 className="magizh-card p-6 flex flex-col justify-between border-[#252525] hover:border-[#D4AF37] transition-all group"
               >

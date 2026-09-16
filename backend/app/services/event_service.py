@@ -1,3 +1,4 @@
+import time
 import uuid
 from typing import Optional, Any
 
@@ -9,7 +10,12 @@ from app.models.event import Event
 from app.repositories.audit_repo import AuditRepository
 from app.repositories.event_repo import EventRepository
 from app.schemas.event import EventCreate, EventUpdate, PaginatedResponse
+from app.services.stats_service import StatsService
 import app.websocket.publisher as realtime
+
+# In-memory cache for public events list: key -> (timestamp, response)
+_PUBLIC_EVENTS_CACHE: dict[str, tuple[float, PaginatedResponse[Any]]] = {}
+_EVENTS_CACHE_TTL_SECONDS: float = 60.0
 
 
 class EventService:
@@ -17,6 +23,13 @@ class EventService:
         self.session = session
         self.repo = EventRepository(session)
         self.audit_repo = AuditRepository(session)
+
+    @staticmethod
+    def invalidate_cache():
+        """Clear public events and stats in-memory caches."""
+        global _PUBLIC_EVENTS_CACHE
+        _PUBLIC_EVENTS_CACHE.clear()
+        StatsService.invalidate_cache()
 
     async def _log_action(
         self,
@@ -52,7 +65,15 @@ class EventService:
         search: Optional[str] = None,
         public_only: bool = False,
     ) -> PaginatedResponse[Any]:
-        """Get paginated events."""
+        """Get paginated events with TTL caching for public queries."""
+        cache_key = f"{page}:{size}:{event_type}:{status_filter}:{search}"
+        now = time.monotonic()
+
+        if public_only and cache_key in _PUBLIC_EVENTS_CACHE:
+            ts, cached_resp = _PUBLIC_EVENTS_CACHE[cache_key]
+            if (now - ts) < _EVENTS_CACHE_TTL_SECONDS:
+                return cached_resp
+
         skip = (page - 1) * size
         items, total = await self.repo.get_events(
             skip=skip,
@@ -63,9 +84,14 @@ class EventService:
             public_only=public_only,
         )
         pages = (total + size - 1) // size
-        return PaginatedResponse(
+        response = PaginatedResponse(
             items=items, total=total, page=page, size=size, pages=pages
         )
+
+        if public_only:
+            _PUBLIC_EVENTS_CACHE[cache_key] = (now, response)
+
+        return response
 
     async def get_event_or_404(self, event_id: uuid.UUID, public_only: bool = False) -> Event:
         event = await self.repo.get_by_id(event_id)
@@ -85,6 +111,7 @@ class EventService:
         create_data = data.model_dump()
         event = await self.repo.create_event(create_data)
         
+        self.invalidate_cache()
         await self._log_action(request, "event.created", str(event.id))
         return event
 
@@ -102,6 +129,7 @@ class EventService:
         update_data = data.model_dump(exclude_unset=True)
         if update_data:
             event = await self.repo.update_event(event, update_data)
+            self.invalidate_cache()
             await self._log_action(request, "event.updated", str(event.id))
             await self.session.commit()
             await realtime.publish_event_updated(
@@ -127,6 +155,7 @@ class EventService:
                 raise HTTPException(status_code=400, detail="Event is already cancelled")
 
             await self.repo.update_event(event, {"status": EventStatus.CANCELLED})
+            self.invalidate_cache()
             await self._log_action(request, "event.cancelled", str(event.id))
             await self.session.commit()
             _user_id = getattr(getattr(request.state, "user", None), "id", event_id)
@@ -138,6 +167,7 @@ class EventService:
         else:
             # Hard delete
             await self.repo.delete_event(event)
+            self.invalidate_cache()
             await self._log_action(request, "event.deleted", str(event_id))
             return {"message": "Event hard deleted successfully."}
 
@@ -160,6 +190,7 @@ class EventService:
             )
 
         event = await self.repo.update_event(event, {"status": EventStatus.PUBLISHED})
+        self.invalidate_cache()
         await self._log_action(request, "event.published", str(event.id))
         await self.session.commit()
         _user_id = getattr(getattr(request.state, "user", None), "id", event_id)
@@ -177,5 +208,7 @@ class EventService:
             raise HTTPException(status_code=400, detail="Only published events can be unpublished")
 
         event = await self.repo.update_event(event, {"status": EventStatus.DRAFT})
+        self.invalidate_cache()
         await self._log_action(request, "event.unpublished", str(event.id))
         return event
+

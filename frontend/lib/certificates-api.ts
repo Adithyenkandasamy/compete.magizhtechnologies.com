@@ -3,7 +3,10 @@ import apiClient from "./api-client";
 export type Certificate = {
   id: string;
   certificate_code: string;
+  verification_code?: string | null;
   user_id: string;
+  student_name?: string | null;
+  certificate_type?: string | null;
   event_id?: string | null;
   event_title?: string | null;
   title?: string | null;
@@ -12,6 +15,7 @@ export type Certificate = {
   updated_at?: string | null;
   [key: string]: unknown;
 };
+
 
 export async function getMyCertificates(): Promise<Certificate[]> {
   const response = await apiClient.get<

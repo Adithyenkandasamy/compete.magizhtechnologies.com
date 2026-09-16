@@ -156,7 +156,7 @@ export default function EventDetailsPage() {
                 </span>
 
                 <span className="flex items-center gap-1.5 rounded-full border border-[#252525] bg-[#000000] px-3 py-1 text-[10px] font-mono text-[#A1A1A1]">
-                  <span className={`h-1.5 w-1.5 rounded-full ${event.status === "LIVE" ? "bg-[#6FAF7B] animate-pulse" : "bg-[#D4AF37]"}`} />
+                  <span className={`h-1.5 w-1.5 rounded-full ${event.status === "ONGOING" ? "bg-[#6FAF7B] animate-pulse" : "bg-[#D4AF37]"}`} />
                   {event.status}
                 </span>
 
@@ -189,8 +189,9 @@ export default function EventDetailsPage() {
             </h1>
 
             <p className="magizh-muted mt-4 max-w-3xl text-sm leading-relaxed md:text-base">
-              {event.short_description || event.description}
+              {event.description}
             </p>
+
 
             {/* Quick Param Strip */}
             <div className="mt-8 grid grid-cols-2 gap-4 border-t border-[#252525] pt-6 sm:grid-cols-4">
@@ -384,7 +385,7 @@ export default function EventDetailsPage() {
                     <div key={r.id} className="rounded-lg border border-[#252525] bg-[#000000] p-4 flex justify-between items-center">
                       <div>
                         <span className="font-mono text-[10px] text-[#D4AF37]">ROUND {idx + 1}</span>
-                        <h4 className="font-bold text-sm text-[#F5F3ED]">{r.name}</h4>
+                        <h4 className="font-bold text-sm text-[#F5F3ED]">{r.title}</h4>
                       </div>
                       <span className="text-xs font-mono text-[#A1A1A1]">{r.status}</span>
                     </div>
@@ -445,13 +446,14 @@ export default function EventDetailsPage() {
                   {sponsors.map((sp) => (
                     <div key={sp.id} className="rounded-lg border border-[#252525] bg-[#000000] p-4 text-center">
                       <p className="font-bold text-sm text-[#F5F3ED]">{sp.name}</p>
-                      <span className="text-[10px] text-[#D4AF37] uppercase">{sp.tier}</span>
+                      <span className="text-[10px] text-[#D4AF37] uppercase">Official Partner</span>
                     </div>
                   ))}
                 </div>
               )}
             </div>
           )}
+
 
           {/* TAB: FAQ */}
           {activeTab === "faq" && (

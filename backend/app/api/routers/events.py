@@ -1,7 +1,7 @@
 import uuid
 from typing import Optional
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Query, Response
 
 from app.api.deps import SessionDep
 from app.models.enums import EventStatus, EventType
@@ -20,6 +20,7 @@ router = APIRouter(prefix="/events", tags=["Events (Public)"])
 )
 async def list_events(
     session: SessionDep,
+    response: Response,
     page: int = Query(1, ge=1),
     size: int = Query(20, ge=1, le=100),
     event_type: Optional[EventType] = None,
@@ -27,9 +28,10 @@ async def list_events(
     search: Optional[str] = None,
 ) -> PaginatedResponse[EventPublicResponse]:
     """
-    Get a paginated list of published/active events.
+    Get a paginated list of published/active events (cached).
     Drafts are automatically excluded.
     """
+    response.headers["Cache-Control"] = "public, max-age=60, stale-while-revalidate=300"
     service = EventService(session)
     # Only allow fetching non-draft events via this public endpoint
     return await service.list_events(
@@ -50,10 +52,12 @@ async def list_events(
 async def get_event(
     event_id: uuid.UUID,
     session: SessionDep,
+    response: Response,
 ) -> EventPublicResponse:
     """
     Get public details of a specific event. Returns 404 if the event is a draft.
     """
+    response.headers["Cache-Control"] = "public, max-age=60, stale-while-revalidate=300"
     service = EventService(session)
     event = await service.get_event_or_404(event_id, public_only=True)
     return event # type: ignore

@@ -97,7 +97,7 @@ export default function PublicCertificateVerifyPage({ params }: PageProps) {
                     RECIPIENT SCHOLAR
                   </span>
                   <p className="font-bold text-base text-[#F5F3ED] mt-0.5">
-                    {cert.student_name}
+                    {cert.student_name || "Magizh Scholar"}
                   </p>
                 </div>
 
@@ -107,7 +107,7 @@ export default function PublicCertificateVerifyPage({ params }: PageProps) {
                       EVENT CHALLENGE
                     </span>
                     <p className="font-semibold text-sm text-[#D4AF37]">
-                      {cert.event_title}
+                      {cert.event_title || "Magizh Innovation Event"}
                     </p>
                   </div>
                 </div>
@@ -118,7 +118,7 @@ export default function PublicCertificateVerifyPage({ params }: PageProps) {
                       AWARD TYPE
                     </span>
                     <p className="font-mono text-xs font-semibold text-[#F5F3ED]">
-                      {cert.certificate_type}
+                      {cert.certificate_type || "Certificate of Excellence"}
                     </p>
                   </div>
 
@@ -127,7 +127,7 @@ export default function PublicCertificateVerifyPage({ params }: PageProps) {
                       DATE ISSUED
                     </span>
                     <p className="font-mono text-xs text-[#F5F3ED]">
-                      {new Date(cert.issued_at).toLocaleDateString()}
+                      {cert.issued_at ? new Date(cert.issued_at).toLocaleDateString() : "Verified"}
                     </p>
                   </div>
                 </div>
@@ -137,10 +137,11 @@ export default function PublicCertificateVerifyPage({ params }: PageProps) {
                     VERIFICATION CODE
                   </span>
                   <p className="font-mono text-xs font-bold text-[#D4AF37]">
-                    {cert.verification_code}
+                    {cert.verification_code || cert.certificate_code}
                   </p>
                 </div>
               </div>
+
 
               <div className="mt-8 border-t border-[#252525] pt-6 text-center">
                 <Link

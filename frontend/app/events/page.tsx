@@ -57,10 +57,11 @@ export default function EventsPage() {
 
       // Filter match
       if (activeFilter === "ALL") return true;
-      if (activeFilter === "LIVE") return e.status === "LIVE" || (e.is_registration_open && new Date(e.end_date || "") > new Date());
-      if (activeFilter === "UPCOMING") return e.status === "DRAFT" || e.status === "PUBLISHED" || !e.is_completed;
-      if (activeFilter === "COMPLETED") return e.status === "COMPLETED" || e.is_completed;
+      if (activeFilter === "LIVE") return (e.status as string) === "LIVE" || e.status === "ONGOING" || (new Date(e.end_date || "") > new Date() && new Date(e.start_date || "") <= new Date());
+      if (activeFilter === "UPCOMING") return e.status === "PUBLISHED" || new Date(e.start_date || "") > new Date();
+      if (activeFilter === "COMPLETED") return e.status === "COMPLETED" || new Date(e.end_date || "") < new Date();
       return e.event_type?.toUpperCase() === activeFilter;
+
     });
   }, [events, activeFilter, searchQuery]);
 
