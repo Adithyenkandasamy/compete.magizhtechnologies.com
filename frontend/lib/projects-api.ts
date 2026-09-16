@@ -110,7 +110,7 @@ export async function getProject(
 
 export async function updateProject(
   projectId: string,
-  data: ProjectPayload,
+  data: UpdateProjectRequest,
 ): Promise<Project> {
   const response = await apiClient.put<Project>(
     `/projects/${projectId}`,

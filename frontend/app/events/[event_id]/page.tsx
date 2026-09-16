@@ -47,12 +47,9 @@ export default function EventDetailsPage() {
 
   const { data: event, isLoading, isError, refetch } = useEvent(eventId);
 
-  const [activeTab, setActiveTab] = useState<
-    "overview" | "challenge" | "timeline" | "rules" | "prizes" | "sponsors" | "faq"
-  >("overview");
-
   const [sponsors, setSponsors] = useState<Sponsor[]>([]);
   const [rounds, setRounds] = useState<EventRound[]>([]);
+
   const [regModalOpen, setRegModalOpen] = useState(false);
   const [realtimeMessage, setRealtimeMessage] = useState("");
   const [myRegistration, setMyRegistration] = useState<Registration | null | undefined>(undefined);
@@ -258,224 +255,179 @@ export default function EventDetailsPage() {
         </section>
 
         {/* ===================================================================== */}
-        {/* TABS NAVIGATION                                                       */}
+        {/* EVENT CONTENT (VERTICAL FLOW)                                         */}
         {/* ===================================================================== */}
-        <div className="sticky top-20 z-30 border-b border-[#252525] bg-[#000000]/90 backdrop-blur-md">
-          <div className="magizh-container flex overflow-x-auto">
-            {[
-              { id: "overview", label: "Overview" },
-              { id: "challenge", label: "Challenge & Problems" },
-              { id: "timeline", label: "Timeline & Rounds" },
-              { id: "rules", label: "Rules & Eligibility" },
-              { id: "prizes", label: "Prizes & Awards" },
-              { id: "sponsors", label: "Partners" },
-              { id: "faq", label: "FAQ" },
-            ].map((tab) => (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => setActiveTab(tab.id as any)}
-                className={`whitespace-nowrap border-b-2 px-5 py-4 text-xs font-semibold uppercase tracking-wider transition-colors ${
-                  activeTab === tab.id
-                    ? "border-[#D4AF37] text-[#D4AF37]"
-                    : "border-transparent text-[#A1A1A1] hover:text-[#F5F3ED]"
-                }`}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* ===================================================================== */}
-        {/* TAB CONTENTS                                                          */}
-        {/* ===================================================================== */}
-        <section className="magizh-container py-12 md:py-16">
-          {/* TAB: OVERVIEW */}
-          {activeTab === "overview" && (
-            <div className="grid gap-10 lg:grid-cols-12">
-              <div className="lg:col-span-8 space-y-8">
-                <div className="magizh-card p-6 md:p-8">
-                  <h3 className="magizh-heading text-2xl font-bold text-[#F5F3ED]">
-                    About the Event
-                  </h3>
-                  <div className="prose prose-invert mt-4 max-w-none text-xs leading-relaxed text-[#A1A1A1] space-y-4">
-                    <p>{event.description || "Official challenge by Magizh Technologies."}</p>
-                  </div>
-                </div>
-
-                {/* Team & Collaboration Preview */}
-                <div className="magizh-card p-6 md:p-8">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <span className="text-[10px] uppercase tracking-[0.25em] text-[#D4AF37]">
-                        COLLABORATION
-                      </span>
-                      <h3 className="text-xl font-bold text-[#F5F3ED]">
-                        Event Teams
-                      </h3>
-                    </div>
-                    <Link
-                      href={`/events/${eventId}/teams`}
-                      className="inline-flex items-center gap-1 text-xs font-semibold text-[#D4AF37] hover:underline"
-                    >
-                      Browse All Teams <ArrowRight size={13} />
-                    </Link>
-                  </div>
-                  <p className="mt-2 text-xs text-[#A1A1A1]">
-                    Teams are event-specific. You can join an existing open roster or create your own team as leader.
-                  </p>
+        <div className="magizh-container py-12 md:py-16 space-y-12">
+          {/* Section 1: Overview & Dates */}
+          <section className="grid gap-8 lg:grid-cols-12">
+            <div className="lg:col-span-8 space-y-8">
+              <div className="magizh-card p-6 md:p-8">
+                <h3 className="magizh-heading text-2xl font-bold text-[#F5F3ED]">
+                  About the Event
+                </h3>
+                <div className="prose prose-invert mt-4 max-w-none text-xs leading-relaxed text-[#A1A1A1] space-y-4">
+                  <p>{event.description || "Official challenge by Magizh Technologies."}</p>
                 </div>
               </div>
 
-              {/* Sidebar Info */}
-              <div className="lg:col-span-4 space-y-6">
-                <div className="magizh-card p-6">
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-[#D4AF37]">
-                    IMPORTANT DATES
-                  </h4>
-                  <div className="mt-4 space-y-3 text-xs">
-                    <div className="flex justify-between border-b border-[#252525] pb-2">
-                      <span className="text-[#A1A1A1]">Registration Opens:</span>
-                      <span className="font-mono">{event.created_at ? new Date(event.created_at).toLocaleDateString() : "Active"}</span>
-                    </div>
-                    <div className="flex justify-between border-b border-[#252525] pb-2">
-                      <span className="text-[#A1A1A1]">Event Starts:</span>
-                      <span className="font-mono text-[#D4AF37]">{event.start_date ? new Date(event.start_date).toLocaleDateString() : "TBA"}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-[#A1A1A1]">Final Submissions:</span>
-                      <span className="font-mono">{event.end_date ? new Date(event.end_date).toLocaleDateString() : "TBA"}</span>
-                    </div>
+              {/* Team & Collaboration */}
+              <div className="magizh-card p-6 md:p-8">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <span className="text-[10px] uppercase tracking-[0.25em] text-[#D4AF37]">
+                      COLLABORATION
+                    </span>
+                    <h3 className="text-xl font-bold text-[#F5F3ED]">
+                      Event Teams
+                    </h3>
                   </div>
+                  <Link
+                    href={`/events/${eventId}/teams`}
+                    className="inline-flex items-center gap-1 text-xs font-semibold text-[#D4AF37] hover:underline"
+                  >
+                    Browse All Teams <ArrowRight size={13} />
+                  </Link>
                 </div>
-              </div>
-            </div>
-          )}
-
-          {/* TAB: CHALLENGE */}
-          {activeTab === "challenge" && (
-            <div className="magizh-card p-8 space-y-6">
-              <h3 className="magizh-heading text-2xl font-bold">
-                Problem Statements & Themes
-              </h3>
-              <p className="text-xs text-[#A1A1A1] leading-relaxed">
-                Build real-world solutions that demonstrate creativity, technical depth, and scalability. Participants are encouraged to submit working code, demo links, and architectural documentation.
-              </p>
-              <div className="rounded-xl border border-[#252525] bg-[#000000] p-6 space-y-3">
-                <span className="font-mono text-xs font-bold text-[#D4AF37]">CHALLENGE THEMES:</span>
-                <p className="text-xs text-[#F5F3ED]">
-                  Artificial Intelligence • Cloud & Distributed Systems • Web Innovation • Embedded & IoT
+                <p className="mt-2 text-xs text-[#A1A1A1]">
+                  Teams are event-specific. You can join an existing open roster or create your own team as leader.
                 </p>
               </div>
             </div>
-          )}
 
-          {/* TAB: TIMELINE */}
-          {activeTab === "timeline" && (
-            <div className="magizh-card p-8">
-              <h3 className="magizh-heading text-2xl font-bold mb-6">
-                Event Rounds & Timeline
-              </h3>
-              {rounds.length === 0 ? (
-                <p className="text-xs text-[#A1A1A1]">Official rounds will be published shortly before kickoff.</p>
-              ) : (
-                <div className="space-y-4">
-                  {rounds.map((r, idx) => (
-                    <div key={r.id} className="rounded-lg border border-[#252525] bg-[#000000] p-4 flex justify-between items-center">
-                      <div>
-                        <span className="font-mono text-[10px] text-[#D4AF37]">ROUND {idx + 1}</span>
-                        <h4 className="font-bold text-sm text-[#F5F3ED]">{r.title}</h4>
-                      </div>
-                      <span className="text-xs font-mono text-[#A1A1A1]">{r.status}</span>
-                    </div>
-                  ))}
+            {/* Sidebar / Important Dates */}
+            <div className="lg:col-span-4 space-y-6">
+              <div className="magizh-card p-6">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-[#D4AF37]">
+                  IMPORTANT DATES
+                </h4>
+                <div className="mt-4 space-y-3 text-xs">
+                  <div className="flex justify-between border-b border-[#252525] pb-2">
+                    <span className="text-[#A1A1A1]">Registration Opens:</span>
+                    <span className="font-mono">{event.created_at ? new Date(event.created_at).toLocaleDateString() : "Open"}</span>
+                  </div>
+                  <div className="flex justify-between border-b border-[#252525] pb-2">
+                    <span className="text-[#A1A1A1]">Event Starts:</span>
+                    <span className="font-mono text-[#D4AF37]">{event.start_date ? new Date(event.start_date).toLocaleDateString() : "TBA"}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-[#A1A1A1]">Final Submissions:</span>
+                    <span className="font-mono">{event.end_date ? new Date(event.end_date).toLocaleDateString() : "TBA"}</span>
+                  </div>
                 </div>
-              )}
+              </div>
             </div>
-          )}
+          </section>
 
-          {/* TAB: RULES */}
-          {activeTab === "rules" && (
-            <div className="magizh-card p-8 space-y-4">
-              <h3 className="magizh-heading text-2xl font-bold">Rules & Eligibility</h3>
-              <ul className="space-y-3 text-xs text-[#A1A1A1] list-disc pl-5 leading-relaxed">
-                <li>All team members must hold an active, verified Magizh Student ID.</li>
-                <li>Projects must be original work developed during the specified hackathon window.</li>
-                <li>All submissions require a publicly accessible Git repository and working demo URL.</li>
-                <li>Leadership changes and team rosters freeze upon final project submission.</li>
-              </ul>
-            </div>
-          )}
-
-          {/* TAB: PRIZES */}
-          {activeTab === "prizes" && (
-            <div className="magizh-card p-8">
-              <h3 className="magizh-heading text-2xl font-bold">Prizes & Recognition</h3>
-              <p className="mt-2 text-xs text-[#D4AF37] font-mono font-bold">
-                {event.prize_pool || "Official Cash Awards & Verified Magizh Merit Certificates"}
+          {/* Section 2: Problem Statements & Themes */}
+          <section className="magizh-card p-6 md:p-8 space-y-6">
+            <h3 className="magizh-heading text-2xl font-bold">
+              Problem Statements & Themes
+            </h3>
+            <p className="text-xs text-[#A1A1A1] leading-relaxed">
+              Build real-world solutions that demonstrate creativity, technical depth, and scalability. Participants are encouraged to submit working code, demo links, and architectural documentation.
+            </p>
+            <div className="rounded-xl border border-[#252525] bg-[#000000] p-6 space-y-3">
+              <span className="font-mono text-xs font-bold text-[#D4AF37]">CHALLENGE THEMES:</span>
+              <p className="text-xs text-[#F5F3ED]">
+                Artificial Intelligence • Cloud & Distributed Systems • Web Innovation • Embedded & IoT
               </p>
-              <div className="mt-6 grid gap-4 sm:grid-cols-3">
-                <div className="rounded-xl border border-[#D4AF37]/50 bg-[#000000] p-5 text-center">
-                  <Trophy size={28} className="mx-auto text-[#D4AF37]" />
-                  <h4 className="mt-3 font-bold text-sm">1st Place Winner</h4>
-                  <p className="text-xs text-[#A1A1A1] mt-1">Cash Award + Winner Badge</p>
-                </div>
-                <div className="rounded-xl border border-[#252525] bg-[#000000] p-5 text-center">
-                  <Award size={28} className="mx-auto text-[#A1A1A1]" />
-                  <h4 className="mt-3 font-bold text-sm">2nd Place Runner Up</h4>
-                  <p className="text-xs text-[#A1A1A1] mt-1">Certificate of Excellence</p>
-                </div>
-                <div className="rounded-xl border border-[#252525] bg-[#000000] p-5 text-center">
-                  <ShieldCheck size={28} className="mx-auto text-[#6FAF7B]" />
-                  <h4 className="mt-3 font-bold text-sm">All Finalists</h4>
-                  <p className="text-xs text-[#A1A1A1] mt-1">Official Magizh Certificate</p>
-                </div>
-              </div>
             </div>
-          )}
+          </section>
 
-          {/* TAB: SPONSORS */}
-          {activeTab === "sponsors" && (
-            <div className="magizh-card p-8">
-              <h3 className="magizh-heading text-2xl font-bold mb-6">Ecosystem Partners & Sponsors</h3>
-              {sponsors.length === 0 ? (
-                <p className="text-xs text-[#A1A1A1]">Organized exclusively by Magizh Technologies.</p>
-              ) : (
-                <div className="grid gap-4 sm:grid-cols-3">
-                  {sponsors.map((sp) => (
-                    <div key={sp.id} className="rounded-lg border border-[#252525] bg-[#000000] p-4 text-center">
-                      <p className="font-bold text-sm text-[#F5F3ED]">{sp.name}</p>
-                      <span className="text-[10px] text-[#D4AF37] uppercase">Official Partner</span>
+          {/* Section 3: Timeline & Rounds */}
+          <section className="magizh-card p-6 md:p-8">
+            <h3 className="magizh-heading text-2xl font-bold mb-6">
+              Event Rounds & Timeline
+            </h3>
+            {rounds.length === 0 ? (
+              <p className="text-xs text-[#A1A1A1]">Official rounds will be published shortly before kickoff.</p>
+            ) : (
+              <div className="space-y-4">
+                {rounds.map((r, idx) => (
+                  <div key={r.id} className="rounded-lg border border-[#252525] bg-[#000000] p-4 flex justify-between items-center">
+                    <div>
+                      <span className="font-mono text-[10px] text-[#D4AF37]">ROUND {idx + 1}</span>
+                      <h4 className="font-bold text-sm text-[#F5F3ED]">{r.title}</h4>
                     </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
+                    <span className="text-xs font-mono text-[#A1A1A1]">{r.status}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
 
-
-          {/* TAB: FAQ */}
-          {activeTab === "faq" && (
-            <div className="magizh-card p-8 space-y-6">
-              <h3 className="magizh-heading text-2xl font-bold">Frequently Asked Questions</h3>
-              <div className="space-y-4 text-xs">
-                <div className="rounded-lg border border-[#252525] p-4">
-                  <h4 className="font-bold text-[#F5F3ED]">Can I participate as a solo developer?</h4>
-                  <p className="mt-1 text-[#A1A1A1]">
-                    If minimum team size is 1, solo participation is allowed. Otherwise, browse the Event Teams page to find or invite teammates.
-                  </p>
-                </div>
-                <div className="rounded-lg border border-[#252525] p-4">
-                  <h4 className="font-bold text-[#F5F3ED]">How are certificates issued?</h4>
-                  <p className="mt-1 text-[#A1A1A1]">
-                    Certificates are cryptographically issued to your Magizh Student ID immediately after official results are published.
-                  </p>
-                </div>
+          {/* Section 4: Prizes & Recognition */}
+          <section className="magizh-card p-6 md:p-8">
+            <h3 className="magizh-heading text-2xl font-bold">Prizes & Recognition</h3>
+            <p className="mt-2 text-xs text-[#D4AF37] font-mono font-bold">
+              {event.prize_pool || "Official Cash Awards & Verified Magizh Merit Certificates"}
+            </p>
+            <div className="mt-6 grid gap-4 sm:grid-cols-3">
+              <div className="rounded-xl border border-[#D4AF37]/50 bg-[#000000] p-5 text-center">
+                <Trophy size={28} className="mx-auto text-[#D4AF37]" />
+                <h4 className="mt-3 font-bold text-sm">1st Place Winner</h4>
+                <p className="text-xs text-[#A1A1A1] mt-1">Cash Award + Winner Badge</p>
+              </div>
+              <div className="rounded-xl border border-[#252525] bg-[#000000] p-5 text-center">
+                <Award size={28} className="mx-auto text-[#A1A1A1]" />
+                <h4 className="mt-3 font-bold text-sm">2nd Place Runner Up</h4>
+                <p className="text-xs text-[#A1A1A1] mt-1">Certificate of Excellence</p>
+              </div>
+              <div className="rounded-xl border border-[#252525] bg-[#000000] p-5 text-center">
+                <ShieldCheck size={28} className="mx-auto text-[#6FAF7B]" />
+                <h4 className="mt-3 font-bold text-sm">All Finalists</h4>
+                <p className="text-xs text-[#A1A1A1] mt-1">Official Magizh Certificate</p>
               </div>
             </div>
-          )}
-        </section>
+          </section>
+
+          {/* Section 5: Rules & Eligibility */}
+          <section className="magizh-card p-6 md:p-8 space-y-4">
+            <h3 className="magizh-heading text-2xl font-bold">Rules & Eligibility</h3>
+            <ul className="space-y-3 text-xs text-[#A1A1A1] list-disc pl-5 leading-relaxed">
+              <li>All team members must hold an active, verified Magizh Student ID.</li>
+              <li>Projects must be original work developed during the specified hackathon window.</li>
+              <li>All submissions require a publicly accessible Git repository and working demo URL.</li>
+              <li>Leadership changes and team rosters freeze upon final project submission.</li>
+            </ul>
+          </section>
+
+          {/* Section 6: Ecosystem Partners & Sponsors */}
+          <section className="magizh-card p-6 md:p-8">
+            <h3 className="magizh-heading text-2xl font-bold mb-6">Ecosystem Partners & Sponsors</h3>
+            {sponsors.length === 0 ? (
+              <p className="text-xs text-[#A1A1A1]">Organized exclusively by Magizh Technologies.</p>
+            ) : (
+              <div className="grid gap-4 sm:grid-cols-3">
+                {sponsors.map((sp) => (
+                  <div key={sp.id} className="rounded-lg border border-[#252525] bg-[#000000] p-4 text-center">
+                    <p className="font-bold text-sm text-[#F5F3ED]">{sp.name}</p>
+                    <span className="text-[10px] text-[#D4AF37] uppercase">Official Partner</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+
+          {/* Section 7: FAQ */}
+          <section className="magizh-card p-6 md:p-8 space-y-6">
+            <h3 className="magizh-heading text-2xl font-bold">Frequently Asked Questions</h3>
+            <div className="space-y-4 text-xs">
+              <div className="rounded-lg border border-[#252525] p-4">
+                <h4 className="font-bold text-[#F5F3ED]">Can I participate as a solo developer?</h4>
+                <p className="mt-1 text-[#A1A1A1]">
+                  If minimum team size is 1, solo participation is allowed. Otherwise, browse the Event Teams page to find or invite teammates.
+                </p>
+              </div>
+              <div className="rounded-lg border border-[#252525] p-4">
+                <h4 className="font-bold text-[#F5F3ED]">How are certificates issued?</h4>
+                <p className="mt-1 text-[#A1A1A1]">
+                  Certificates are cryptographically issued to your Magizh Student ID immediately after official results are published.
+                </p>
+              </div>
+            </div>
+          </section>
+        </div>
       </main>
 
       <Footer />

@@ -45,10 +45,14 @@ export default function ResultsPage() {
               getEventResults(eventId),
             ]);
 
+            const items = Array.isArray(eventResults)
+              ? eventResults
+              : (eventResults.results || eventResults.items || []);
+
             results.push({
               eventId,
               title: event.title,
-              results: eventResults,
+              results: items,
             });
           } catch {
             // Ignore events whose results are unavailable.
@@ -72,7 +76,7 @@ export default function ResultsPage() {
   }
 
   function getProjectName(result: EventResult) {
-    return result.project_name || result.project_id || "Project";
+    return result.project_name || result.project_title || result.project_id || "Project";
   }
 
   function getTeamName(result: EventResult) {
@@ -211,13 +215,18 @@ export default function ResultsPage() {
                           <td className="px-6 py-5">
                             {result.score !== undefined
                               ? result.score
-                              : "-"}
+                              : (result.final_score !== undefined
+                                  ? result.final_score
+                                  : (result.total_score !== undefined
+                                      ? result.total_score
+                                      : "-"))}
                           </td>
 
                           <td className="px-6 py-5">
                             <span className="text-sm font-semibold">
                               {result.result ||
                                 result.prize ||
+                                result.award ||
                                 result.status ||
                                 "-"}
                             </span>

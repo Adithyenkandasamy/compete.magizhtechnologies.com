@@ -1,18 +1,26 @@
 import apiClient from "./api-client";
 
 export type EventResult = {
-  rank: number;
+  id?: string;
+  rank?: number;
+  position?: number;
   submission_id?: string;
-  project_id: string;
-  team_id: string;
+  project_id?: string;
+  project_name?: string;
+  team_id?: string;
   project_title?: string;
   project_description?: string;
   team_name?: string;
   team_members?: string[];
   final_score?: number;
   total_score?: number;
+  score?: number;
   award?: string;
+  prize?: string;
+  result?: string;
+  status?: string;
   is_winner?: boolean;
+  [key: string]: unknown;
 };
 
 export type ResultsResponse = {

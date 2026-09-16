@@ -25,12 +25,6 @@ export function Footer() {
             <p className="max-w-md text-xs leading-relaxed text-[#A1A1A1]">
               The official innovation and student competition ecosystem of Magizh Technologies. One permanent verified student identity. Year-round opportunities to build, compete, and showcase.
             </p>
-
-            <div className="flex items-center gap-4 text-xs font-mono text-[#D4AF37]">
-              <span>● SYSTEM ACTIVE</span>
-              <span>•</span>
-              <span>MZ-INNOVATION-v2.0</span>
-            </div>
           </div>
 
           {/* Navigation Links */}

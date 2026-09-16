@@ -148,7 +148,7 @@ export default function CertificatesPage() {
 
                     <div className="flex justify-between">
                       <span>Issued:</span>
-                      <span className="font-mono">{new Date(cert.issued_at).toLocaleDateString()}</span>
+                      <span className="font-mono">{cert.issued_at ? new Date(cert.issued_at).toLocaleDateString() : "—"}</span>
                     </div>
 
                     <div className="flex justify-between">
