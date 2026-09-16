@@ -2,9 +2,10 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { IdCard, Loader2, ShieldCheck, User } from "lucide-react";
+import { Camera, IdCard, Loader2, ShieldCheck, Trash2, User } from "lucide-react";
 
 import { getMyProfile, updateMyProfile } from "@/lib/profile-api";
+import { uploadUserAvatar, removeUserAvatar } from "@/lib/uploads-api";
 import { useAuth } from "@/providers/auth-provider";
 import type { Profile } from "@/types/auth";
 import { getErrorMessage } from "@/lib/error-message";
@@ -19,6 +20,8 @@ export default function ProfilePage() {
 
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isIdModalOpen, setIsIdModalOpen] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
 
   // Form state
   const [fullName, setFullName] = useState("");
@@ -60,6 +63,7 @@ export default function ProfilePage() {
         setLinkedinUrl(data.linkedin_url || "");
         setGithubUrl(data.github_url || "");
         setPortfolioUrl(data.portfolio_url || "");
+        setAvatarUrl(data.avatar_url || null);
       } catch {
         setError("Unable to load your profile.");
       } finally {
@@ -71,6 +75,46 @@ export default function ProfilePage() {
       loadProfile();
     }
   }, [status]);
+
+  async function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setIsUploadingAvatar(true);
+      setError("");
+      setSuccess("");
+      const res = await uploadUserAvatar(file);
+      setAvatarUrl(res.avatar_url);
+      if (profile) {
+        setProfile({ ...profile, avatar_url: res.avatar_url });
+      }
+      setSuccess("Avatar compressed and uploaded to Cloudinary successfully.");
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, "Failed to upload avatar."));
+    } finally {
+      setIsUploadingAvatar(false);
+      e.target.value = "";
+    }
+  }
+
+  async function handleAvatarRemove() {
+    try {
+      setIsUploadingAvatar(true);
+      setError("");
+      setSuccess("");
+      await removeUserAvatar();
+      setAvatarUrl(null);
+      if (profile) {
+        setProfile({ ...profile, avatar_url: null });
+      }
+      setSuccess("Avatar removed successfully.");
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, "Failed to remove avatar."));
+    } finally {
+      setIsUploadingAvatar(false);
+    }
+  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -159,6 +203,71 @@ export default function ProfilePage() {
         <div className="grid gap-10 lg:grid-cols-[1fr_340px]">
           {/* LEFT: EDITABLE FORM */}
           <section className="rounded-xl border border-[#252525] bg-[#0A0A0A] p-6 md:p-8">
+            {/* AVATAR UPLOAD SECTION */}
+            <div className="mb-8 flex flex-col sm:flex-row sm:items-center gap-6 border-b border-[#252525] pb-8">
+              <div className="relative group">
+                <div className="h-24 w-24 overflow-hidden rounded-full border-2 border-[#D4AF37]/50 bg-[#151515] flex items-center justify-center shadow-lg shadow-[#D4AF37]/10">
+                  {avatarUrl ? (
+                    <img
+                      src={avatarUrl}
+                      alt={fullName || "User Avatar"}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center bg-[#1A1A1A] text-2xl font-bold text-[#D4AF37]">
+                      {fullName ? fullName.charAt(0).toUpperCase() : <User className="h-10 w-10 text-[#D4AF37]" />}
+                    </div>
+                  )}
+                </div>
+
+                {isUploadingAvatar && (
+                  <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/75">
+                    <Loader2 className="h-6 w-6 animate-spin text-[#D4AF37]" />
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-2 flex-1">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-sm font-bold uppercase tracking-wider text-[#F5F3ED]">
+                    Profile Avatar
+                  </h3>
+                  <span className="rounded bg-[#D4AF37]/10 px-2 py-0.5 text-[9px] font-semibold text-[#D4AF37] border border-[#D4AF37]/30">
+                    Auto-Compressed via Cloudinary
+                  </span>
+                </div>
+                <p className="text-xs text-[#A1A1A1]">
+                  Upload your student photo. It will be compressed, auto-cropped to your face, and served via Cloudinary CDN.
+                </p>
+
+                <div className="flex flex-wrap items-center gap-3 pt-1">
+                  <label className="inline-flex cursor-pointer items-center gap-2 rounded border border-[#D4AF37]/40 bg-[#D4AF37]/10 px-3.5 py-2 text-xs font-semibold uppercase tracking-wider text-[#D4AF37] transition hover:bg-[#D4AF37] hover:text-black">
+                    <Camera size={13} />
+                    <span>{avatarUrl ? "Change Photo" : "Upload Photo"}</span>
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp,image/gif"
+                      className="hidden"
+                      onChange={handleAvatarChange}
+                      disabled={isUploadingAvatar}
+                    />
+                  </label>
+
+                  {avatarUrl && (
+                    <button
+                      type="button"
+                      onClick={handleAvatarRemove}
+                      disabled={isUploadingAvatar}
+                      className="inline-flex items-center gap-1.5 rounded border border-[#C75C5C]/40 bg-[#C75C5C]/10 px-3 py-2 text-xs font-semibold uppercase tracking-wider text-[#C75C5C] transition hover:bg-[#C75C5C] hover:text-white disabled:opacity-50"
+                    >
+                      <Trash2 size={13} />
+                      Remove
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+
             <form onSubmit={handleSubmit} className="space-y-6">
               <div>
                 <label htmlFor="fullName" className="mb-2 block text-xs font-semibold uppercase tracking-wider text-[#A1A1A1]">
@@ -352,6 +461,22 @@ export default function ProfilePage() {
                   <ShieldCheck size={12} />
                   ACTIVE
                 </span>
+              </div>
+
+              <div className="flex items-center gap-3 border-b border-[#252525] pb-3">
+                <div className="h-12 w-12 overflow-hidden rounded-full border border-[#D4AF37]/50 bg-[#151515] flex-shrink-0 flex items-center justify-center">
+                  {avatarUrl ? (
+                    <img src={avatarUrl} alt="Avatar" className="h-full w-full object-cover" />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center text-sm font-bold text-[#D4AF37]">
+                      {fullName ? fullName.charAt(0).toUpperCase() : <User size={18} className="text-[#D4AF37]" />}
+                    </div>
+                  )}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-semibold text-sm text-[#F5F3ED]">{fullName || "Student"}</p>
+                  <p className="truncate text-[10px] uppercase tracking-wider text-[#A1A1A1]">{college || "Magizh Scholar"}</p>
+                </div>
               </div>
 
               <div>

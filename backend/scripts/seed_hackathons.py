@@ -87,7 +87,7 @@ HACKATHONS = [
             "4. Submission must include a working demo + GitHub link.\n"
             "5. Plagiarism results in immediate disqualification."
         ),
-        "banner_url": "https://placehold.co/1200x400/6366f1/ffffff?text=HackFusion+2026",
+        "banner_url": None,
     },
     {
         "title": "InnoSprint: Sustainability Hack",
@@ -115,7 +115,7 @@ HACKATHONS = [
             "4. Final demo must be 5 minutes or less.\n"
             "5. Judges' decisions are final."
         ),
-        "banner_url": "https://placehold.co/1200x400/10b981/ffffff?text=InnoSprint+Sustainability",
+        "banner_url": None,
     },
 ]
 

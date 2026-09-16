@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { BackButton } from "@/components/ui/BackButton";
+import { BannerUploader } from "@/components/events/banner-uploader";
 import {
   createAdminEvent,
   type CreateEventRequest,
@@ -163,6 +164,12 @@ export default function CreateAdminEventPage() {
             />
 
             <div className="mt-8 space-y-6">
+              <BannerUploader
+                bannerUrl={form.banner_url}
+                onChange={(url) => updateField("banner_url", url || undefined)}
+                disabled={loading}
+              />
+
               <FormField
                 label="Event Title"
                 required

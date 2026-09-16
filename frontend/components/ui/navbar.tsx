@@ -1,37 +1,30 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import {
+  Award,
   Calendar,
-  Compass,
-  FileText,
+  FolderGit2,
+  Home,
   IdCard,
+  Loader2,
+  LogIn,
   LogOut,
-  Menu,
+  Radio,
+  Shield,
   Sparkles,
   Trophy,
   User,
-  Users,
-  X,
-  Shield,
 } from "lucide-react";
 
 import { useAuth } from "@/providers/auth-provider";
 import { MagizhIdModal } from "@/components/student/MagizhIdModal";
-import { Loader2 } from "lucide-react";
-
-type NavLink = {
-  href: string;
-  label: string;
-  live?: boolean;
-};
+import { FloatingDock, type FloatingDockItem } from "@/components/ui/floating-dock";
 
 export function Navbar() {
   const pathname = usePathname();
   const { user, status, logout } = useAuth();
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [idModalOpen, setIdModalOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
@@ -48,24 +41,104 @@ export function Navbar() {
     }
   }
 
-  // Public Links
-  const publicNavLinks: NavLink[] = [
-    { href: "/events", label: "Events" },
-    { href: "/events?status=LIVE", label: "Live", live: true },
-    { href: "/projects", label: "Projects" },
-  ];
-
-  // Student Links
-  const studentNavLinks: NavLink[] = [
-    { href: "/dashboard", label: "Home" },
-    { href: "/events", label: "Events" },
-    { href: "/dashboard/events", label: "My Events" },
-    { href: "/dashboard/teams", label: "My Teams" },
-    { href: "/dashboard/projects", label: "My Projects" },
-    { href: "/certificates", label: "Certificates" },
-  ];
-
-  const currentLinks = isAuthenticated ? studentNavLinks : publicNavLinks;
+  const dockItems: FloatingDockItem[] = isAuthenticated
+    ? [
+        {
+          title: "Home",
+          href: "/dashboard",
+          icon: <Home size={18} />,
+          active: pathname === "/dashboard",
+        },
+        {
+          title: "Events",
+          href: "/events",
+          icon: <Calendar size={18} />,
+          active: pathname === "/events" || (pathname.startsWith("/events/") && !pathname.includes("/dashboard")),
+        },
+        {
+          title: "My Events",
+          href: "/dashboard/events",
+          icon: <Trophy size={18} />,
+          active: pathname === "/dashboard/events",
+        },
+        {
+          title: "My Projects",
+          href: "/dashboard/projects",
+          icon: <FolderGit2 size={18} />,
+          active: pathname.startsWith("/dashboard/projects") || pathname.startsWith("/projects"),
+        },
+        {
+          title: "Certificates",
+          href: "/certificates",
+          icon: <Award size={18} />,
+          active: pathname.startsWith("/certificates"),
+        },
+        {
+          title: "ID Card",
+          onClick: () => setIdModalOpen(true),
+          icon: <IdCard size={18} className="text-[#D4AF37]" />,
+          active: idModalOpen,
+        },
+        {
+          title: "Profile",
+          href: "/profile",
+          icon: <User size={18} />,
+          active: pathname === "/profile",
+        },
+        ...(isAdmin
+          ? [
+              {
+                title: "Command Center",
+                href: "/admin",
+                icon: <Shield size={18} className="text-[#D4AF37]" />,
+                active: pathname.startsWith("/admin"),
+              },
+            ]
+          : []),
+        {
+          title: "Sign Out",
+          onClick: handleLogout,
+          icon: <LogOut size={18} className="text-[#C75C5C]" />,
+        },
+      ]
+    : [
+        {
+          title: "Home",
+          href: "/",
+          icon: <Home size={18} />,
+          active: pathname === "/",
+        },
+        {
+          title: "Events",
+          href: "/events",
+          icon: <Calendar size={18} />,
+          active: pathname === "/events",
+        },
+        {
+          title: "Live",
+          href: "/events?status=LIVE",
+          icon: <Radio size={18} className="text-[#6FAF7B]" />,
+          active: pathname === "/events?status=LIVE",
+        },
+        {
+          title: "Projects",
+          href: "/projects",
+          icon: <FolderGit2 size={18} />,
+          active: pathname.startsWith("/projects"),
+        },
+        {
+          title: "Sign In",
+          href: "/login",
+          icon: <LogIn size={18} />,
+          active: pathname === "/login",
+        },
+        {
+          title: "Join Magizh",
+          href: "/register",
+          icon: <Sparkles size={18} className="text-[#D4AF37]" />,
+          active: pathname === "/register",
+        },
+      ];
 
   return (
     <>
@@ -78,205 +151,17 @@ export function Navbar() {
         </div>
       )}
 
-      <header className="sticky top-0 z-40 w-full border-b border-[#252525] bg-[#000000]/90 backdrop-blur-md">
-        <div className="magizh-container flex h-20 items-center justify-between">
-          {/* BRAND */}
-          <Link href="/" className="group flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded border border-[#D4AF37]/40 bg-[#0A0A0A] text-[#D4AF37] shadow-[0_0_15px_rgba(212,175,55,0.15)] transition-all group-hover:border-[#D4AF37] group-hover:bg-[#D4AF37]/10">
-              <span className="font-mono text-base font-bold tracking-tighter">M</span>
-            </div>
-            <div>
-              <div className="text-sm font-bold uppercase tracking-[0.28em] text-[#F5F3ED]">
-                MAGIZH
-              </div>
-              <div className="text-[9px] uppercase tracking-[0.32em] text-[#D4AF37]">
-                INNOVATION PLATFORM
-              </div>
-            </div>
-          </Link>
+      {/* FLOATING DOCK NAVIGATION (DESKTOP CENTERED & MOBILE FLOATING) */}
+      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 hidden lg:block pointer-events-auto">
+        <FloatingDock items={dockItems} />
+      </div>
 
-          {/* DESKTOP NAVIGATION */}
-          <nav className="hidden items-center gap-6 lg:flex">
-            {currentLinks.map((link) => {
-              const isActive = pathname === link.href;
-              return (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className={`relative text-xs uppercase tracking-[0.16em] transition-colors ${
-                    isActive
-                      ? "font-semibold text-[#D4AF37]"
-                      : "text-[#A1A1A1] hover:text-[#F5F3ED]"
-                  }`}
-                >
-                  {link.label}
-                  {link.live && (
-                    <span className="ml-1.5 inline-block h-1.5 w-1.5 rounded-full bg-[#6FAF7B] animate-pulse" />
-                  )}
-                  {isActive && (
-                    <span className="absolute -bottom-2 left-0 right-0 h-[2px] bg-[#D4AF37]" />
-                  )}
-                </Link>
-              );
-            })}
-          </nav>
-
-          {/* ACTIONS */}
-          <div className="hidden items-center gap-4 lg:flex">
-            {isAuthenticated ? (
-              <>
-                {isAdmin && (
-                  <Link
-                    href="/admin"
-                    className="flex items-center gap-1.5 rounded border border-[#D4AF37]/50 bg-[#D4AF37]/10 px-3.5 py-2 text-xs font-semibold uppercase tracking-[0.15em] text-[#D4AF37] transition hover:bg-[#D4AF37] hover:text-black"
-                  >
-                    <Shield size={13} />
-                    Command Center
-                  </Link>
-                )}
-
-                <button
-                  type="button"
-                  onClick={() => setIdModalOpen(true)}
-                  className="flex items-center gap-1.5 rounded border border-[#252525] bg-[#0A0A0A] px-3.5 py-2 text-xs font-medium uppercase tracking-[0.15em] text-[#F5F3ED] transition hover:border-[#D4AF37] hover:text-[#D4AF37]"
-                >
-                  <IdCard size={14} className="text-[#D4AF37]" />
-                  ID Card
-                </button>
-
-                <Link
-                  href="/profile"
-                  className="flex items-center gap-1.5 rounded border border-[#252525] bg-[#0A0A0A] px-3.5 py-2 text-xs font-medium uppercase tracking-[0.15em] text-[#A1A1A1] transition hover:border-[#D4AF37] hover:text-[#F5F3ED]"
-                >
-                  <User size={14} />
-                  Profile
-                </Link>
-
-                <button
-                  type="button"
-                  onClick={handleLogout}
-                  className="rounded p-2 text-[#A1A1A1] transition hover:text-[#C75C5C]"
-                  title="Sign Out"
-                >
-                  <LogOut size={16} />
-                </button>
-              </>
-            ) : (
-              <>
-                <Link
-                  href="/login"
-                  className="px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-[#A1A1A1] transition hover:text-[#F5F3ED]"
-                >
-                  Login
-                </Link>
-                <Link
-                  href="/register"
-                  className="rounded bg-[#D4AF37] px-5 py-2.5 text-xs font-semibold uppercase tracking-[0.18em] text-black transition hover:bg-[#E5C04A]"
-                >
-                  Join Magizh
-                </Link>
-              </>
-            )}
-          </div>
-
-          {/* MOBILE MENU TOGGLE */}
-          <button
-            type="button"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="p-2 text-[#A1A1A1] transition hover:text-[#F5F3ED] lg:hidden"
-            aria-label="Toggle menu"
-          >
-            {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-          </button>
-        </div>
-
-        {/* MOBILE MENU */}
-        {mobileMenuOpen && (
-          <div className="border-b border-[#252525] bg-[#0A0A0A] px-5 py-6 lg:hidden">
-            <nav className="flex flex-col gap-4">
-              {currentLinks.map((link) => {
-                const isActive = pathname === link.href;
-                return (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    onClick={() => setMobileMenuOpen(false)}
-                    className={`text-sm uppercase tracking-[0.16em] ${
-                      isActive ? "font-bold text-[#D4AF37]" : "text-[#A1A1A1]"
-                    }`}
-                  >
-                    {link.label}
-                  </Link>
-                );
-              })}
-
-              <div className="mt-4 flex flex-col gap-3 border-t border-[#252525] pt-4">
-                {isAuthenticated ? (
-                  <>
-                    {isAdmin && (
-                      <Link
-                        href="/admin"
-                        onClick={() => setMobileMenuOpen(false)}
-                        className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-[#D4AF37]"
-                      >
-                        <Shield size={16} /> Command Center
-                      </Link>
-                    )}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setMobileMenuOpen(false);
-                        setIdModalOpen(true);
-                      }}
-                      className="flex items-center gap-2 text-left text-sm uppercase tracking-wider text-[#F5F3ED]"
-                    >
-                      <IdCard size={16} className="text-[#D4AF37]" /> View My Magizh ID
-                    </button>
-                    <Link
-                      href="/profile"
-                      onClick={() => setMobileMenuOpen(false)}
-                      className="flex items-center gap-2 text-sm uppercase tracking-wider text-[#A1A1A1]"
-                    >
-                      <User size={16} /> Profile
-                    </Link>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setMobileMenuOpen(false);
-                        handleLogout();
-                      }}
-                      className="flex items-center gap-2 text-left text-sm uppercase tracking-wider text-[#C75C5C]"
-                    >
-                      <LogOut size={16} /> Sign Out
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <Link
-                      href="/login"
-                      onClick={() => setMobileMenuOpen(false)}
-                      className="text-center text-sm uppercase tracking-wider text-[#A1A1A1]"
-                    >
-                      Login
-                    </Link>
-                    <Link
-                      href="/register"
-                      onClick={() => setMobileMenuOpen(false)}
-                      className="rounded bg-[#D4AF37] py-2.5 text-center text-xs font-semibold uppercase tracking-wider text-black"
-                    >
-                      Join Magizh
-                    </Link>
-                  </>
-                )}
-              </div>
-            </nav>
-          </div>
-        )}
-      </header>
+      <div className="fixed bottom-6 right-6 z-40 block lg:hidden pointer-events-auto">
+        <FloatingDock items={dockItems} />
+      </div>
 
       {/* STUDENT ID POPUP MODAL */}
       <MagizhIdModal isOpen={idModalOpen} onClose={() => setIdModalOpen(false)} />
     </>
   );
 }
-

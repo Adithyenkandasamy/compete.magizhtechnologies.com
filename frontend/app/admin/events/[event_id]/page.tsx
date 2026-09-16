@@ -6,6 +6,7 @@ import { useParams } from "next/navigation";
 import { PageLoader } from "@/components/loading";
 
 import { BackButton } from "@/components/ui/BackButton";
+import { BannerUploader } from "@/components/events/banner-uploader";
 import {
   getAdminEvent,
   updateAdminEvent,
@@ -42,6 +43,7 @@ type EventForm = {
   title: string;
   description: string;
   event_type: EventType;
+  banner_url: string;
   start_date: string;
   end_date: string;
   registration_deadline: string;
@@ -193,6 +195,7 @@ export default function AdminEventEditPage() {
         title: form.title.trim(),
         description: form.description.trim(),
         event_type: form.event_type,
+        banner_url: form.banner_url.trim() || undefined,
         start_date: form.start_date,
         end_date: form.end_date,
         registration_deadline: form.registration_deadline,
@@ -369,6 +372,13 @@ export default function AdminEventEditPage() {
             />
 
             <div className="mt-8 space-y-6">
+              <BannerUploader
+                bannerUrl={form.banner_url}
+                onChange={(url) => updateField("banner_url", url || "")}
+                eventId={eventId}
+                disabled={saving}
+              />
+
               <FormField
                 label="Event Title"
                 required
@@ -789,6 +799,7 @@ function createFormFromEvent(event: Event): EventForm {
     title: event.title,
     description: event.description,
     event_type: event.event_type,
+    banner_url: event.banner_url ?? "",
     start_date: toDateTimeLocal(event.start_date),
     end_date: toDateTimeLocal(event.end_date),
     registration_deadline: toDateTimeLocal(

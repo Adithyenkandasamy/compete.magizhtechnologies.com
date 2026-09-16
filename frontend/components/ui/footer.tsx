@@ -4,7 +4,7 @@ import { Sparkles, Shield, Trophy, Globe, Heart } from "lucide-react";
 export function Footer() {
   return (
     <footer className="border-t border-[#252525] bg-[#000000] text-[#A1A1A1]">
-      <div className="magizh-container py-16">
+      <div className="magizh-container py-16 pb-28">
         <div className="grid gap-10 md:grid-cols-4">
           {/* Brand */}
           <div className="space-y-4 md:col-span-2">

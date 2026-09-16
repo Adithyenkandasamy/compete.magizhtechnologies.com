@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import { ShieldCheck } from "lucide-react";
 import type { User, Profile, StudentIdentity } from "@/types/auth";
+import type { PublicStudentProfile } from "@/lib/public-api";
 import { formatMagizhStudentId, formatDateOfBirth } from "@/lib/student-id";
 import { QRCode } from "@/components/ui/qr-code";
 
@@ -10,6 +11,8 @@ export interface MagizhIdCardProps {
   user?: User | null;
   profile?: Profile | null;
   identity?: StudentIdentity | null;
+  publicProfile?: PublicStudentProfile | null;
+  isVerifiedScan?: boolean;
   className?: string;
 }
 
@@ -17,16 +20,20 @@ export function MagizhIdCard({
   user,
   profile,
   identity,
+  publicProfile,
+  isVerifiedScan = false,
   className = "",
 }: MagizhIdCardProps) {
   const fullName = (
+    publicProfile?.full_name ||
     identity?.full_name ||
     profile?.full_name ||
     user?.profile?.full_name ||
-    "ADITHYEN KANDASAMY"
+    "MAGIZH STUDENT"
   ).toUpperCase();
 
   const studentId = (
+    publicProfile?.magizh_student_id ||
     identity?.magizh_student_id ||
     profile?.magizh_student_id ||
     user?.profile?.magizh_student_id ||
@@ -38,13 +45,14 @@ export function MagizhIdCard({
   );
 
   const college = (
+    publicProfile?.college ||
     identity?.college ||
     profile?.college ||
     user?.profile?.college ||
-    "SNS COLLEGE OF ENGINEERING"
+    "MAGIZH INNOVATION NETWORK"
   ).toUpperCase();
 
-  const status = identity?.status || "ACTIVE STUDENT";
+  const status = publicProfile?.status || identity?.status || "ACTIVE STUDENT";
 
   // Verification URL for QR code (points to /student/verify/[magizhStudentId])
   const verifyUrl = useMemo(() => {
@@ -135,21 +143,35 @@ export function MagizhIdCard({
         </div>
       </div>
 
-      {/* LARGE QR CODE (occupying approx 35-45% of card visual area) */}
+      {/* LARGE QR CODE / VERIFIED STATUS */}
       <div className="relative z-10 border-t border-[#252525] pt-5">
-        <div className="flex flex-col items-center justify-center">
-          <div className="rounded-xl border border-[#252525] bg-white p-3.5 shadow-md">
-            <QRCode
-              value={verifyUrl}
-              size={160}
-              className="rounded"
-            />
+        {isVerifiedScan ? (
+          <div className="flex flex-col items-center justify-center py-3 text-center">
+            <div className="flex h-16 w-16 items-center justify-center rounded-full border border-[#6FAF7B]/40 bg-[#6FAF7B]/10 text-[#6FAF7B] shadow-[0_0_30px_rgba(111,175,123,0.25)]">
+              <ShieldCheck size={36} />
+            </div>
+            <p className="mt-3 font-mono text-sm font-bold uppercase tracking-[0.22em] text-[#6FAF7B]">
+              VERIFIED STUDENT
+            </p>
+            <p className="mt-1 text-[10px] uppercase tracking-wider text-[#A1A1A1]">
+              Magizh Technologies Registry
+            </p>
           </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center">
+            <div className="rounded-xl border border-[#252525] bg-white p-3.5 shadow-md">
+              <QRCode
+                value={verifyUrl}
+                size={160}
+                className="rounded"
+              />
+            </div>
 
-          <p className="mt-3 text-[9px] uppercase tracking-[0.2em] text-[#A1A1A1]">
-            SCAN TO VERIFY CREDENTIAL
-          </p>
-        </div>
+            <p className="mt-3 text-[9px] uppercase tracking-[0.2em] text-[#A1A1A1]">
+              SCAN TO VERIFY CREDENTIAL
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );

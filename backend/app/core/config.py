@@ -60,6 +60,29 @@ class Settings(BaseSettings):
         ]
     )
 
+    # Cloudinary Image Storage
+    cloudinary_cloud_name: str = Field(
+        default="dgh5j0ahr",
+        validation_alias=AliasChoices(
+            "CLOUDINARY_CLOUD_NAME",
+            "cloudinary_cloud_name",
+        ),
+    )
+    cloudinary_api_key: str = Field(
+        default="",
+        validation_alias=AliasChoices(
+            "CLOUDINARY_API_KEY",
+            "cloudinary_api_key",
+        ),
+    )
+    cloudinary_secret: str = Field(
+        default="",
+        validation_alias=AliasChoices(
+            "CLOUDINARY_SECRET",
+            "cloudinary_secret",
+        ),
+    )
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

@@ -1,7 +1,7 @@
 import uuid
 from typing import Optional
 
-from fastapi import APIRouter, Depends, Query, Request, status
+from fastapi import APIRouter, Depends, File, HTTPException, Query, Request, UploadFile, status
 
 from app.api.deps import SessionDep, require_admin
 from app.models.enums import EventStatus, EventType
@@ -11,6 +11,7 @@ from app.schemas.event import (
     EventUpdate,
     PaginatedResponse,
 )
+from app.services.cloudinary_service import cloudinary_service
 from app.services.event_service import EventService
 
 router = APIRouter(
@@ -142,3 +143,75 @@ async def unpublish_event(
     service = EventService(session)
     event = await service.unpublish_event(event_id, request)
     return event # type: ignore
+
+
+@router.post(
+    "/{event_id}/banner",
+    summary="Upload and compress event banner via Cloudinary",
+)
+async def upload_event_banner(
+    event_id: uuid.UUID,
+    session: SessionDep,
+    request: Request,
+    file: UploadFile = File(...),
+) -> dict:
+    """
+    Accepts an event banner image (JPEG, PNG, WEBP),
+    pre-compresses, uploads to Cloudinary with proportional 1600px width limit,
+    and updates Event.banner_url.
+    """
+    if not file.content_type or not file.content_type.startswith("image/"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="File must be an image (JPEG, PNG, WEBP).",
+        )
+
+    file_bytes = await file.read()
+    banner_url = await cloudinary_service.upload_event_banner(
+        image_bytes=file_bytes,
+        filename=file.filename or "banner.jpg",
+        event_id=event_id,
+    )
+
+    service = EventService(session)
+    event = await service.update_event(
+        event_id,
+        EventUpdate(banner_url=banner_url),
+        request,
+    )
+
+    return {
+        "message": "Event banner uploaded successfully",
+        "banner_url": banner_url,
+        "event_id": str(event.id),
+    }
+
+
+@router.post(
+    "/upload-banner",
+    summary="Upload and compress banner without associating to an existing event",
+)
+async def upload_standalone_banner(
+    file: UploadFile = File(...),
+) -> dict:
+    """
+    Upload and compress a banner image to Cloudinary.
+    Useful when creating a new event before saving.
+    Returns the Cloudinary CDN secure URL.
+    """
+    if not file.content_type or not file.content_type.startswith("image/"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="File must be an image (JPEG, PNG, WEBP).",
+        )
+
+    file_bytes = await file.read()
+    banner_url = await cloudinary_service.upload_event_banner(
+        image_bytes=file_bytes,
+        filename=file.filename or "banner.jpg",
+    )
+
+    return {
+        "message": "Banner uploaded successfully",
+        "banner_url": banner_url,
+    }

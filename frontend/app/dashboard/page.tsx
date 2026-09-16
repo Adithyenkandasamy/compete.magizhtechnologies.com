@@ -266,15 +266,15 @@ export default function DashboardPage() {
             {/* Quick Navigation Cards */}
             <div className="grid gap-4 sm:grid-cols-3">
               <Link
-                href="/dashboard/teams"
+                href="/dashboard/events"
                 className="magizh-card group p-5 transition-colors hover:border-[#D4AF37]"
               >
                 <Users size={18} className="text-[#D4AF37]" />
                 <h4 className="mt-3 font-bold text-[#F5F3ED] group-hover:text-[#D4AF37]">
-                  My Teams
+                  Event Teams
                 </h4>
                 <p className="magizh-muted mt-1 text-xs">
-                  Collaborate and manage event rosters.
+                  Manage your teams inside each registered event.
                 </p>
               </Link>
 
@@ -335,7 +335,7 @@ export default function DashboardPage() {
                   onClick={() => setIdModalOpen(true)}
                   className="w-full rounded border border-[#252525] bg-[#000000] py-2 text-xs font-semibold uppercase tracking-wider text-[#F5F3ED] hover:border-[#D4AF37]"
                 >
-                  Open Smart ID Card
+                  Open - ID Card
                 </button>
                 <Link
                   href="/my-id"
