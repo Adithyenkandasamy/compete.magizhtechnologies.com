@@ -35,6 +35,7 @@ import {
 import { getErrorMessage } from "@/lib/error-message";
 import { PageLoader } from "@/components/loading";
 import { BackButton } from "@/components/ui/BackButton";
+import { useAuth } from "@/providers/auth-provider";
 
 type TeamMember = {
     id: string;
@@ -50,6 +51,7 @@ type TeamWithMembers = Team & {
 export default function TeamDetailsPage() {
     const params = useParams();
     const router = useRouter();
+    const { user } = useAuth();
 
     const teamId = params.team_id as string;
 
@@ -81,6 +83,14 @@ export default function TeamDetailsPage() {
     const [inviteLink, setInviteLink] = useState("");
     const [isGeneratingInvite, setIsGeneratingInvite] = useState(false);
     const [inviteCopied, setInviteCopied] = useState(false);
+
+    /*
+     * Leader-only actions (invite, delete) are gated on the
+     * current user being the team leader.
+     */
+    const isLeader = Boolean(
+        team && user && team.leader_id === user.id,
+    );
 
     /*
      * Load team details.
@@ -765,7 +775,7 @@ export default function TeamDetailsPage() {
                                         member.email ||
                                         memberId;
 
-                                    const isLeader =
+                                    const isMemberLeader =
                                         memberId === team.leader_id;
 
                                     const isProcessing =
@@ -784,7 +794,7 @@ export default function TeamDetailsPage() {
                                                             {memberName}
                                                         </p>
 
-                                                        {isLeader && (
+                                                        {isMemberLeader && (
                                                             <span className="rounded border border-[#D4AF37]/40 bg-[#D4AF37]/10 px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-[#D4AF37]">
                                                                 Leader
                                                             </span>
@@ -802,7 +812,7 @@ export default function TeamDetailsPage() {
                                                     </p>
                                                 </div>
 
-                                                {!isLeader && (
+                                                {isLeader && !isMemberLeader && (
                                                     <div className="flex flex-col gap-2 sm:flex-row">
                                                         <button
                                                             type="button"
@@ -988,19 +998,30 @@ export default function TeamDetailsPage() {
                             Manage your participation in this team.
                         </p>
 
+                        {!isLeader && (
+                        <div className="rounded border border-[#252525] bg-[#0A0A0A] p-4">
+                            <p className="magizh-muted text-xs">
+                                Only the team leader can generate an
+                                invite link.
+                            </p>
+                        </div>
+                    )}
+
                         <div className="mt-6 space-y-3">
-                            <button
-                                type="button"
-                                onClick={handleGenerateInvite}
-                                disabled={
-                                    isGeneratingInvite || isLeaving || isDeleting
-                                }
-                                className="w-full rounded border border-[#D4AF37]/50 px-4 py-3 text-sm font-semibold text-[#D4AF37] transition-colors hover:bg-[#D4AF37]/10 disabled:cursor-not-allowed disabled:opacity-50"
-                            >
-                                {isGeneratingInvite
-                                    ? "Generating..."
-                                    : "Generate Invite Link"}
-                            </button>
+                            {isLeader && (
+                                <button
+                                    type="button"
+                                    onClick={handleGenerateInvite}
+                                    disabled={
+                                        isGeneratingInvite || isLeaving || isDeleting
+                                    }
+                                    className="w-full rounded border border-[#D4AF37]/50 px-4 py-3 text-sm font-semibold text-[#D4AF37] transition-colors hover:bg-[#D4AF37]/10 disabled:cursor-not-allowed disabled:opacity-50"
+                                >
+                                    {isGeneratingInvite
+                                        ? "Generating..."
+                                        : "Generate Invite Link"}
+                                </button>
+                            )}
 
                             <button
                                 type="button"
@@ -1015,21 +1036,23 @@ export default function TeamDetailsPage() {
                                     : "Leave Team"}
                             </button>
 
-                            <button
-                                type="button"
-                                onClick={handleDeleteTeam}
-                                disabled={
-                                    isDeleting || isLeaving
-                                }
-                                className="w-full rounded border border-[#C75C5C]/50 px-4 py-3 text-sm font-semibold text-[#C75C5C] transition-colors hover:bg-[#C75C5C]/10 disabled:cursor-not-allowed disabled:opacity-50"
-                            >
-                                {isDeleting
-                                    ? "Deleting..."
-                                    : "Delete Team"}
-                            </button>
+                            {isLeader && (
+                                <button
+                                    type="button"
+                                    onClick={handleDeleteTeam}
+                                    disabled={
+                                        isDeleting || isLeaving
+                                    }
+                                    className="w-full rounded border border-[#C75C5C]/50 px-4 py-3 text-sm font-semibold text-[#C75C5C] transition-colors hover:bg-[#C75C5C]/10 disabled:cursor-not-allowed disabled:opacity-50"
+                                >
+                                    {isDeleting
+                                        ? "Deleting..."
+                                        : "Delete Team"}
+                                </button>
+                            )}
                         </div>
 
-                        {inviteLink && (
+                        {inviteLink && isLeader && (
                             <div className="mt-5 rounded border border-[#252525] bg-[#0A0A0A] p-4">
                                 <p className="magizh-gold text-[10px] font-semibold uppercase tracking-[0.2em]">
                                     Invite Link

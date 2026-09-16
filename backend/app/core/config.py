@@ -1,3 +1,5 @@
+import re
+
 from pydantic import AliasChoices, Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -30,6 +32,34 @@ class Settings(BaseSettings):
         # For asyncpg, sslmode=require should be ssl=require
         if "sslmode=require" in cleaned:
             cleaned = cleaned.replace("sslmode=require", "ssl=require")
+
+        # Rewrite Supabase direct (IPv6-only) host to the IPv4 connection
+        # pooler. The `db.<ref>.supabase.co` direct host only publishes an
+        # IPv6 AAAA record. Serverless runtimes (Vercel Lambda, fastAPI on
+        # AWS, etc.) are IPv4-only, so the attempt to open a TCP/SSL
+        # connection fails with `[Errno 99] Cannot assign requested address`.
+        # The pooler (aws-0-<region>.pooler.supabase.com) is IPv4 and is the
+        # supported connection path for serverless environments.
+        match = re.match(
+            r"^(postgresql\+asyncpg)://(?P<user>[^:]+):(?P<password>[^@]*)@"
+            r"db\.(?P<ref>[a-z0-9]+)\.supabase\.co:(?P<port>\d+)/(?P<dbname>[^?]+)"
+            r"(?P<query>\?.*)?$",
+            cleaned,
+        )
+        if match:
+            import os
+
+            pooler_host = (
+                os.getenv("SUPABASE_POOLER_HOST", "")
+                or "aws-0-ap-southeast-2.pooler.supabase.com"
+            ).strip()
+            pooler_port = os.getenv("SUPABASE_POOLER_PORT", "6543").strip() or "6543"
+            pooler_user = f"postgres.{match.group('ref')}"
+            cleaned = (
+                f"postgresql+asyncpg://{pooler_user}:{match.group('password')}"
+                f"@{pooler_host}:{pooler_port}/{match.group('dbname')}"
+                f"{match.group('query') or ''}"
+            )
 
         return cleaned
 
