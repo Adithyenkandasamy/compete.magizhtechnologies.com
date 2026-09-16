@@ -2,6 +2,7 @@ import apiClient from "@/lib/api-client";
 import type { Project, ProjectPayload } from "@/types/project";
 
 export type { Project, ProjectPayload };
+export type UpdateProjectRequest = Partial<ProjectPayload>;
 
 /* =========================
    Submission Types

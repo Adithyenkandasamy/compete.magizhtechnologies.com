@@ -13,8 +13,9 @@ export type Certificate = {
   issued_at?: string | null;
   created_at?: string | null;
   updated_at?: string | null;
-  [key: string]: unknown;
+  [key: string]: any;
 };
+
 
 
 export async function getMyCertificates(): Promise<Certificate[]> {

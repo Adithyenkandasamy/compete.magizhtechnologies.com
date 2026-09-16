@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { Search, FolderGit2, Sparkles, ExternalLink, Github, Globe, ArrowRight } from "lucide-react";
+import { Search, FolderGit2, Sparkles, ExternalLink, Globe, ArrowRight } from "lucide-react";
 
 import { getProjects, type Project } from "@/lib/projects-api";
 import { Navbar } from "@/components/ui/navbar";

@@ -5,9 +5,9 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   FolderGit2,
-  Github,
   Globe,
   Video,
+
   CheckCircle2,
   Lock,
   Edit3,
