@@ -1,9 +1,9 @@
 import uuid
-from typing import List
+from typing import List, Optional
 
-from fastapi import APIRouter, Depends, Request, status
+from fastapi import APIRouter, Depends, Query, Request, status
 
-from app.api.deps import SessionDep, get_current_user
+from app.api.deps import SessionDep, get_current_user, get_optional_user
 from app.models.team import Team
 from app.models.user import User
 from app.schemas.team import TeamCreate, TeamResponse, TeamUpdate
@@ -12,7 +12,6 @@ from app.services.team_service import TeamService
 router = APIRouter(
     prefix="/api",
     tags=["Teams"],
-    dependencies=[Depends(get_current_user)],
 )
 
 
@@ -51,18 +50,26 @@ async def create_team(
 @router.get(
     "/events/{event_id}/teams",
     response_model=List[TeamResponse],
-    summary="List the current user's teams for an event",
+    summary="List teams for an event",
 )
 async def list_event_teams(
     event_id: uuid.UUID,
     session: SessionDep,
-    current_user: User = Depends(get_current_user),
+    my_teams_only: bool = Query(False),
+    current_user: Optional[User] = Depends(get_optional_user),
 ) -> List[TeamResponse]:
     """
-    Returns every team the authenticated user belongs to within the given event.
+    Returns teams for the given event.
+    If my_teams_only is True, returns only teams the authenticated user belongs to.
+    Otherwise, returns all teams registered for the event.
     """
     service = TeamService(session)
-    teams = await service.list_user_teams_for_event(current_user.id, event_id)
+    if my_teams_only:
+        if not current_user:
+            return []
+        teams = await service.list_user_teams_for_event(current_user.id, event_id)
+    else:
+        teams = await service.list_teams_for_event(event_id)
     return [_populate_team_response(team) for team in teams]  # type: ignore
 
 

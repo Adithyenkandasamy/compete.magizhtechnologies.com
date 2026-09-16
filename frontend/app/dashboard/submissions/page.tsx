@@ -35,7 +35,9 @@ export default function SubmissionsPage() {
 
         for (const registration of registrations) {
           try {
-            const teams = await getEventTeams(registration.event_id);
+            const teams = await getEventTeams(registration.event_id, {
+              myTeamsOnly: true,
+            });
             allTeams.push(...teams);
           } catch {
             // Ignore events whose teams cannot be loaded.

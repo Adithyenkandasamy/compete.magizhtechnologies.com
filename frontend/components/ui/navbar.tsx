@@ -20,7 +20,11 @@ import {
 
 import { useAuth } from "@/providers/auth-provider";
 import { MagizhIdModal } from "@/components/student/MagizhIdModal";
-import { FloatingDock, type FloatingDockItem } from "@/components/ui/floating-dock";
+import {
+  FloatingDockDesktop,
+  FloatingDockMobile,
+  type FloatingDockItem,
+} from "@/components/ui/floating-dock";
 
 export function Navbar() {
   const pathname = usePathname();
@@ -53,19 +57,23 @@ export function Navbar() {
           title: "Events",
           href: "/events",
           icon: <Calendar size={18} />,
-          active: pathname === "/events" || (pathname.startsWith("/events/") && !pathname.includes("/dashboard")),
+          active:
+            pathname === "/events" ||
+            (pathname.startsWith("/events/") && !pathname.includes("/dashboard")),
         },
         {
-          title: "My Events",
+          title: "Competitions",
           href: "/dashboard/events",
           icon: <Trophy size={18} />,
           active: pathname === "/dashboard/events",
         },
         {
-          title: "My Projects",
+          title: "Projects",
           href: "/dashboard/projects",
           icon: <FolderGit2 size={18} />,
-          active: pathname.startsWith("/dashboard/projects") || pathname.startsWith("/projects"),
+          active:
+            pathname.startsWith("/dashboard/projects") ||
+            pathname.startsWith("/projects"),
         },
         {
           title: "Certificates",
@@ -88,7 +96,7 @@ export function Navbar() {
         ...(isAdmin
           ? [
               {
-                title: "Command Center",
+                title: "Admin",
                 href: "/admin",
                 icon: <Shield size={18} className="text-[#D4AF37]" />,
                 active: pathname.startsWith("/admin"),
@@ -151,13 +159,13 @@ export function Navbar() {
         </div>
       )}
 
-      {/* FLOATING DOCK NAVIGATION (DESKTOP CENTERED & MOBILE FLOATING) */}
+      {/* FLOATING DOCK NAVIGATION */}
       <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 hidden lg:block pointer-events-auto">
-        <FloatingDock items={dockItems} />
+        <FloatingDockDesktop items={dockItems} />
       </div>
 
       <div className="fixed bottom-6 right-6 z-40 block lg:hidden pointer-events-auto">
-        <FloatingDock items={dockItems} />
+        <FloatingDockMobile items={dockItems} />
       </div>
 
       {/* STUDENT ID POPUP MODAL */}

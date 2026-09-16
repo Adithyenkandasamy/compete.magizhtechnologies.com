@@ -9,6 +9,7 @@ import { getMyProfile, updateMyProfile, isProfileComplete } from "@/lib/profile-
 import { getErrorMessage } from "@/lib/error-message";
 import { Navbar } from "@/components/ui/navbar";
 import { Footer } from "@/components/ui/footer";
+import { PhoneInput } from "@/components/ui/phone-input";
 
 export default function OnboardingProfilePage() {
   const router = useRouter();
@@ -78,8 +79,8 @@ export default function OnboardingProfilePage() {
       setError("Please select your Date of Birth.");
       return;
     }
-    if (!phone.trim()) {
-      setError("Please enter your Phone Number.");
+    if (!phone.trim() || phone.replace(/[^0-9]/g, "").length < 7) {
+      setError("Please enter a valid Phone Number.");
       return;
     }
     if (!college.trim()) {
@@ -209,14 +210,12 @@ export default function OnboardingProfilePage() {
                   <label htmlFor="phone" className="mb-2 block text-xs font-semibold uppercase tracking-wider text-[#A1A1A1]">
                     Phone Number <span className="text-[#D4AF37]">*</span>
                   </label>
-                  <input
+                  <PhoneInput
                     id="phone"
-                    type="tel"
                     required
                     value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
+                    onChange={setPhone}
                     placeholder="+91 98765 43210"
-                    className="w-full rounded border border-[#252525] bg-[#0A0A0A] px-4 py-3 text-sm text-[#F5F3ED] outline-none transition focus:border-[#D4AF37]"
                   />
                 </div>
               </div>

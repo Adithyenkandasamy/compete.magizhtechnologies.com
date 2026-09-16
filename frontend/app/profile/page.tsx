@@ -13,6 +13,7 @@ import { formatMagizhStudentId, formatDateOfBirth } from "@/lib/student-id";
 import { Navbar } from "@/components/ui/navbar";
 import { Footer } from "@/components/ui/footer";
 import { MagizhIdModal } from "@/components/student/MagizhIdModal";
+import { PhoneInput } from "@/components/ui/phone-input";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -301,13 +302,7 @@ export default function ProfilePage() {
                   <label htmlFor="phone" className="mb-2 block text-xs font-semibold uppercase tracking-wider text-[#A1A1A1]">
                     Phone Number
                   </label>
-                  <input
-                    id="phone"
-                    type="tel"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    className="w-full rounded border border-[#252525] bg-[#000000] px-4 py-3 text-sm text-[#F5F3ED] outline-none transition focus:border-[#D4AF37]"
-                  />
+                  <PhoneInput id="phone" value={phone} onChange={setPhone} />
                 </div>
               </div>
 

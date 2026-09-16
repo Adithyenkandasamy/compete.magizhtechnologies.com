@@ -85,6 +85,10 @@ class TeamService:
         """List every team the user belongs to within an event."""
         return await self.team_repo.get_user_teams_for_event(user_id, event_id)
 
+    async def list_teams_for_event(self, event_id: uuid.UUID) -> list[Team]:
+        """List all teams registered for an event."""
+        return await self.team_repo.get_teams_for_event(event_id)
+
     async def update_team(
         self, team_id: uuid.UUID, user_id: uuid.UUID, name: str, request: Request
     ) -> Team:

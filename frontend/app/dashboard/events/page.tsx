@@ -62,7 +62,9 @@ export default function MyEventsPage() {
             let teams: Team[] = [];
 
             try {
-              teams = await getEventTeams(registration.event_id);
+              teams = await getEventTeams(registration.event_id, {
+                myTeamsOnly: true,
+              });
             } catch {
               teams = [];
             }

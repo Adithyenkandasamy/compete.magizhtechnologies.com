@@ -32,7 +32,9 @@ export default function ProjectsPage() {
 
         for (const registration of registrations) {
           try {
-            const teams = await getEventTeams(registration.event_id);
+            const teams = await getEventTeams(registration.event_id, {
+              myTeamsOnly: true,
+            });
             allTeams.push(...teams);
           } catch {
             // Ignore events where teams cannot be loaded.

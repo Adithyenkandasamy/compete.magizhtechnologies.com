@@ -66,7 +66,9 @@ export default function MyTeamsPage() {
           let teams: TeamWithMembers[] = [];
 
           try {
-            const eventTeams = await getEventTeams(registration.event_id);
+            const eventTeams = await getEventTeams(registration.event_id, {
+              myTeamsOnly: true,
+            });
             teams = await Promise.all(
               eventTeams.map(async (t) => {
                 try {

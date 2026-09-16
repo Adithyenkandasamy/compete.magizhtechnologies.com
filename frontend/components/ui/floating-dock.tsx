@@ -38,7 +38,7 @@ export const FloatingDock = ({
   );
 };
 
-const FloatingDockMobile = ({
+export const FloatingDockMobile = ({
   items,
   className,
 }: {
@@ -120,7 +120,7 @@ const FloatingDockMobile = ({
   );
 };
 
-const FloatingDockDesktop = ({
+export const FloatingDockDesktop = ({
   items,
   className,
 }: {
@@ -208,10 +208,12 @@ function IconContainer({
       <AnimatePresence>
         {hovered && (
           <motion.div
-            initial={{ opacity: 0, y: 8, x: "-50%" }}
+            initial={{ opacity: 0, y: 6, x: "-50%" }}
             animate={{ opacity: 1, y: 0, x: "-50%" }}
             exit={{ opacity: 0, y: 4, x: "-50%" }}
-            className="absolute -top-9 left-1/2 -translate-x-1/2 w-fit rounded-md border border-[#D4AF37]/30 bg-[#000000]/95 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-[#D4AF37] shadow-xl backdrop-blur-md whitespace-nowrap pointer-events-none"
+            transition={{ duration: 0.15 }}
+            style={{ left: "50%" }}
+            className="absolute -top-10 z-50 w-max rounded-md border border-[#D4AF37]/40 bg-[#0A0A0C]/95 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-[#D4AF37] shadow-[0_4px_20px_rgba(0,0,0,0.9)] backdrop-blur-md pointer-events-none"
           >
             {title}
           </motion.div>

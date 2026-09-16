@@ -81,9 +81,15 @@ export async function createTeam(
 
 export async function getEventTeams(
   eventId: string,
+  options?: { myTeamsOnly?: boolean },
 ): Promise<Team[]> {
+  const params: Record<string, unknown> = {};
+  if (options?.myTeamsOnly) {
+    params.my_teams_only = true;
+  }
   const response = await apiClient.get<Team[]>(
     `/events/${eventId}/teams`,
+    { params },
   );
 
   return response.data;

@@ -1,5 +1,5 @@
 import uuid
-from typing import Annotated
+from typing import Annotated, Optional
 
 from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordBearer
@@ -14,10 +14,12 @@ from app.repositories.user_repo import UserRepository
 
 # We use standard OAuth2 scheme to extract token from the "Authorization: Bearer <token>" header
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
+oauth2_scheme_optional = OAuth2PasswordBearer(tokenUrl="/api/auth/login", auto_error=False)
 
 # Type alias for cleaner dependency injection
 SessionDep = Annotated[AsyncSession, Depends(get_db)]
 TokenDep = Annotated[str, Depends(oauth2_scheme)]
+OptionalTokenDep = Annotated[Optional[str], Depends(oauth2_scheme_optional)]
 
 
 async def get_current_user(
@@ -61,6 +63,36 @@ async def get_current_user(
 
 
 CurrentUserDep = Annotated[User, Depends(get_current_user)]
+
+
+async def get_optional_user(
+    request: Request, session: SessionDep, token: OptionalTokenDep
+) -> Optional[User]:
+    """Validate JWT token if present, fetch user and ensure they are active. Returns None if unauthenticated."""
+    if not token:
+        return None
+    if hasattr(request.state, "_current_user"):
+        return request.state._current_user  # type: ignore
+
+    try:
+        payload = decode_access_token(token)
+        user_id_str: str = payload.get("sub")
+        if user_id_str is None:
+            return None
+        user_id = uuid.UUID(user_id_str)
+    except Exception:
+        return None
+
+    repo = UserRepository(session)
+    user = await repo.get_by_id(user_id)
+    if user is None or user.status != AccountStatus.ACTIVE:
+        return None
+
+    request.state._current_user = user
+    return user
+
+
+OptionalUserDep = Annotated[Optional[User], Depends(get_optional_user)]
 
 
 class RoleChecker:

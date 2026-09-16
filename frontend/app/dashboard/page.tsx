@@ -335,7 +335,7 @@ export default function DashboardPage() {
                   onClick={() => setIdModalOpen(true)}
                   className="w-full rounded border border-[#252525] bg-[#000000] py-2 text-xs font-semibold uppercase tracking-wider text-[#F5F3ED] hover:border-[#D4AF37]"
                 >
-                  Open - ID Card
+                  ID Card
                 </button>
                 <Link
                   href="/my-id"
