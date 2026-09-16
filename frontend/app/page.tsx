@@ -12,8 +12,10 @@ import {
 import { motion } from "framer-motion";
 
 import { useEvents } from "@/hooks/use-events";
+import { useProjects } from "@/hooks/use-projects";
 import { usePlatformStats } from "@/hooks/use-platform-stats";
 import { EventCard } from "@/components/events/event-card";
+import { ProjectCard } from "@/components/projects/project-card";
 import {
   HackerSnakeLoader,
   ErrorState,
@@ -37,11 +39,6 @@ function AnimatedStatValue({ value }: { value: number }) {
   const [displayCount, setDisplayCount] = useState(0);
 
   useEffect(() => {
-    if (value === 0) {
-      setDisplayCount(0);
-      return;
-    }
-
     const duration = 1000;
     const startTime = performance.now();
 
@@ -85,12 +82,26 @@ const highlights = [
 ];
 
 export default function HomePage() {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setMounted(true));
+    return () => cancelAnimationFrame(id);
+  }, []);
+
   const {
     data: events,
     isLoading: eventsLoading,
     isError: eventsError,
     refetch: refetchEvents,
   } = useEvents();
+
+  const {
+    data: projects,
+    isLoading: projectsLoading,
+    isError: projectsError,
+    refetch: refetchProjects,
+  } = useProjects();
 
   const {
     data: statsData,
@@ -105,6 +116,7 @@ export default function HomePage() {
   ];
 
   const featuredEvents = events?.slice(0, 3) ?? [];
+  const featuredProjects = projects?.slice(0, 3) ?? [];
 
   return (
     <main className="min-h-screen bg-black text-[#F5F3ED]">
@@ -250,7 +262,7 @@ export default function HomePage() {
               }`}
             >
               <div className="magizh-heading text-3xl font-bold md:text-4xl">
-                {statsLoading ? (
+                {!mounted || statsLoading ? (
                   <span className="inline-block h-9 w-16 animate-pulse rounded bg-[#252525]" />
                 ) : (
                   <AnimatedStatValue value={stat.value} />
@@ -287,7 +299,7 @@ export default function HomePage() {
             </Link>
           </div>
 
-          {eventsLoading ? (
+          {!mounted || eventsLoading ? (
             <HackerSnakeLoader size="lg" message="SCANNING EVENTS" />
           ) : eventsError ? (
             <ErrorState
@@ -306,6 +318,54 @@ export default function HomePage() {
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
               {featuredEvents.map((event) => (
                 <EventCard key={event.id} event={event} />
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* FEATURED PROJECTS */}
+      <section className="border-b border-[#252525] py-24">
+        <div className="magizh-container">
+          <div className="mb-12 flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
+            <div>
+              <p className="mb-4 text-xs font-semibold uppercase tracking-[0.3em] text-[#D4AF37]">
+                Built By Students
+              </p>
+
+              <h2 className="magizh-heading text-4xl font-bold md:text-5xl">
+                Winning projects on display.
+              </h2>
+            </div>
+
+            <Link
+              href="/projects"
+              className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-[#D4AF37] transition-colors hover:text-[#E5C04A]"
+            >
+              View All Projects
+              <ArrowRight size={14} />
+            </Link>
+          </div>
+
+          {!mounted || projectsLoading ? (
+            <HackerSnakeLoader size="lg" message="SCANNING PROJECTS" />
+          ) : projectsError ? (
+            <ErrorState
+              title="Unable to load projects."
+              message="The backend may be offline. Please try again."
+              onRetry={() => refetchProjects()}
+              retryLabel="Try Again"
+            />
+          ) : featuredProjects.length === 0 ? (
+            <EmptyState
+              kicker="PROJECTS"
+              title="No projects yet"
+              description="Projects built in Magizh hackathons will be showcased here. Check back soon."
+            />
+          ) : (
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {featuredProjects.map((project) => (
+                <ProjectCard key={project.id} project={project} />
               ))}
             </div>
           )}
