@@ -1,13 +1,41 @@
-from pydantic import Field
+from pydantic import AliasChoices, Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    # Database
-    database_url: str
+    # Database (supports DATABASE_URL and DB_URL)
+    database_url: str = Field(
+        ...,
+        validation_alias=AliasChoices(
+            "DATABASE_URL",
+            "DB_URL",
+            "database_url",
+            "db_url",
+        ),
+    )
+
+    @field_validator("database_url", mode="before")
+    @classmethod
+    def assemble_db_connection(cls, v: str) -> str:
+        if not v or not isinstance(v, str):
+            return v
+        cleaned = v.strip().strip("'\"")
+
+        # Convert postgres:// or postgresql:// to postgresql+asyncpg://
+        if cleaned.startswith("postgres://"):
+            cleaned = "postgresql+asyncpg://" + cleaned[len("postgres://"):]
+        elif cleaned.startswith("postgresql://") and not cleaned.startswith("postgresql+asyncpg://"):
+            cleaned = "postgresql+asyncpg://" + cleaned[len("postgresql://"):]
+
+        # For asyncpg, sslmode=require should be ssl=require
+        if "sslmode=require" in cleaned:
+            cleaned = cleaned.replace("sslmode=require", "ssl=require")
+
+        return cleaned
 
     # JWT
     jwt_secret: str
+
     jwt_algorithm: str = "HS256"
     access_token_expire_minutes: int = 60
     refresh_token_expire_days: int = 30

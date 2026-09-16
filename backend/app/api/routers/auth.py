@@ -1,5 +1,6 @@
-from fastapi import APIRouter, Depends, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordRequestForm
+from pydantic import ValidationError
 
 from app.api.deps import CurrentUserDep, SessionDep
 from app.schemas.auth import LoginRequest, RefreshRequest, RegisterRequest, TokenResponse, UserResponse
@@ -28,6 +29,7 @@ async def register(
     # The Pydantic UserResponse schema automatically strips the password hash
     return user  # type: ignore
 
+
 @router.post(
     "/login",
     response_model=TokenResponse,
@@ -45,10 +47,18 @@ async def login(
     """
     auth_service = AuthService(session)
     # The OAuth2PasswordRequestForm uses 'username' instead of 'email'
-    login_data = LoginRequest(email=form_data.username, password=form_data.password)
+    try:
+        login_data = LoginRequest(email=form_data.username.strip(), password=form_data.password)
+    except ValidationError:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="A valid email address and password are required.",
+        )
+
     _, tokens = await auth_service.authenticate_user(login_data, request)
 
     return tokens
+
 
 
 @router.post(

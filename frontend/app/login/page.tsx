@@ -71,8 +71,16 @@ export default function LoginPage() {
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
+
+    const cleanEmail = email.trim();
+    if (!cleanEmail || !cleanEmail.includes("@")) {
+      setError("Please enter a valid email address.");
+      return;
+    }
+
     loginMutation.mutate();
   }
+
 
   return (
     <main className="min-h-screen flex items-center justify-center px-5 py-16 bg-black text-[#F5F3ED]">

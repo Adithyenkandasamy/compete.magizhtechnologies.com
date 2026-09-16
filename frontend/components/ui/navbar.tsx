@@ -141,7 +141,7 @@ export function Navbar() {
                   className="flex items-center gap-1.5 rounded border border-[#252525] bg-[#0A0A0A] px-3.5 py-2 text-xs font-medium uppercase tracking-[0.15em] text-[#F5F3ED] transition hover:border-[#D4AF37] hover:text-[#D4AF37]"
                 >
                   <IdCard size={14} className="text-[#D4AF37]" />
-                  My Magizh ID
+                  ID Card
                 </button>
 
                 <Link
