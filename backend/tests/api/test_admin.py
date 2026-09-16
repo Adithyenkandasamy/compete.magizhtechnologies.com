@@ -95,14 +95,14 @@ async def setup_admin_env(client: AsyncClient, session: AsyncSession) -> dict:
     session.add(TeamMember(team_id=team.id, user_id=student1.id))
     session.add(TeamMember(team_id=team.id, user_id=student2.id))
 
-    proj = Project(team_id=team.id, title="Autonomous Drone AI", description="Smart delivery system")
+    proj = Project(team_id=team.id, event_id=event.id, title="Autonomous Drone AI", description="Smart delivery system")
     session.add(proj)
     await session.flush()
 
     sub = Submission(
         project_id=proj.id,
+        event_id=event.id,
         status=SubmissionStatus.SUBMITTED,
-        title="Autonomous Drone AI Submission",
     )
     session.add(sub)
 
@@ -656,3 +656,90 @@ async def test_admin_badges_management_and_awarding(
         json={"user_id": str(student1_id)},
     )
     assert dup_res.status_code == 409
+
+
+async def test_admin_delete_user(client: AsyncClient, session: AsyncSession):
+    """
+    Test user deletion functionality for admin:
+    1. Admin CANNOT delete their own account (400 - self-lockout prevention)
+    2. Admin CANNOT delete a SUPER_ADMIN (403 - privilege escalation protection)
+    3. Admin CAN soft-delete a student (status becomes DELETED, 200)
+    4. Admin CAN hard-delete a user (permanently deleted from DB, 200)
+    5. Non-existent user deletion returns 404
+    """
+    # Setup Super Admin
+    sa_email = f"sa_{uuid.uuid4()}@example.com"
+    super_admin = await create_test_user(session, email=sa_email, role=UserRole.SUPER_ADMIN)
+    sa_id = super_admin.id
+
+    # Setup Admin
+    admin_email = f"adm_{uuid.uuid4()}@example.com"
+    admin_user = await create_test_user(session, email=admin_email, role=UserRole.ADMIN)
+    admin_login = await client.post("/api/auth/login", data={"username": admin_email, "password": "StrongPass123!"})
+    admin_token = admin_login.json()["access_token"]
+    admin_id = admin_user.id
+
+    # Setup Student
+    student_email = f"stu_{uuid.uuid4()}@example.com"
+    student = await create_test_user(session, email=student_email, role=UserRole.STUDENT)
+    student_id = student.id
+
+    # 1. Admin self-delete rejected (400)
+    self_del = await client.delete(
+        f"/api/admin/users/{admin_id}",
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+    assert self_del.status_code == 400
+    assert "cannot delete your own admin account" in self_del.json()["detail"]
+
+    # 2. Admin cannot delete SUPER_ADMIN (403)
+    sa_del = await client.delete(
+        f"/api/admin/users/{sa_id}",
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+    assert sa_del.status_code == 403
+
+    # 3. Soft-delete student (status -> DELETED)
+    soft_del = await client.delete(
+        f"/api/admin/users/{student_id}?hard=false",
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+    assert soft_del.status_code == 200
+    data = soft_del.json()
+    assert data["status"] == "success"
+    assert data["hard_deleted"] is False
+
+    # Verify student status is now DELETED
+    user_check = await client.get(
+        f"/api/admin/users/{student_id}",
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+    assert user_check.status_code == 200
+    assert user_check.json()["status"] == "DELETED"
+
+    # 4. Hard-delete a newly created user
+    temp_email = f"temp_delete_{uuid.uuid4()}@example.com"
+    temp_user = await create_test_user(session, email=temp_email, role=UserRole.STUDENT)
+    temp_id = temp_user.id
+
+    hard_del = await client.delete(
+        f"/api/admin/users/{temp_id}?hard=true",
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+    assert hard_del.status_code == 200
+    assert hard_del.json()["hard_deleted"] is True
+
+    # Verify user no longer exists (404)
+    after_del = await client.get(
+        f"/api/admin/users/{temp_id}",
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+    assert after_del.status_code == 404
+
+    # 5. Non-existent user returns 404
+    fake_id = uuid.uuid4()
+    not_found_del = await client.delete(
+        f"/api/admin/users/{fake_id}",
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+    assert not_found_del.status_code == 404

@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   ArrowRight,
@@ -11,6 +12,7 @@ import {
 import { motion } from "framer-motion";
 
 import { useEvents } from "@/hooks/use-events";
+import { usePlatformStats } from "@/hooks/use-platform-stats";
 import { EventCard } from "@/components/events/event-card";
 import {
   HackerSnakeLoader,
@@ -18,12 +20,48 @@ import {
   EmptyState,
 } from "@/components/loading";
 
-const stats = [
-  { value: "40+", label: "Events" },
-  { value: "1.2K+", label: "Participants" },
-  { value: "300+", label: "Teams" },
-  { value: "25+", label: "Winning Projects" },
-];
+function formatStatValue(count: number): string {
+  if (count >= 1_000_000) {
+    return `${(count / 1_000_000).toFixed(1).replace(/\.0$/, "")}M+`;
+  }
+  if (count >= 1_000) {
+    return `${(count / 1_000).toFixed(1).replace(/\.0$/, "")}K+`;
+  }
+  if (count > 0) {
+    return `${count}+`;
+  }
+  return "0";
+}
+
+function AnimatedStatValue({ value }: { value: number }) {
+  const [displayCount, setDisplayCount] = useState(0);
+
+  useEffect(() => {
+    if (value === 0) {
+      setDisplayCount(0);
+      return;
+    }
+
+    const duration = 1000;
+    const startTime = performance.now();
+
+    const frame = (now: number) => {
+      const elapsed = now - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setDisplayCount(Math.round(eased * value));
+
+      if (progress < 1) {
+        requestAnimationFrame(frame);
+      }
+    };
+
+    const animId = requestAnimationFrame(frame);
+    return () => cancelAnimationFrame(animId);
+  }, [value]);
+
+  return <>{formatStatValue(displayCount)}</>;
+}
 
 const highlights = [
   {
@@ -53,6 +91,18 @@ export default function HomePage() {
     isError: eventsError,
     refetch: refetchEvents,
   } = useEvents();
+
+  const {
+    data: statsData,
+    isLoading: statsLoading,
+  } = usePlatformStats();
+
+  const statItems = [
+    { label: "Events", value: statsData?.events ?? 0 },
+    { label: "Participants", value: statsData?.participants ?? 0 },
+    { label: "Teams", value: statsData?.teams ?? 0 },
+    { label: "Winning Projects", value: statsData?.winning_projects ?? 0 },
+  ];
 
   const featuredEvents = events?.slice(0, 3) ?? [];
 
@@ -192,16 +242,20 @@ export default function HomePage() {
       {/* STATS */}
       <section className="border-b border-[#252525]">
         <div className="magizh-container grid grid-cols-2 md:grid-cols-4">
-          {stats.map((stat, index) => (
+          {statItems.map((stat, index) => (
             <div
               key={stat.label}
               className={`px-5 py-10 md:px-8 ${
                 index !== 0 ? "border-l border-[#252525]" : ""
               }`}
             >
-              <p className="magizh-heading text-3xl font-bold md:text-4xl">
-                {stat.value}
-              </p>
+              <div className="magizh-heading text-3xl font-bold md:text-4xl">
+                {statsLoading ? (
+                  <span className="inline-block h-9 w-16 animate-pulse rounded bg-[#252525]" />
+                ) : (
+                  <AnimatedStatValue value={stat.value} />
+                )}
+              </div>
               <p className="mt-2 text-xs uppercase tracking-[0.18em] text-[#666]">
                 {stat.label}
               </p>

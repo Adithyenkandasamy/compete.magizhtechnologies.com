@@ -110,3 +110,24 @@ async def update_user_role(
         current_admin=current_admin,
         request=request,
     )
+
+
+@router.delete(
+    "/{user_id}",
+    summary="Delete a user (soft or hard)",
+    description="Soft-deletes a user (sets status to DELETED and revokes active sessions) or permanently deletes user from database if hard=True. Prevents self-deletion and enforces privilege rules.",
+)
+async def delete_user(
+    user_id: uuid.UUID,
+    request: Request,
+    session: SessionDep,
+    current_admin: CurrentUserDep,
+    hard: bool = Query(False, description="If true, permanently delete user and associated records from database"),
+) -> dict:
+    service = AdminUserService(session)
+    return await service.delete_user(
+        user_id=user_id,
+        current_admin=current_admin,
+        request=request,
+        hard=hard,
+    )

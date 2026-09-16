@@ -1,4 +1,4 @@
-import { HackerSnakeLoader } from "./HackerSnakeLoader";
+import { Loader2 } from "lucide-react";
 
 type RefetchIndicatorProps = {
   active: boolean;
@@ -6,16 +6,9 @@ type RefetchIndicatorProps = {
   className?: string;
 };
 
-/**
- * Background-refresh indicator (Hacker Snake, small).
- *
- * Used on TanStack Query pages where a background refetch is running: the
- * existing content stays visible and this small pill shows a flowing snake
- * with "Updating…" instead of replacing content with a full-page loader.
- */
 export function RefetchIndicator({
   active,
-  label = "Updating",
+  label = "Updating...",
   className = "",
 }: RefetchIndicatorProps) {
   if (!active) {
@@ -27,8 +20,8 @@ export function RefetchIndicator({
       aria-live="polite"
       className={`inline-flex items-center gap-2 rounded border border-[#252525] bg-[#0D0D0F] px-3 py-1.5 ${className}`}
     >
-      <HackerSnakeLoader size="sm" announce={false} />
-      <span className="text-xs font-medium uppercase tracking-[0.15em] text-[#A1A1A1]">
+      <Loader2 data-testid="hacker-snake" className="h-3.5 w-3.5 animate-spin text-[#D4AF37]" />
+      <span className="text-xs font-normal text-[#A1A1A1]">
         {label}
       </span>
     </div>

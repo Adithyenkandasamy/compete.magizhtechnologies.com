@@ -32,6 +32,7 @@ from app.api.routers import (
     registrations,
     rounds,
     sponsors,
+    stats,
     submissions,
     team_invites,
     teams,
@@ -109,6 +110,7 @@ app.include_router(admin_security.router, prefix="/api")
 app.include_router(admin_analytics.router, prefix="/api")
 app.include_router(admin_badges.router, prefix="/api")
 app.include_router(sponsors.router, prefix="/api")
+app.include_router(stats.router, prefix="/api")
 app.include_router(registrations.router)
 app.include_router(profile_router.router)
 app.include_router(profile_router.public_router)

@@ -67,3 +67,21 @@ export async function updateAdminUserRole(
 
   return response.data;
 }
+
+export type DeleteUserResponse = {
+  status: string;
+  message: string;
+  user_id: string;
+  hard_deleted: boolean;
+};
+
+export async function deleteAdminUser(
+  userId: string,
+  hard = false,
+): Promise<DeleteUserResponse> {
+  const response = await apiClient.delete<DeleteUserResponse>(
+    `/admin/users/${userId}?hard=${hard}`,
+  );
+
+  return response.data;
+}

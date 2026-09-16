@@ -2,15 +2,19 @@ import uuid
 from typing import Optional
 
 from fastapi import HTTPException, Request, status
-from sqlalchemy import func, or_, select
+from sqlalchemy import delete, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.models.audit import UserSession
+from app.models.badge import UserBadge
 from app.models.certificate import Certificate
-from app.models.enums import AccountStatus, UserRole
+from app.models.enums import AccountStatus, TeamMemberRole, UserRole
+from app.models.judge import Judge
+from app.models.notification import Notification
 from app.models.project import Submission
 from app.models.registration import Registration
-from app.models.team import TeamMember
+from app.models.team import Team, TeamMember
 from app.models.user import Profile, User
 from app.repositories.audit_repo import AuditRepository
 from app.repositories.user_repo import UserRepository
@@ -270,3 +274,124 @@ class AdminUserService:
             created_at=target_user.created_at,
             updated_at=target_user.updated_at,
         )
+
+    async def delete_user(
+        self,
+        user_id: uuid.UUID,
+        current_admin: User,
+        request: Request,
+        hard: bool = False,
+    ) -> dict:
+        target_user = await self.user_repo.get_by_id(user_id)
+        if not target_user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found",
+            )
+
+        # 1. Prevent self-lockout / self-delete
+        if target_user.id == current_admin.id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Action rejected: You cannot delete your own admin account",
+            )
+
+        # 2. Strict Privilege Escalation Protection:
+        if target_user.role == UserRole.SUPER_ADMIN and current_admin.role != UserRole.SUPER_ADMIN:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Forbidden: Only SUPER_ADMIN can delete another SUPER_ADMIN",
+            )
+
+        if target_user.role == UserRole.ADMIN and current_admin.role != UserRole.SUPER_ADMIN:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Forbidden: Only SUPER_ADMIN can delete an ADMIN",
+            )
+
+        email = target_user.email
+
+        if not hard:
+            # Soft delete: set status to DELETED
+            old_status = target_user.status
+            target_user.status = AccountStatus.DELETED
+            # Invalidate any active sessions for the deleted user
+            await self.session.execute(
+                delete(UserSession).where(UserSession.user_id == user_id)
+            )
+            await self.session.commit()
+
+            # Audit log
+            await self.audit_repo.create_audit_log(
+                action="admin.user.deleted",
+                event_type="user_management",
+                user_id=current_admin.id,
+                resource_type="User",
+                resource_id=str(user_id),
+                details=f"Deactivated user {email} (status changed from {old_status.value} to DELETED). Active sessions revoked.",
+                ip_address=request.client.host if request.client else None,
+                user_agent=request.headers.get("user-agent"),
+                endpoint=request.url.path,
+                http_method=request.method,
+            )
+
+            return {
+                "status": "success",
+                "message": f"User {email} has been deactivated and marked as DELETED.",
+                "user_id": str(user_id),
+                "hard_deleted": False,
+            }
+        else:
+            # Hard delete: remove completely from DB
+            # 1. Handle teams where user is leader (since teams.leader_id has ondelete="RESTRICT")
+            teams_led = (
+                await self.session.execute(
+                    select(Team).options(selectinload(Team.members)).where(Team.leader_id == user_id)
+                )
+            ).scalars().all()
+
+            for team in teams_led:
+                other_members = [m for m in team.members if m.user_id != user_id]
+                if other_members:
+                    # Reassign leader
+                    team.leader_id = other_members[0].user_id
+                    other_members[0].role = TeamMemberRole.LEADER
+                else:
+                    # Single-member team: delete the team
+                    await self.session.delete(team)
+
+            await self.session.flush()
+
+            # 2. Explicitly remove child relationships
+            await self.session.execute(delete(UserSession).where(UserSession.user_id == user_id))
+            await self.session.execute(delete(Registration).where(Registration.user_id == user_id))
+            await self.session.execute(delete(TeamMember).where(TeamMember.user_id == user_id))
+            await self.session.execute(delete(Certificate).where(Certificate.user_id == user_id))
+            await self.session.execute(delete(Notification).where(Notification.user_id == user_id))
+            await self.session.execute(delete(UserBadge).where(UserBadge.user_id == user_id))
+            await self.session.execute(delete(Judge).where(Judge.user_id == user_id))
+
+            # 3. Delete target user (profile cascades automatically)
+            await self.session.delete(target_user)
+            await self.session.commit()
+
+            # Audit log
+            await self.audit_repo.create_audit_log(
+                action="admin.user.hard_deleted",
+                event_type="user_management",
+                user_id=current_admin.id,
+                resource_type="User",
+                resource_id=str(user_id),
+                details=f"Permanently hard-deleted user {email} from database.",
+                ip_address=request.client.host if request.client else None,
+                user_agent=request.headers.get("user-agent"),
+                endpoint=request.url.path,
+                http_method=request.method,
+            )
+
+            return {
+                "status": "success",
+                "message": f"User {email} has been permanently deleted from the platform.",
+                "user_id": str(user_id),
+                "hard_deleted": True,
+            }

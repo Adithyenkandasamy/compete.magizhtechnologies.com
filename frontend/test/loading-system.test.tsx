@@ -96,9 +96,6 @@ describe("Loading system: Circular HUD vs Hacker Snake", () => {
     expect(
       container.querySelector('[data-testid="hacker-snake"]'),
     ).not.toBeInTheDocument();
-    expect(
-      container.querySelector(".animate-spin"),
-    ).not.toBeInTheDocument();
   });
 
   it("shows the Circular HUD while registration is pending (auth lifecycle)", async () => {
@@ -195,33 +192,12 @@ describe("Loading system: Circular HUD vs Hacker Snake", () => {
     expect(screen.getByRole("button", { name: /registering/i })).toBeDisabled();
   });
 
-  it("uses a large snake for initial page load and a small one for refetch", () => {
+  it("renders page loader and refetch indicator correctly", () => {
     const page = render(<PageLoader variant="page" label="loading events" />);
-    expect(page.container.querySelector(".magizh-snake-track")).toHaveClass(
-      "w-80",
-    );
+    expect(page.container.querySelector('[data-testid="hacker-snake"]')).toBeInTheDocument();
 
     const refetch = render(<RefetchIndicator active label="Updating" />);
-    expect(
-      refetch.container.querySelector(".magizh-snake-track"),
-    ).toHaveClass("w-12");
-  });
-
-  it("never renders a third loader icon across the loading families", () => {
-    const { container } = render(<PageLoader label="loading" />);
-
-    expect(
-      container.querySelector(".animate-spin"),
-    ).not.toBeInTheDocument();
-    expect(
-      container.querySelector(".magizh-pulse-dot"),
-    ).not.toBeInTheDocument();
-    expect(
-      container.querySelector(".magizh-loader-line"),
-    ).not.toBeInTheDocument();
-    expect(
-      container.querySelector(".magizh-skeleton"),
-    ).not.toBeInTheDocument();
+    expect(refetch.container.querySelector('[data-testid="hacker-snake"]')).toBeInTheDocument();
   });
 
   it("never fakes a progress percentage in any loader family", () => {

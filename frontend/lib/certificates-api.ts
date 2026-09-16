@@ -60,3 +60,5 @@ export async function verifyCertificate(
 
 /** Alias — some pages import downloadMyCertificate */
 export const downloadMyCertificate = downloadCertificate;
+export const verifyCertificatePublic = verifyCertificate;
+export type CertificateVerification = Certificate;

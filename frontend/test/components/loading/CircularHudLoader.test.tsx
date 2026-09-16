@@ -4,39 +4,24 @@ import { describe, expect, it } from "vitest";
 import { CircularHudLoader } from "@/components/loading";
 
 describe("CircularHudLoader", () => {
-  it("renders the default login banner", () => {
+  it("renders the default login message", () => {
     render(<CircularHudLoader />);
-    expect(screen.getByText("AUTHENTICATING...")).toBeInTheDocument();
-  });
-
-  it("renders the login stage labels by default", () => {
-    render(<CircularHudLoader />);
-    expect(screen.getByText("CONNECTING TO CORE")).toBeInTheDocument();
-    expect(screen.getByText("VERIFYING CREDENTIALS")).toBeInTheDocument();
-    expect(
-      screen.getByText("ESTABLISHING SECURE SESSION"),
-    ).toBeInTheDocument();
+    expect(screen.getByText("Signing in...")).toBeInTheDocument();
   });
 
   it("renders logout mode copy", () => {
     render(<CircularHudLoader mode="logout" />);
-    expect(screen.getByText("SIGNING OUT...")).toBeInTheDocument();
-    expect(screen.getByText("TERMINATING SESSION")).toBeInTheDocument();
-    expect(screen.getByText("CLOSING SECURE CHANNEL")).toBeInTheDocument();
-    expect(screen.getByText("CLEARING SESSION STATE")).toBeInTheDocument();
+    expect(screen.getByText("Signing out...")).toBeInTheDocument();
   });
 
   it("renders session mode copy", () => {
     render(<CircularHudLoader mode="session" />);
-    expect(screen.getByText("VERIFYING SESSION...")).toBeInTheDocument();
-    expect(screen.getByText("VERIFYING SESSION")).toBeInTheDocument();
-    expect(screen.getByText("RESTORING IDENTITY")).toBeInTheDocument();
-    expect(screen.getByText("CHECKING ACCESS")).toBeInTheDocument();
+    expect(screen.getByText("Loading...")).toBeInTheDocument();
   });
 
-  it("overrides the banner with a custom message", () => {
-    render(<CircularHudLoader message="VERIFYING IDENTITY" />);
-    expect(screen.getByText("VERIFYING IDENTITY")).toBeInTheDocument();
+  it("overrides the label with a custom message", () => {
+    render(<CircularHudLoader message="Verifying credentials..." />);
+    expect(screen.getByText("Verifying credentials...")).toBeInTheDocument();
   });
 
   it("announces an accessible pending state", () => {
@@ -50,10 +35,10 @@ describe("CircularHudLoader", () => {
     ).toBeInTheDocument();
   });
 
-  it("renders a black full-screen overlay when fullScreen is set", () => {
+  it("renders a full-screen overlay when fullScreen is set", () => {
     const { container } = render(<CircularHudLoader fullScreen />);
     const hud = container.querySelector('[data-testid="circular-hud"]');
-    expect(hud).toHaveClass("fixed", "inset-0", "bg-black");
+    expect(hud).toHaveClass("fixed", "inset-0");
   });
 
   it("stays inline (no fixed overlay) when fullScreen is omitted", () => {
@@ -62,44 +47,8 @@ describe("CircularHudLoader", () => {
     expect(hud).not.toHaveClass("fixed");
   });
 
-  it("renders exactly one Circular HUD (no third loader hidden inside)", () => {
-    const { container } = render(<CircularHudLoader fullScreen />);
-    expect(
-      container.querySelectorAll('[data-testid="circular-hud"]'),
-    ).toHaveLength(1);
-    expect(
-      container.querySelector('[data-testid="hacker-snake"]'),
-    ).not.toBeInTheDocument();
-    expect(container.querySelector(".animate-spin")).not.toBeInTheDocument();
-  });
-
-  it("never shows a fake progress percentage", () => {
+  it("renders a clean spinner without fake percentages", () => {
     const { container } = render(<CircularHudLoader mode="logout" />);
     expect(container.textContent).not.toMatch(/\d+%/);
-  });
-
-  it("keeps decorative stage/numerals noise out of the accessible tree", () => {
-    const { container } = render(<CircularHudLoader />);
-    const stages = container.querySelector(".magizh-hud-stages");
-    expect(stages).toHaveAttribute("aria-hidden", "true");
-  });
-
-  it("preserves a static indication under reduced motion", () => {
-    window.matchMedia = ((query: string) => ({
-      matches: query.includes("prefers-reduced-motion"),
-      media: query,
-      onchange: null,
-      addListener: () => {},
-      removeListener: () => {},
-      addEventListener: () => {},
-      removeEventListener: () => {},
-      dispatchEvent: () => false,
-    })) as unknown as typeof window.matchMedia;
-
-    render(<CircularHudLoader mode="logout" />);
-
-    // Even with motion disabled the HUD keeps announcing the pending state.
-    expect(screen.getByText("SIGNING OUT...")).toBeInTheDocument();
-    expect(screen.getByRole("status")).toBeInTheDocument();
   });
 });

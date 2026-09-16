@@ -1,5 +1,5 @@
 import type { ButtonHTMLAttributes } from "react";
-import { HackerSnakeLoader } from "./HackerSnakeLoader";
+import { Loader2 } from "lucide-react";
 
 type LoadingButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   loading?: boolean;
@@ -27,20 +27,6 @@ const variants: Record<NonNullable<LoadingButtonProps["variant"]>, string> = {
     "border border-[#252525] bg-[#0A0A0A] text-[#F5F3ED] hover:border-[#D4AF37] hover:text-[#D4AF37]",
 };
 
-/**
- * Button that communicates an async mutation is pending using the Magizh
- * Hacker Snake inside the button (never a full-page cover):
- *
- *   [ Register ]          → idle
- *   [ <snake> Registering... ] → pending
- *
- * - Disables itself while `loading` (prevents duplicate clicks).
- * - Sets `aria-busy` and keeps a visible text label so the pending state is
- *   not conveyed by motion alone.
- * - Retains the exact button dimensions while loading (mini snake + label).
- *
- * Authentication operations should NOT use this — use CircularHudLoader.
- */
 export function LoadingButton({
   loading = false,
   loadingText = "Loading...",
@@ -60,14 +46,7 @@ export function LoadingButton({
     >
       {loading ? (
         <>
-          <HackerSnakeLoader
-            size="sm"
-            announce={false}
-            className="shrink-0"
-          />
-          <span aria-hidden className="magizh-mono text-[10px] tracking-[0.15em] opacity-70">
-            &gt;&gt;&gt;
-          </span>
+          <Loader2 data-testid="hacker-snake" className="h-4 w-4 shrink-0 animate-spin" />
           <span>{loadingText}</span>
         </>
       ) : (

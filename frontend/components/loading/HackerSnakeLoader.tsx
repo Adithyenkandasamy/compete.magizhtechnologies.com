@@ -1,11 +1,6 @@
 "use client";
 
-/**
- * MagizhLoader — clean, professional page-level spinner.
- * Replaces HackerSnakeLoader for all non-auth loading states.
- * 
- * Visual: slim pulsing gold ring + "M" monogram, no hacker text.
- */
+import { Loader2 } from "lucide-react";
 
 export type HackerSnakeSize = "sm" | "md" | "lg" | "full";
 
@@ -17,12 +12,22 @@ type HackerSnakeLoaderProps = {
   className?: string;
 };
 
-const sizeMap: Record<HackerSnakeSize, { ring: string; text: string; wrapper: string }> = {
-  sm: { ring: "h-5 w-5 border-2", text: "hidden", wrapper: "" },
-  md: { ring: "h-8 w-8 border-2", text: "text-[10px] mt-3", wrapper: "" },
-  lg: { ring: "h-10 w-10 border-2", text: "text-[11px] mt-4", wrapper: "min-h-[30vh]" },
-  full: { ring: "h-12 w-12 border-[3px]", text: "text-xs mt-5", wrapper: "min-h-[55vh]" },
+const sizeMap: Record<HackerSnakeSize, { icon: string; text: string; wrapper: string }> = {
+  sm: { icon: "h-4 w-4", text: "hidden", wrapper: "" },
+  md: { icon: "h-5 w-5", text: "text-xs mt-2", wrapper: "" },
+  lg: { icon: "h-6 w-6", text: "text-xs mt-2.5", wrapper: "min-h-[20vh]" },
+  full: { icon: "h-7 w-7", text: "text-xs mt-3", wrapper: "min-h-[40vh]" },
 };
+
+function formatMessage(msg?: string): string | null {
+  if (!msg) return null;
+  // Convert any aggressive all-caps strings (e.g. "LOADING ROSTER...") to normal readable casing
+  if (msg === msg.toUpperCase() && msg.length > 3) {
+    const clean = msg.replace(/\.+$/, "");
+    return clean.charAt(0).toUpperCase() + clean.slice(1).toLowerCase() + "...";
+  }
+  return msg;
+}
 
 export function HackerSnakeLoader({
   message,
@@ -30,28 +35,23 @@ export function HackerSnakeLoader({
   announce = true,
   className = "",
 }: HackerSnakeLoaderProps) {
-  const { ring, text, wrapper } = sizeMap[size];
+  const { icon, text, wrapper } = sizeMap[size];
+  const displayMsg = formatMessage(message);
 
   return (
     <div
+      data-testid="hacker-snake"
       role={announce ? "status" : undefined}
       aria-live={announce ? "polite" : undefined}
       aria-busy={announce ? "true" : undefined}
       aria-hidden={announce ? undefined : "true"}
       className={`flex flex-col items-center justify-center ${wrapper} ${className}`}
     >
-      {/* Clean spinner ring */}
-      <div
-        aria-hidden
-        className={`${ring} rounded-full border-[#252525] border-t-[#D4AF37] animate-spin`}
-      />
+      <Loader2 className={`${icon} animate-spin text-[#D4AF37]`} />
 
-      {/* Optional label */}
-      {message && size !== "sm" && (
-        <p
-          className={`${text} font-mono uppercase tracking-[0.2em] text-[#A1A1A1] text-center`}
-        >
-          {message}
+      {displayMsg && size !== "sm" && (
+        <p className={`${text} text-[#A1A1A1] text-center font-normal`}>
+          {displayMsg}
         </p>
       )}
     </div>

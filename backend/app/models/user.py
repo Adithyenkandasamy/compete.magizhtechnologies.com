@@ -69,37 +69,37 @@ class User(Base):
     # ------------------------------------------------------------------ #
 
     profile: Mapped[Optional["Profile"]] = relationship(
-        "Profile", back_populates="user", uselist=False, cascade="all, delete-orphan"
+        "Profile", back_populates="user", uselist=False, cascade="all, delete-orphan", passive_deletes=True
     )
     registrations: Mapped[list["Registration"]] = relationship(
-        "Registration", back_populates="user"
+        "Registration", back_populates="user", passive_deletes=True
     )
     led_teams: Mapped[list["Team"]] = relationship(
         "Team", back_populates="leader", foreign_keys="Team.leader_id"
     )
     team_memberships: Mapped[list["TeamMember"]] = relationship(
-        "TeamMember", back_populates="user"
+        "TeamMember", back_populates="user", passive_deletes=True
     )
     certificates: Mapped[list["Certificate"]] = relationship(
-        "Certificate", back_populates="user"
+        "Certificate", back_populates="user", passive_deletes=True
     )
     notifications: Mapped[list["Notification"]] = relationship(
-        "Notification", back_populates="user"
+        "Notification", back_populates="user", passive_deletes=True
     )
     audit_logs: Mapped[list["AuditLog"]] = relationship(
         "AuditLog", back_populates="user"
     )
     sessions: Mapped[list["UserSession"]] = relationship(
-        "UserSession", back_populates="user"
+        "UserSession", back_populates="user", passive_deletes=True
     )
     login_attempts: Mapped[list["LoginAttempt"]] = relationship(
         "LoginAttempt", back_populates="user"
     )
     user_badges: Mapped[list["UserBadge"]] = relationship(
-        "UserBadge", back_populates="user"
+        "UserBadge", back_populates="user", passive_deletes=True
     )
     judge: Mapped[Optional["Judge"]] = relationship(
-        "Judge", back_populates="user", uselist=False
+        "Judge", back_populates="user", uselist=False, passive_deletes=True
     )
     security_alerts: Mapped[list["SecurityAlert"]] = relationship(
         "SecurityAlert", back_populates="user"
