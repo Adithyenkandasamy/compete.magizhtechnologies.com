@@ -54,6 +54,13 @@ export function MagizhIdCard({
 
   const status = publicProfile?.status || identity?.status || "ACTIVE STUDENT";
 
+  const avatarUrl =
+    profile?.avatar_url ||
+    user?.profile?.avatar_url ||
+    null;
+
+  const fallbackLetter = (fullName || "M").charAt(0);
+
   // Verification URL for QR code (points to /student/verify/[magizhStudentId])
   const verifyUrl = useMemo(() => {
     if (typeof window !== "undefined") {
@@ -102,12 +109,29 @@ export function MagizhIdCard({
       {/* STUDENT CREDENTIAL DETAILS */}
       <div className="relative z-10 my-6 space-y-4">
         {/* Full Name & Student ID */}
-        <div>
-          <h2 className="magizh-heading text-2xl font-bold tracking-tight text-[#F5F3ED] leading-tight">
-            {fullName}
-          </h2>
-          <div className="mt-2 inline-flex items-center gap-2 rounded border border-[#D4AF37]/30 bg-[#000000] px-3 py-1 font-mono text-sm font-bold tracking-[0.16em] text-[#D4AF37]">
-            {studentId}
+        <div className="flex items-center gap-4">
+          {/* Photo / initial fallback */}
+          <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-full border-2 border-[#D4AF37]/60 bg-[#151515] shadow-lg shadow-[#D4AF37]/10 flex items-center justify-center">
+            {avatarUrl ? (
+              <img
+                src={avatarUrl}
+                alt={fullName}
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <span className="text-2xl font-bold text-[#D4AF37]">
+                {fallbackLetter}
+              </span>
+            )}
+          </div>
+
+          <div className="min-w-0">
+            <h2 className="magizh-heading text-2xl font-bold tracking-tight text-[#F5F3ED] leading-tight">
+              {fullName}
+            </h2>
+            <div className="mt-2 inline-flex items-center gap-2 rounded border border-[#D4AF37]/30 bg-[#000000] px-3 py-1 font-mono text-sm font-bold tracking-[0.16em] text-[#D4AF37]">
+              {studentId}
+            </div>
           </div>
         </div>
 
