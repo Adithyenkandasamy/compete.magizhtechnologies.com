@@ -63,6 +63,15 @@ class Settings(BaseSettings):
 
         return cleaned
 
+    # Environment / Debug mode
+    debug: bool = Field(
+        default=False,
+        validation_alias=AliasChoices(
+            "DEBUG",
+            "debug",
+        ),
+    )
+
     # JWT
     jwt_secret: str
 

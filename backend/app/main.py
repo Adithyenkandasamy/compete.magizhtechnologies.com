@@ -58,8 +58,10 @@ app = FastAPI(
     title="Magizh Innovation API",
     description="Official event and innovation platform for Magizh Technologies.",
     version="0.1.0",
-    docs_url="/docs",
-    redoc_url="/redoc",
+    docs_url="/docs" if settings.debug else None,
+    redoc_url="/redoc" if settings.debug else None,
+    openapi_url="/openapi.json" if settings.debug else None,
+    debug=settings.debug,
 )
 
 # ---------------------------------------------------------------------------
